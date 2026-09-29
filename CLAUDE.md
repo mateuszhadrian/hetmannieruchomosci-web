@@ -1,0 +1,200 @@
+# hetmannieruchomosci-web — CLAUDE.md
+
+Strona biura nieruchomości **HETMAN Nieruchomości** (Poznań) —
+`hetmannieruchomosci.com`. Astro 6 **static** (bez SSR), **PL-only**.
+Hosting: Cloudflare Pages, deploy automatyczny z gałęzi `main` →
+**main = to, co widzi klientka**. Do przełączenia domeny strona żyje pod
+adresem podglądu `nowa.hetmannieruchomosci.com` (z nagłówkiem `noindex`);
+obecna strona klientki pod domeną główną działa do tego czasu nietknięta.
+Main chroniony rulesetem — zmiany idą przez feature branch → PR → zielone
+checki → merge (`docs/daily-workflow.md`); jedynym wyjątkiem jest bot
+syncu danych.
+
+**Oferty pochodzą z systemu CRM biura.** Nocny sync (GitHub Actions)
+pobiera je, przepuszcza przez allow-listę pól, zapisuje `data/*.json`
+i wyzwala build; zdjęcia ofert leżą w zasobniku mediów (R2), rozmiary
+powstają przez transformacje obrazów. Faza 1 jest **bez CMS** — treści
+statyczne siedzą w kodzie.
+
+Projekt budowany wg instrukcji wykonawczej (Etapy 0–9) i bazy wiedzy.
+**Oba zestawy dokumentów są LOKALNE, poza gitem** (`docs/plan/`,
+`docs/kb/`) — repo jest publiczne. Decyzje D01–D41 i ustalenia U1–U17 są
+zapadłe: NIE otwieraj ich na nowo; jeśli coś okazuje się niewykonalne,
+zatrzymaj się i zgłoś z uzasadnieniem. Kod startowy to kopia szablonu
+projektów z tej samej rodziny: infrastruktura (testy, CI, budżety,
+formularz, nakładki) została, widoki powstają od nowa wg `docs/design/`.
+
+## Zasady twarde
+
+1. **NIGDY nie wykonuj `git commit` ani `git push`** — commituje wyłącznie
+   Mateusz. Twoja rola: zostawić zmiany w working tree i ZAPROPONOWAĆ
+   treść commita (conventional commits ze scope, po angielsku, temat małą
+   literą, np. `feat(oferty): …`, `fix(sync): …`) z JAWNĄ listą plików —
+   nigdy `git add .`. Blokada jest też egzekwowana w
+   `.claude/settings.json`.
+2. **Dane ofert pisze wyłącznie skrypt, nigdy ręcznie:** pliki w `data/`
+   zapisuje bot syncu, a katalog `tests/fixtures/offers/` buduje
+   `pnpm fixtures:build`. Blokada w settings.json i hook `guard-data.sh`.
+   Jedyny wyjątek: `tests/fixtures/offers/selection.json` (lista numerów
+   ofert i nadpisań do fixture'u) — ten plik pisze się ręcznie.
+3. **Nie dotykaj `dist/` i `.astro/`** — generowane.
+4. **Sekrety i dane wrażliwe:** nie czytaj `.env*`, `~/.config/hetman/`,
+   `**/devtools/api/**`; nie loguj tokenów ani kluczy. Żadnych wartości
+   pól z `FORBIDDEN_FIELDS` w kodzie, testach, logach, dokumentach
+   i odpowiedziach (`.claude/rules/data-sync.md`).
+5. **Nie aktualizuj baseline'ów wizualnych**
+   (`tests/visual/__screenshots__/`) bez pokazania diffu i zgody Mateusza.
+   Aktualizacja wyłącznie przez `pnpm test:visual:update` po akceptacji;
+   komplet linuksowy → workflow `update-visual-baselines.yml`. Święta
+   kolejność: kod → workflow linux → commit darwin na końcu.
+6. **API systemu CRM: wyłącznie `GET`, wyłącznie przez `scripts/sync`**,
+   nigdy z adresem zapytania w logu (adres niesie token). Obecna,
+   produkcyjna strona klientki: wyłącznie `GET`. W sesji Claude pracuje na
+   danych syntetycznych — przebiegi z API uruchamia Mateusz.
+7. **Decyzje są zapadłe; CRM jest źródłem prawdy; design = wygląd.**
+   Treści ofert nie redagujemy (tylko sanityzacja i prezentacja). Sposób
+   pracy klientki ma się zmienić jak najmniej. Gdy design różni się od
+   bazy wiedzy w logice albo wartości — obowiązuje baza wiedzy.
+8. **Repo jest PUBLICZNE:** nic z `docs/kb/` ani `docs/plan/` nie trafia
+   do plików śledzonych przez git — także do tego pliku, mini-analiz
+   i komunikatów commitów. Odsyłaj sekcją („part3 §1.3"), nie kopiuj
+   treści. Publiczne są też logi GitHub Actions.
+9. **Docs-first:** gdy krok instrukcji trzeba wykonać inaczej, najpierw
+   opisz rozjazd Mateuszowi, potem koduj. Nie instaluj niczego globalnie.
+
+## Mapa projektu
+
+- **8 tras statycznych** + strona 404 (`src/pages/404.astro`, noindex, poza
+  sitemapą) — `src/lib/routes.ts`: `/`, `/oferty/`, `/sprzedaj-z-nami/`,
+  `/o-nas/`, `/uslugi/`, `/praca/`, `/kontakt/`, `/polityka-prywatnosci/`.
+- **Trasy ofert** (wzorzec w `routes.ts`, funkcje `offerListPath` /
+  `offerDetailPath`): `/oferty/{typ}-na-{transakcja}/`,
+  `…/{lokalizacja}/`, `…/{lokalizacja}/{numer}/` oraz indeks wyszukiwarki
+  `/oferty/index.json`. Wchodzą w Etapie 2 (szkielety) i 4 (widoki).
+- **Przełączniki i stałe** w jednym miejscu: `src/lib/site-config.ts`
+  (progi układu, `SHOW_PRACA`, `MAP_MARKER`, `SHOW_PRICE_WHEN_SOLD`,
+  `SHOW_TAGS`, `INTERACTIVE_MAP`, `SORT_NEWEST_BY`, `NEW_BADGE_DAYS`,
+  `AGENT`, `MEDIA_BASE`).
+- **Breakpoint projektu: 1025 px** (desktop ≥ 1025; tablet 1024 px dostaje
+  układ tabletowy); drugi próg **768 px**; mapa kontaktu 600 px. Stała
+  w configu + `@media` W PARZE, kontrakt `expectBreakpointFlip`.
+- **Tokeny** w `src/styles/global.css` (paleta i typografia z designu);
+  **fonty** Manrope Variable + Archivo Variable, self-hosted przez
+  Fontsource z własnymi polskimi subsetami (`src/styles/fonts.css`,
+  `scripts/subset-fonts.mjs`). Google Fonts NIE wchodzi.
+- **Dane kontaktowe przez sloty antyscrapingowe**
+  (`src/lib/contact-details.ts`): jeden telefon `a[data-tel]`, dwa adresy
+  `a[data-mail="biuro|joanna"]`; pełnych ciągów NIE MA w statycznym HTML.
+  Kontrakt nie obejmuje opisu oferty z CRM.
+- **Nakładki** (menu mobilne, a docelowo bottom sheety filtrów
+  i sortowania oraz lightbox galerii) stoją na `src/scripts/overlay.ts` —
+  mechaniki nie ruszać. Scroll NATYWNY na dokumencie
+  (`.claude/rules/scroll.md`).
+- **Formularze:** Pages Function `functions/api/kontakt.ts` + Resend,
+  logika w `src/lib/contact-form.ts`. Functions uruchamiają się wyłącznie
+  dla `/api/*` (`public/_routes.json`).
+- **Pliki platformy** w `public/`: `_headers` (noindex dla podglądu
+  i `*.pages.dev`; domena główna bez wpisu), `_routes.json`, `robots.txt`.
+- **Eksport designu** (`docs/design/export/*.html`) = referencja WYGLĄDU,
+  nie zachowania, wartości ani implementacji — podwójne drzewa DOM,
+  jednostki `cqw` i style inline to artefakty narzędzia. Obrazy i wideo
+  eksportu są POZA repo (`.gitignore`); pochodne w `src/assets/img/`
+  i `public/video/`. Mapa i tabela assetów: `docs/design/README.md`.
+
+## Komendy
+
+- `pnpm dev` — dev server (port 4321)
+- `pnpm build` / `pnpm preview`; `pnpm build:visual` — build na
+  zamrożonym fixture ofert (`OFFERS_DATA_DIR=./tests/fixtures/offers`)
+- `pnpm typecheck` — `astro check` (obejmuje też `tests/` i `functions/`)
+- `pnpm lint` / `pnpm lint:fix` / `pnpm format` / `pnpm format:check`
+- Testy (kontrakt: `.claude/rules/testing.md`): `pnpm test` (wszystko);
+  `pnpm test:unit` (Vitest, sekundy); `pnpm test:e2e` (Playwright:
+  funkcjonalne + a11y + SEO; wymaga `pnpm build`); `pnpm test:visual`
+  (zrzuty vs baseline; wymaga `pnpm build:visual`; webServer sam wstaje
+  na 4399); `pnpm test:visual:update` (nowe baseline'y — TYLKO za zgodą
+  Mateusza); `pnpm test:smoke:prod` (smoke przeciw adresowi produkcyjnemu
+  bieżącej fazy)
+- `pnpm sync`, `pnpm sync:dry`, `pnpm fixtures:build` — dane ofert
+  (Etap 2; do tego czasu zaślepki kończące się błędem)
+- `node scripts/optimize-images.mjs <src> <out.webp> [szer] [q]` — obrazy
+  z eksportu designu → WebP do `src/assets/img/`
+- `node scripts/subset-fonts.mjs` — polskie subsety fontów
+- `node scripts/make-icons.mjs` — komplet ikon marki + og-image (wersja
+  tymczasowa na źródłach rastrowych; nie podmieniaj plików ręcznie)
+- CI (GitHub Actions) na push/PR — 3 joby: `quality` (format:check →
+  lint → typecheck → test:unit → build), `e2e` (test:e2e + test:visual),
+  `lighthouse` (budżety w `lighthouserc*.cjs`). Po merge'u do main
+  dodatkowo `prod-smoke.yml`. Lokalnie husky: pre-commit lint-staged,
+  commit-msg commitlint.
+- Skille: `/test`, `/release-check`, `/verify-mobile`.
+
+## Stan projektu (aktualizuj po każdym etapie!)
+
+Każda sesja zaczyna pracę od przeczytania tej sekcji. Zasady wpisu:
+fakty, nie opis przebiegu; bez treści z bazy wiedzy i planu (plik jest
+publiczny); wpisy kolejnych etapów dopisuje się POD poprzednimi, niczego
+nie kasując; etap wykonany częściowo oznacza się „W TOKU" z listą tego,
+co zostało.
+
+- **Etap 0 (bootstrap) — WYKONANY** (2026-09-29): repo powstało jako kopia
+  szablonu projektu (147 plików), z której wycięto 53 pliki: cały aparat
+  CMS, kolekcję i widoki poprzedniego serwisu wraz z ich specami. Zostały
+  infrastruktura testów i CI, `overlay.ts`, mechanika formularza
+  i modułu ruchu. Powstało 8 tras-szkieletów na `SkeletonPage.astro`,
+  `routes.ts` z wzorcem adresów ofert, `site-config.ts` z przełącznikami,
+  tokeny z designu, fonty Manrope + Archivo (pakiety variable, sama oś
+  wagi, bez italików; polskie subsety 8 KB), `public/_headers`
+  i `_routes.json`, robocze Navbar i stopka (płaskie menu, bottom sheet;
+  BEZ auto-hide i dropdownu), 20 kadrów designu w dwóch wariantach WebP,
+  wideo hero w WebM i MP4, ekosystem `.claude` (5 reguł, 4 hooki,
+  3 skille). Decyzje w trakcie: `DESKTOP_MIN_PX = 1025`,
+  `TABLET_MIN_PX = 768` w `site-config.ts` (configi sekcji importują
+  stamtąd); zakres osi Manrope 200–800 (z arkusza Fontsource);
+  potwierdzenie do nadawcy formularza usunięte; ikony i og-image
+  TYMCZASOWE, ze źródeł rastrowych, bez `favicon.svg`. Weryfikacja:
+  format, lint, typecheck, 52 testy unit, build 9 stron, e2e 218 testów
+  na 6 profilach — zielone. Świadomie zostawione na później: baseline'y
+  wizualne i realne budżety LHCI (Etap 3), wygląd docelowy chrome'u (4.1),
+  pola formularzy (5), JSON-LD w stronach i wektor znaku (6).
+  UWAGI dla kolejnych etapów: (1) `pnpm sync`, `sync:dry`,
+  `fixtures:build` to ZAŚLEPKI kończące się błędem; katalogi `data/`
+  i `tests/fixtures/offers/` nie istnieją. (2) `TURNSTILE_SITE_KEY`
+  i `MEDIA_BASE` są PUSTE. (3) Zestaw pól w `contact-form.ts`,
+  `contact-ui.ts` i `functions/api/kontakt.ts` jest odziedziczony
+  i niedocelowy; żaden widok nie osadza dziś formularza. (4) `imgAt()`
+  ma logikę szablonu (dwa rozmiary, `format=auto`) — warianty i host
+  ustala Etap 2. (5) `content-motion.ts` i `revealSweep` znają selektory
+  szablonu (`data-rev`, `data-plx`…), nie designu (`data-rv`, `data-px`);
+  `CollapsibleText` jest nieużywany. (6) `tests/helpers/offers.ts` to
+  wersja minimalna (sam odporny odczyt), a `assertVisualFixture` zakłada
+  znacznik `data-offer-card=` na karcie oferty — kontrakt do potwierdzenia
+  w Etapach 3 i 4.2. (7) Blokada `Write(tests/fixtures/offers/**)`
+  w settings.json obejmuje też `selection.json`, który ma być pisany
+  ręcznie — do rozstrzygnięcia przed Etapem 2. (8) Specy `visual/chrome`
+  i `visual/not-found` nie mają baseline'ów, więc `pnpm test:visual`
+  i job `e2e` w CI będą czerwone do Etapu 3. (9) Wariant `-m` kadrów
+  poziomych ma mniejszą wysokość niż desktopowy — hero strony głównej na
+  telefonie może wymagać własnego kadru (4.4). (10) Pliki HTML eksportu
+  designu ładują po otwarciu w przeglądarce zasoby z serwerów
+  zewnętrznych — do czytania kodu, nie do klikania w sesji.
+  KOREKTA 2026-09-30 (decyzje po raporcie): uwaga (7) ROZSTRZYGNIĘTA —
+  blokada w settings.json wymienia generaty fixture'u z nazwy (`offers`,
+  `locations`, `photos`, `maps`, katalog `media/`), a `selection.json`
+  jest spod niej wyłączony; resztę katalogu pilnuje hook `guard-data.sh`.
+  Źródła ikon (`src/assets/logo/source/`) i pełny eksport designu zostają
+  w repo.
+
+## Dokumentacja
+
+- Indeks i statusy plików: `docs/README.md` (tam też kolejność lektury
+  dla nowej sesji).
+- Codzienny proces pracy: `docs/daily-workflow.md`.
+- Zadania cykliczne i świadomie odłożone: `docs/optional-todos.md`.
+- Design-referencje: `docs/design/README.md` + 9 plików HTML eksportu.
+- Reguły szczegółowe: `.claude/rules/` — `testing.md`, `sections.md`,
+  `scroll.md`, `capture-scripts.md`, `data-sync.md`.
+- TYLKO LOKALNIE (poza gitem): instrukcja wykonawcza i prompty etapów
+  w `docs/plan/`, baza wiedzy w `docs/kb/`. Kopia źródłowa obu katalogów
+  leży poza repo; brak tych katalogów w świeżym klonie jest stanem
+  oczekiwanym — poproś Mateusza o ich dostarczenie.

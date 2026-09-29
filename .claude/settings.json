@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "Bash(git commit)",
+      "Bash(git commit *)",
+      "Bash(git push)",
+      "Bash(git push *)",
+      "Read(.env*)",
+      "Read(**/.env*)",
+      "Read(**/devtools/api/**)",
+      "Read(~/.config/hetman/**)",
+      "Edit(.env*)",
+      "Write(.env*)",
+      "Edit(dist/**)",
+      "Write(dist/**)",
+      "Edit(.astro/**)",
+      "Write(.astro/**)",
+      "Edit(data/**)",
+      "Write(data/**)",
+      "Edit(tests/fixtures/offers/offers.json)",
+      "Write(tests/fixtures/offers/offers.json)",
+      "Edit(tests/fixtures/offers/locations.json)",
+      "Write(tests/fixtures/offers/locations.json)",
+      "Edit(tests/fixtures/offers/photos.json)",
+      "Write(tests/fixtures/offers/photos.json)",
+      "Edit(tests/fixtures/offers/maps.json)",
+      "Write(tests/fixtures/offers/maps.json)",
+      "Edit(tests/fixtures/offers/media/**)",
+      "Write(tests/fixtures/offers/media/**)",
+      "Edit(pnpm-lock.yaml)",
+      "Edit(tests/visual/__screenshots__/**)",
+      "Write(tests/visual/__screenshots__/**)"
+    ],
+    "allow": [
+      "Bash(pnpm install)",
+      "Bash(pnpm install *)",
+      "Bash(pnpm dev)",
+      "Bash(pnpm dev *)",
+      "Bash(pnpm build)",
+      "Bash(pnpm preview)",
+      "Bash(pnpm preview *)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm lint:fix)",
+      "Bash(pnpm format)",
+      "Bash(pnpm format:check)",
+      "Bash(pnpm test)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm -s *)",
+      "Bash(pnpm exec *)",
+      "Bash(node scripts/*)",
+      "Bash(npx playwright *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git branch)",
+      "Bash(ls *)",
+      "Bash(curl -s http://localhost:*)",
+      "Bash(curl -s https://nowa.hetmannieruchomosci.com*)",
+      "Bash(curl -s https://hetmannieruchomosci.com*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard-data.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/format-file.sh",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/remind-tests.sh",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-typecheck.sh",
+            "timeout": 180
+          }
+        ]
+      }
+    ]
+  }
+}
