@@ -1,0 +1,71 @@
+/* Kroje Hetman — deklaracje WŁASNE zamiast gotowych arkuszy Fontsource'a.
+ *
+ * DLACZEGO NIE gotowe `index.css` z pakietów Fontsource: tamte arkusze
+ * deklarują KOMPLET subsetów (cyrylica, greka, wietnamski, latin,
+ * latin-ext), a Vite kopiuje do `dist/` wszystkie pliki. Serwis jest
+ * PL-only i z zakresu `latin-ext` używa 16 glifów (ĄąĆćĘęŁłŃńŚśŹźŻż).
+ *
+ * Stąd: `latin` bierzemy z plików Fontsource'a bez zmian, a `latin-ext`
+ * z własnych subsetów w src/assets/fonts/ (generuje je
+ * `node scripts/subset-fonts.mjs`, wynik commitowany).
+ *
+ * Deskryptory (font-display, zakresy wag, unicode-range) są przepisane
+ * 1:1 z arkuszy Fontsource'a — to NIE jest miejsce na własne wartości.
+ * Design używa wag 400/500/600 obu krojów; zakres osi zostaje pełny.
+ * Google Fonts z eksportu designu NIE wchodzi (self-hosting).
+ *
+ * ⚠️ Po zmianie tej listy albo zakresu znaków w subset-fonts.mjs
+ * przegeneruj pliki i uruchom `pnpm test:unit` (kontrakt
+ * tests/unit/fonts-subset.test.ts). */
+
+/* ── Manrope Variable — treść i nagłówki (oś wght 200–800) ────────────── */
+@font-face {
+  font-family: "Manrope Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 800;
+  src: url("@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2")
+    format("woff2-variations");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Manrope Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 800;
+  src: url("../assets/fonts/manrope-latin-ext-wght-normal-pl.woff2")
+    format("woff2-variations");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* ── Archivo Variable — nawigacja, etykiety, liczby (oś wght 100–900) ─── */
+@font-face {
+  font-family: "Archivo Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("@fontsource-variable/archivo/files/archivo-latin-wght-normal.woff2")
+    format("woff2-variations");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Archivo Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("../assets/fonts/archivo-latin-ext-wght-normal-pl.woff2")
+    format("woff2-variations");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}

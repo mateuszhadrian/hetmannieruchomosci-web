@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+@theme {
+  /* Role fontów wg designu:
+     body/display = Manrope Variable (tekst, nagłówki, formularze),
+     label = Archivo Variable (nawigacja, etykiety wersalikami, liczby),
+     mono = systemowy (numer oferty) — bez pliku fontu. */
+  --font-body:
+    "Manrope Variable", system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-display:
+    "Manrope Variable", system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-label:
+    "Archivo Variable", system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, Menlo, monospace;
+}
+
+/* ── Rezerwacja miejsca na pasek scrolla (root scroller).
+   Na Windows/Linux pasek jest klasyczny — zajmuje szerokość i „spycha" treść.
+   `stable` rezerwuje tę szerokość ZAWSZE, także gdy paska chwilowo nie ma
+   (np. modal ustawia body:fixed → html traci przewijalną treść → pasek znika).
+   Bez tego obszar treści rozszerzałby się o szerokość paska i strona skakała
+   przy każdym otwarciu nakładki. Na macOS paski są nakładkowe → bez efektu.
+   text-size-adjust: przeglądarki mobilne oparte na WebView przeliczają
+   automatyczne skalowanie tekstu przy każdej zmianie wysokości viewportu
+   (chowany pasek adresu), co skokowo zmieniało rozmiar treści. ── */
+html {
+  scrollbar-gutter: stable;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+}
+
+/* ── Design system: tokeny brandowe (jedno źródło prawdy — paleta zmierzona
+   na eksporcie designu, docs/design/). Kolory UI pochodzą Z DESIGNU;
+   kolory zmierzone z logo są inne i służą wyłącznie ikonom i mailom.
+   Breakpoint projektu: 1025 px (desktop ≥ 1025, tablet i telefon < 1025);
+   drugi próg 768 px (telefon < 768). Para ze stałymi w
+   src/lib/site-config.ts. Skalowanie eksportu (jednostki cqw, podwójne
+   drzewa DOM, sonda wysokości viewportu) to artefakt narzędzia — tutaj
+   zastępują je clamp()/tokeny i jeden markup responsywny. ── */
+:root {
+  /* Strona jest ZAWSZE jasna (design nie ma wariantu ciemnego). Jawna
+     deklaracja z „only" wyłącza WYMUSZANE ciemnienie przeglądarek Androida. */
+  color-scheme: only light;
+
+  /* marka */
+  --navy: #183a6b; /* granat — nagłówki, stopka, przyciski */
+  --navy-deep: #0e203c; /* tło ciemnych sekcji hero */
+  --copper: #c98236; /* miedź — akcent, CTA */
+  --copper-light: #e0a86a; /* miedź na ciemnym tle, hover */
+  --copper-hover: #d9964c;
+  --copper-dark: #b5732d;
+
+  /* foreground */
+  --ink: #1c1b19; /* tekst podstawowy */
+  --slate: #2f3a4c; /* tekst akapitów na jasnym tle */
+  --muted: #6b6864; /* tekst drugorzędny */
+  --faint: #8a867f; /* podpisy, tekst pomocniczy (tylko duży druk — AA) */
+  --silver: #dddddd; /* tekst i kreski na ciemnym tle */
+  --line: #e2dfd8;
+  --line-soft: #ece9e3;
+
+  /* background */
+  --bg: #f3f2ef; /* tło strony */
+  --bg-card: #ffffff; /* karty, panele, formularze */
+  --bg-photo: #e9e7e2; /* podkład pod zdjęciem przed wczytaniem */
+  --bg-soft: #f6f5f2;
+
+  /* szkło paska i menu (design: rgba + blur 22 px) */
+  --glass: rgba(221, 221, 221, 0.39);
+  --glass-line: rgba(24, 58, 107, 0.12);
+  --glow: 24, 58, 107; /* składowe RGB granatu → rgba(var(--glow), α) */
+
+  /* Layout: margines boczny + maks. szerokość kolumny treści (kontener
+     designu 1360 px). Wartości desktop w @media niżej. */
+  --pad: clamp(17.8px, 5.128vw, 26.7px);
+  --col: 600px;
+
+  /* Wysokość paska chrome'u — statyczny fallback; skrypt Navbara
+     doprecyzowuje pomiarem (ResizeObserver). Pasek jest FIXED, więc strony
+     odsuwają pierwszą treść o tę wartość. Mobile wg designu:
+     clamp(80px, 23vw, 120px); desktop 96 px. */
+  --hdr-h: clamp(80px, 23.077vw, 120px);
+}
+
+@media (min-width: 1025px) {
+  :root {
+    --pad: clamp(48px, 5vw, 120px);
+    --col: 1360px;
+    --hdr-h: 96px;
+    /* Gutter chrome'u desktop (design: 48 px, 32 px poniżej 1200 px). */
+    --g: clamp(32px, 3.33vw, 48px);
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Nakładki (overlay.ts): obszar przewijalny sheeta nie oddaje przewijania
+   przeglądarce. Bez tego mocniejszy gest w dół na przewiniętej do góry
+   treści uruchamiał na Androidzie odświeżenie strony zamiast zamknąć sheet.
+   Drugą połową naprawy jest przejęcie gestu w overlay.ts. */
+[data-overlay-scroll],
+[data-overlay-panel] {
+  overscroll-behavior: contain;
+}

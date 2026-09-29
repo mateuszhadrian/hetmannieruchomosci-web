@@ -1,0 +1,161 @@
+---
+// Fonty (self-hosted przez Fontsource; Google Fonts z eksportu designu
+// NIE wchodzi do produkcji — zero żądań do podmiotów trzecich przy wejściu):
+// — Manrope Variable: treść, nagłówki, formularze,
+// — Archivo Variable: nawigacja, etykiety, liczby.
+// Deklaracje @font-face stoją w src/styles/fonts.css, bo subsety
+// `latin-ext` bierzemy własne (polski alfabet — uzasadnienie w nagłówku
+// fonts.css).
+import "@/styles/fonts.css";
+import "@/styles/global.css";
+
+// Preload krojów above-the-fold — skraca okno font-display:swap (mniejszy
+// „przeskok" z fontu systemowego przy nawigacji). Import ?url zamiast
+// hardkodu: hash pliku woff2 zmienia się co build. Strona jest PL-only,
+// więc kryte są oba subsety (latin + polski latin-ext) obu krojów:
+// Manrope niesie h1 i tekst, Archivo — pasek nawigacji.
+import archivoExtWoff2 from "@/assets/fonts/archivo-latin-ext-wght-normal-pl.woff2?url";
+import manropeExtWoff2 from "@/assets/fonts/manrope-latin-ext-wght-normal-pl.woff2?url";
+import archivoWoff2 from "@fontsource-variable/archivo/files/archivo-latin-wght-normal.woff2?url";
+import manropeWoff2 from "@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2?url";
+
+const SITE_TITLE = "Hetman Nieruchomości — agencja nieruchomości w Poznaniu";
+
+interface Props {
+  title?: string;
+  lang?: string;
+  /** Opcjonalny meta description (podstrony; strona główna go nie ustawia). */
+  description?: string;
+  /** Nadpisanie canonicala. Domyślnie każda trasa wskazuje samą siebie
+   *  w domenie głównej (także na podglądzie — podgląd chroni nagłówek
+   *  noindex z public/_headers). */
+  canonicalPath?: string;
+  /** Strona spoza indeksu (404): `robots noindex` i BEZ canonicala/og:url —
+   *  canonical wskazywałby na adres, który nie istnieje (Cloudflare Pages
+   *  serwuje 404.html pod KAŻDYM błędnym adresem). */
+  noindex?: boolean;
+}
+const {
+  title = SITE_TITLE,
+  lang = "pl",
+  description,
+  canonicalPath,
+  noindex = false,
+} = Astro.props;
+
+// Adresy absolutne dla podglądów linków (iMessage/Messenger/X wymagają pełnego URL).
+// W dev bazą jest bieżący host (np. adres w sieci lokalnej), by podgląd linka
+// działał przed deployem; w buildzie produkcyjnym — domena z astro.config.
+// og-image.png = pełne logo na tle strony, kadr 1200×630 (napis niesie
+// NAZWĘ firmy; 1,91:1 to proporcje, których nie przycina Facebook/X/
+// LinkedIn). Generowany przez `node scripts/make-icons.mjs` razem
+// z kompletem ikon — nie podmieniaj ręcznie. Bez og:image komunikatory same
+// wybierają przypadkowy duży obrazek ze strony.
+const urlBase = import.meta.env.DEV ? Astro.url : Astro.site;
+const canonicalUrl = new URL(canonicalPath ?? Astro.url.pathname, urlBase);
+const ogImageUrl = new URL("/og-image.png", urlBase);
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    {/* Wektorowy favicon.svg dochodzi w Etapie 6 (odrys znaku). */}
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    {
+      /* Kolor UI przeglądarki = tło strony (--bg z global.css). Białe
+         #fff dawało na Androidzie BIAŁY pas przy zwijaniu paska URL. */
+    }
+    <meta name="theme-color" content="#f3f2ef" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {/* Slot head — dla skryptów, które MUSZĄ odpalić przed paintem. */}
+    <slot name="head" />
+    <meta name="generator" content={Astro.generator} />
+    {
+      [manropeWoff2, manropeExtWoff2, archivoWoff2, archivoExtWoff2].map(
+        (href) => (
+          <link
+            rel="preload"
+            as="font"
+            type="font/woff2"
+            href={href}
+            crossorigin
+          />
+        ),
+      )
+    }
+    <script is:inline>
+      // Mikro-fade przy nawigacji WEWNĘTRZNEJ: pierwsza wizyta w karcie (brak flagi sessionStorage) renderuje
+      // się bez żadnej bramki — zero wpływu na LCP (LHCI i Playwright wchodzą
+      // na zimno). Przy kolejnych nawigacjach treść wjeżdża krótkim fade'em
+      // zdejmowanym przez document.fonts.ready LUB twardy timeout 300 ms —
+      // strona nigdy nie zostaje ukryta (błąd JS/brak JS = brak klasy
+      // nav-fade, czyli domyślnie widoczna).
+      (() => {
+        try {
+          const KEY = "hm:visited";
+          const revisit = sessionStorage.getItem(KEY) === "1";
+          sessionStorage.setItem(KEY, "1");
+          if (!revisit) return;
+          const root = document.documentElement;
+          root.classList.add("nav-fade");
+          const reveal = () => root.classList.add("fonts-in");
+          setTimeout(reveal, 300);
+          if (document.fonts && document.fonts.ready)
+            document.fonts.ready.then(reveal, reveal);
+        } catch {
+          /* sessionStorage niedostępny (tryb prywatny) — bez fade */
+        }
+      })();
+    </script>
+    <style is:global>
+      /* Bramka mikro-fade — patrz inline skrypt wyżej. Stan bazowy (bez
+         .nav-fade) jest w pełni widoczny.
+         ⚠️ `opacity` na body NIE gasi jego TŁA: tło body przechodzi na
+         płótno okna (html nie ma własnego), a płótna opacity nie dotyczy.
+         Przez te ≤ 300 ms (na wolnym łączu — pełne, bo fonty nie zdążą)
+         widać więc gołe tło body — dlatego w global.css jest ono GŁADKĄ
+         bazą widoków, a nie teksturą. */
+      html.nav-fade body {
+        opacity: 0;
+      }
+      html.nav-fade.fonts-in body {
+        opacity: 1;
+        transition: opacity 0.18s ease;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html.nav-fade.fonts-in body {
+          transition: none;
+        }
+      }
+    </style>
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Hetman Nieruchomości" />
+    <meta property="og:title" content={title} />
+    {!noindex && <meta property="og:url" content={canonicalUrl} />}
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={SITE_TITLE} />
+    <meta property="og:locale" content="pl_PL" />
+    {
+      /* summary_large_image, nie summary: przy kadrze 1,91:1 „summary"
+         zredukowałby podgląd do miniaturki-kwadracika. */
+    }
+    <meta name="twitter:card" content="summary_large_image" />
+    {
+      noindex ? (
+        <meta name="robots" content="noindex" />
+      ) : (
+        <link rel="canonical" href={canonicalUrl} />
+      )
+    }
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

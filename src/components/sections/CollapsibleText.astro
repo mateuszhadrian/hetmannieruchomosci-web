@@ -1,0 +1,95 @@
+---
+// Zwijany blok treści (mobile) — docelowo „Czytaj więcej" w opisie oferty
+// i długie akapity stron treściowych. SSR = PEŁNA treść + przycisk
+// `hidden` (progressive enhancement) — uzbraja go initCollapsibles()
+// z collapsible.ts (import w skrypcie strony, ładowany zawsze).
+//
+// Mechanika: zwinięte = max-height (parametr per instancja) + overflow
+// hidden + maska linear-gradient(#000 45%, transparent 100%) + przycisk
+// rozwijania; rozwinięte = bez ograniczeń + przycisk zwijania.
+// Przełączenie natychmiastowe. Desktop pokazuje pełny tekst, przycisk
+// znika — próg W PARZE z CONTENT_DESKTOP_MIN_PX (content-config.ts).
+// STAN Etapu 0: komponent odziedziczony z szablonu, nieużywany; etykiety
+// i skin dopasowuje widok, który go osadzi (Etap 4).
+interface Props {
+  /** Unikalny id treści (aria-controls przycisku). */
+  id: string;
+  /** Zwinięta wysokość mobile (dowolna długość CSS, np. "112px"). */
+  collapsedMax: string;
+  class?: string;
+}
+const { id, collapsedMax, class: className } = Astro.props;
+---
+
+<div
+  class:list={["clp", className]}
+  data-clp
+  style={`--clp-max:${collapsedMax}`}
+>
+  <div class="clp-body" id={id}>
+    <slot />
+  </div>
+  <button
+    class="clp-btn"
+    type="button"
+    aria-controls={id}
+    aria-expanded="true"
+    data-clp-btn
+    hidden
+  >
+    <span class="clp-more">Czytaj dalej →</span>
+    <span class="clp-less">Zwiń ↑</span>
+  </button>
+</div>
+
+<style>
+  /* Zwinięcie działa WYŁĄCZNIE na mobile (para: CONTENT_DESKTOP_MIN_PX)
+     i wyłącznie po uzbrojeniu przez JS ([data-collapsed]). */
+  @media (max-width: 1024.98px) {
+    .clp[data-collapsed] .clp-body {
+      max-height: var(--clp-max);
+      /* clip, nie hidden: pudełko z overflow:hidden da się przewinąć
+         PROGRAMOWO (scrollIntoView, fokus w schowanej treści,
+         szukajka przeglądarki) i zwinięte okno pokazywało wtedy środek
+         sekcji zamiast początku (incydent webkit-CI 2026-08-25 —
+         pętla dociskająca sweepa przewijała kontener). clip w ogóle
+         nie tworzy scrollera; hidden zostaje jako fallback starszych
+         silników (kaskada: późniejsza deklaracja wygrywa, nieznana
+         jest ignorowana). */
+      overflow: hidden;
+      overflow: clip;
+      -webkit-mask-image: linear-gradient(#000 45%, rgba(0, 0, 0, 0) 100%);
+      mask-image: linear-gradient(#000 45%, rgba(0, 0, 0, 0) 100%);
+    }
+  }
+
+  .clp-btn {
+    appearance: none;
+    align-self: flex-start;
+    margin: 0;
+    padding: 0 0 2px;
+    background: none;
+    border: none;
+    border-bottom: 1px solid rgba(87, 101, 74, 0.4);
+    font-family: var(--font-body), sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--navy);
+    cursor: pointer;
+  }
+  .clp-btn:focus-visible {
+    outline: 2px solid var(--navy);
+    outline-offset: 3px;
+  }
+  /* etykiety przełącza stan aria (jedno źródło prawdy dla oka i czytnika) */
+  .clp-btn[aria-expanded="false"] .clp-less,
+  .clp-btn[aria-expanded="true"] .clp-more {
+    display: none;
+  }
+  /* desktop: pełny tekst zawsze, przycisk nie istnieje */
+  @media (min-width: 1025px) {
+    .clp-btn {
+      display: none;
+    }
+  }
+</style>

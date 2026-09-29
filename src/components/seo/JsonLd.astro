@@ -1,0 +1,11 @@
+---
+// Emisja danych strukturalnych (wpinana w Etapie 6). Komponent jest głupi:
+// całą wiedzę o firmie trzyma src/lib/jsonld.ts, tu zostaje sam zapis.
+// Wstawiaj przez slot head BaseLayoutu: <JsonLd slot="head" data={…} />.
+interface Props {
+  data: Record<string, unknown>;
+}
+const { data } = Astro.props;
+---
+
+<script type="application/ld+json" is:inline set:html={JSON.stringify(data)} />

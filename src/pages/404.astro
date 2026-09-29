@@ -1,0 +1,160 @@
+---
+// Strona 404. Astro buduje ją jako dist/404.html, a Cloudflare Pages
+// serwuje ten plik pod KAŻDYM nieistniejącym adresem z prawdziwym statusem
+// 404. Bez niego Pages uznawał serwis za SPA i odpowiadał na śmieciowy
+// adres stroną główną z kodem 200 (soft-404 — Google indeksowałby takie
+// adresy jako kopie „/").
+//
+// Dobre praktyki stron 404, które tu obowiązują:
+// — `noindex`, bez canonicala i og:url (prop BaseLayout), bez JSON-LD
+//   i poza sitemapą (kontrakt w tests/e2e/seo.spec.ts);
+// — pełny chrome (navbar + stopka), żeby z błędnego adresu dało się
+//   wyjść w dowolne miejsce serwisu, a nie tylko na stronę główną;
+// — jeden jasny komunikat i jedna akcja; h1 niesie dla czytników pełną
+//   nazwę błędu („Błąd 404 — nie znaleziono strony"), wizualnie samo 404;
+// — linki ABSOLUTNE od „/" — ta sama treść odpowiada pod adresami
+//   dowolnej głębokości (/a/b/c/), więc ścieżki względne by się rozjechały
+//   (Astro i tak emituje assety absolutnie);
+// — zero JS widoku i zero nowych assetów.
+//
+// STAN Etapu 0: układ odziedziczony z szablonu, kolory i kroje z tokenów
+// Hetman. Wersja świadoma ofert (wygasły adres oferty → podpowiedź listy)
+// powstaje w Etapie 4.3.
+import Footer from "@/components/Footer.astro";
+import Navbar from "@/components/navbar/Navbar.astro";
+import { ui } from "@/i18n/ui";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { HOME_PATH } from "@/lib/routes";
+---
+
+<BaseLayout title={ui.pl["notFoundPage.title"]} noindex>
+  <Navbar />
+
+  <main class="nf">
+    <div class="nf-in">
+      <h1 class="nf-code">
+        <span class="sr-only">Błąd </span>404<span class="sr-only">
+          — nie znaleziono strony</span
+        >
+      </h1>
+      <span class="nf-rule" aria-hidden="true"></span>
+      <p class="nf-txt">
+        Strona o podanym adresie nie istnieje. Sprawdź adres i spróbuj ponownie.
+      </p>
+      <a class="nf-btn" href={HOME_PATH}>
+        <svg width="16" height="12" viewBox="0 0 16 12" aria-hidden="true"
+          ><path
+            d="M15 6H2M6.5 1.5L2 6l4.5 4.5"
+            stroke="currentColor"
+            stroke-width="1.4"
+            fill="none"></path></svg
+        >
+        <span>Powrót na stronę główną</span>
+      </a>
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .nf {
+    background: var(--bg);
+    /* komunikat zajmuje pierwszy ekran (pod fixed paskiem), stopka pod
+       zgięciem — 404 nie „wisi" nad stopką na wysokim ekranie */
+    min-height: 100svh;
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    padding: calc(var(--hdr-h) + 32px) 24px 72px;
+  }
+
+  .nf-in {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 560px;
+    text-align: center;
+  }
+
+  .nf-code {
+    margin: 0;
+    font-family: var(--font-label);
+    font-weight: 600;
+    font-size: clamp(104px, 30vw, 150px);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    color: var(--navy);
+  }
+
+  .nf-rule {
+    display: block;
+    width: 56px;
+    height: 2px;
+    margin: 22px 0 24px;
+    background: var(--copper);
+  }
+
+  .nf-txt {
+    margin: 0;
+    max-width: 30ch;
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--slate);
+    text-wrap: balance;
+  }
+
+  .nf-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+    margin-top: 32px;
+    padding: 14px 22px;
+    border: 1px solid var(--navy);
+    color: var(--navy);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 16px;
+    text-decoration: none;
+    transition:
+      background 0.2s ease,
+      color 0.2s ease;
+  }
+  .nf-btn:hover {
+    background: var(--navy);
+    color: #fff;
+  }
+  .nf-btn:focus-visible {
+    outline: 2px solid var(--navy);
+    outline-offset: 3px;
+  }
+  .nf-btn svg {
+    flex: none;
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .nf {
+      padding: calc(var(--hdr-h) + 48px) var(--g) 96px;
+    }
+    .nf-code {
+      font-size: clamp(150px, 13vw, 220px);
+    }
+    .nf-rule {
+      margin: clamp(22px, 2vw, 32px) 0 clamp(24px, 2.2vw, 34px);
+    }
+    .nf-txt {
+      font-size: clamp(16px, 1.2vw, 19px);
+    }
+    .nf-btn {
+      margin-top: clamp(32px, 2.8vw, 44px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nf-btn {
+      transition: none;
+    }
+  }
+</style>
