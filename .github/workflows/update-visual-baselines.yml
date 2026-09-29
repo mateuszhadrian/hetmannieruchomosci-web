@@ -1,0 +1,81 @@
+# Ręczna aktualizacja LINUKSOWYCH baseline'ów wizualnych (*-linux.png).
+# WYŁĄCZNIE workflow_dispatch — nigdy automatycznie: auto-aktualizacja
+# unieważniłaby testy (wzorzec podążałby za regresją). Odpalaj z brancha
+# PR-a; bot-commit dopisuje się do tego brancha (potem `git pull` lokalnie).
+# Diff obrazków oglądasz w PR (GitHub renderuje before/after) i decydujesz
+# o merge'u. Procedura i kolejność: .claude/rules/testing.md (awaryjna
+# alternatywa: Docker mcr.microsoft.com/playwright).
+name: Update linux visual baselines
+on:
+  workflow_dispatch:
+    inputs:
+      spec:
+        description: >-
+          Zakres do przeliczenia. Domyślnie CAŁY tests/visual; podaj
+          konkretny spec (np. tests/visual/chrome.spec.ts), gdy zmiana
+          dotyczy jednej trasy — wtedy „znani intruzi" bot-commitów nie
+          mają jak wejść. NIE zostawiaj pustego: bez ścieżki Playwright
+          wziąłby też tests/e2e (testDir to ./tests).
+        required: false
+        default: tests/visual
+      mode:
+        description: >-
+          changed = przepisuje TYLKO zrzuty powyżej progu (domyślne
+          Playwrighta). all = przepisuje też te, które przechodzą, ale mają
+          nieaktualną treść pod per-shot maxDiffPixelRatio. „all" używaj
+          ŚWIADOMIE i zawsze razem ze zawężonym `spec` — każdy przepisany
+          PNG zostaje w historii gita na zawsze.
+        required: false
+        default: changed
+        type: choice
+        options:
+          - changed
+          - all
+permissions:
+  contents: write
+jobs:
+  update-baselines:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Cache przeglądarek jak w ci.yml — bez niego każdy przebieg instaluje
+      # binaria od zera (~3–5 min).
+      - name: Playwright version (klucz cache)
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+      # Jak w ci.yml: feedy packages.microsoft.com bywają zepsute i nie są potrzebne.
+      - name: Wyłącz feedy packages.microsoft.com (flaky)
+        run: sudo bash -c 'grep -rl packages.microsoft.com /etc/apt/sources.list.d/ | xargs -r rm -f'
+      # timeout jak w ci.yml: udokumentowana klasa zawieszeń apt/CDN (>1h).
+      - run: pnpm exec playwright install --with-deps chromium webkit firefox
+        timeout-minutes: 10
+      # Zamrożona treść ofert (tests/fixtures/offers) — jak w jobie e2e w ci.yml.
+      - run: pnpm build:visual
+      - name: Przelicz baseline'y
+        run: >-
+          pnpm exec playwright test
+          ${{ inputs.spec }}
+          --update-snapshots=${{ inputs.mode }}
+        env:
+          CI: "true"
+      - name: Commit updated baselines
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/visual/__screenshots__
+          if git diff --cached --quiet; then
+            echo "Baseline'y linux bez zmian — nic do commitowania."
+          else
+            git commit -m "chore(test): update linux visual baselines"
+            git push
+          fi

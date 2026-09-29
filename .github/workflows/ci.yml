@@ -1,0 +1,107 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Ręczne odpalenie z zakładki Actions. Powód: przy awarii GitHuba webhooki
+  # bywają odrzucane (2026-08-06: „processing approximately 15% of webhooks"),
+  # więc push i otwarcie PR-a NIE tworzą biegu — a odrzuconych zdarzeń GitHub
+  # nie odtwarza. Bez tego wyzwalacza jedynym sposobem na kopnięcie checków
+  # jest zamknięcie i otwarcie PR-a albo pusty commit.
+  workflow_dispatch:
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test:unit
+      - run: pnpm build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+  e2e:
+    needs: quality
+    runs-on: ubuntu-latest
+    # Normalny czas joba: ~13 min (install z cache 1–3 min + e2e + visual).
+    # Backstop na zawieszenia infrastruktury (apt/CDN wisiały >1h, 2026-07-13).
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Playwright version (klucz cache)
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+      # Feedy packages.microsoft.com bywają zepsute (błędy podpisów
+      # „NOSPLIT") i wywracają apt-get w `--with-deps`, a nie są
+      # potrzebne — Playwright bierze zależności z repozytoriów Ubuntu.
+      - name: Wyłącz feedy packages.microsoft.com (flaky)
+        run: sudo bash -c 'grep -rl packages.microsoft.com /etc/apt/sources.list.d/ | xargs -r rm -f'
+      # Z cache 1–3 min; zimny cache (bump Playwrighta) do ~6 min. Dłużej =
+      # zawieszony apt/CDN — lepiej ubić i zrobić rerun niż czekać godzinę.
+      - run: pnpm exec playwright install --with-deps chromium webkit firefox
+        timeout-minutes: 10
+      # E2E funkcjonalne biegają na dist z danymi PRODUKCYJNYMI (oferty
+      # czytane dynamicznie przez tests/helpers/offers.ts, więc nocna zmiana
+      # składu ofert ich nie rusza; zero ofert to stan dopuszczalny).
+      - run: pnpm test:e2e
+      # Testy wizualne stoją na ZAMROŻONEJ treści (tests/fixtures/offers) —
+      # inaczej każda oferta dodana albo zdjęta w CRM rozjeżdża baseline'y
+      # listy, liczników i detalu, blokując wszystkie PR-y. Stąd drugi
+      # build; strażnik assertVisualFixture pilnuje, że dist pod zrzutami
+      # jest tym właściwym.
+      - run: pnpm build:visual
+      # Baseline'y *-linux.png w repo (aktualizacja TYLKO przez workflow
+      # update-visual-baselines.yml — patrz .claude/rules/testing.md)
+      - run: pnpm test:visual
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+  lighthouse:
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      # Progi w lighthouserc* — do Etapu 3 luźne, tymczasowe; potem
+      # ratchet. Pomiar median: lhci collect --numberOfRuns=5 +
+      # scripts/lhci-median.mjs; zacieśnianie tylko decyzją Mateusza.
+      - name: LHCI — mobile
+        run: pnpm exec lhci autorun --config=lighthouserc.cjs
+      - name: LHCI — desktop
+        run: |
+          rm -rf .lighthouseci
+          pnpm exec lhci autorun --config=lighthouserc.desktop.cjs

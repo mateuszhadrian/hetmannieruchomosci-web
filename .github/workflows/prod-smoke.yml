@@ -1,0 +1,90 @@
+# Smoke produkcji po każdym push na main (main = to, co widzi klientka;
+# deploy robi Cloudflare Pages automatycznie). Strategia: zbuduj dist
+# lokalnie, wyciągnij zahashowane nazwy assetów i czekaj, aż adres
+# produkcyjny zacznie je serwować (hash Astro jest deterministyczny dla tej
+# samej treści) — dopiero wtedy odpal testy @prod-smoke. Porażka = mail
+# z GitHuba natychmiast po zepsutym deployu.
+#
+# ADRES PRODUKCYJNY BIEŻĄCEJ FAZY: podgląd. Przy przełączeniu domeny
+# zmienia się PROD_URL tutaj i BASE_URL w skrypcie test:smoke:prod
+# (package.json) — oba w tym samym PR.
+name: Prod smoke
+on:
+  push:
+    branches: [main]
+  # Ręczne odpalenie: smoke bywa czerwony przez wyścig z deployem Cloudflare
+  # (dokument już nowy, chunk JS jeszcze zwraca stronę 404 jako text/html),
+  # a przy awarii Actions push w ogóle nie tworzy biegu.
+  workflow_dispatch:
+env:
+  PROD_URL: https://nowa.hetmannieruchomosci.com
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Czekaj na świeży deploy Cloudflare Pages
+        run: |
+          # KOMPLET assetów z buildu, nie pierwszy z brzegu: pierwszym bywa
+          # font (stały hash między buildami → strażnik zawsze „świeży"),
+          # przez co smoke startowałby w środku propagacji (nowy HTML + 404
+          # na nowym CSS → console.error). Deploy uznajemy za świeży
+          # dopiero, gdy HTML z produkcji zawiera wszystkie assety buildu
+          # i KAŻDY z nich odpowiada 200.
+          # Wzorzec ucina też na spacji i przecinku: atrybuty srcset/
+          # imagesrcset trzymają w jednej wartości ścieżkę + deskryptor
+          # gęstości ("…webp 1.8x, …webp 3x") — [^"]+ łykałby całość,
+          # a word-splitting robiłby z deskryptorów śmieciowe tokeny.
+          # Apostrof i nawias też są wykluczone — inline'owe style
+          # z url('/_astro/…') dawałyby adres zakończony "')".
+          assets=$(grep -oE "/_astro/[^\"' ,)]+" dist/index.html | sort -u)
+          if [ -z "$assets" ]; then
+            echo "Nie znalazłem zahashowanych assetów w dist/index.html" >&2
+            exit 1
+          fi
+          echo "Czekam, aż $PROD_URL poda komplet:"
+          echo "$assets"
+          for i in $(seq 1 30); do
+            html=$(curl -s -H "Cache-Control: no-cache" "$PROD_URL/")
+            fresh=1
+            for a in $assets; do
+              # test wbudowany zamiast echo|grep -q — grep zamykał potok
+              # wcześniej i każda próba sypała "echo: write error: Broken pipe"
+              if [[ "$html" != *"$a"* ]]; then fresh=0; break; fi
+              code=$(curl -s -o /dev/null -w '%{http_code}' "$PROD_URL$a")
+              if [ "$code" != "200" ]; then fresh=0; break; fi
+            done
+            if [ "$fresh" = "1" ]; then
+              ray=$(curl -sI "$PROD_URL/" | tr -d '\r' | grep -i '^cf-ray' || true)
+              echo "Deploy świeży (próba $i; $ray)"
+              exit 0
+            fi
+            echo "  próba $i/30 — build niekompletny na produkcji, czekam 20 s…"
+            sleep 20
+          done
+          echo "Timeout (10 min): produkcja nadal nie serwuje kompletu assetów" >&2
+          exit 1
+      - name: Playwright version (klucz cache)
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+      # Jak w ci.yml: feedy packages.microsoft.com bywają zepsute i nie są potrzebne.
+      - name: Wyłącz feedy packages.microsoft.com (flaky)
+        run: sudo bash -c 'grep -rl packages.microsoft.com /etc/apt/sources.list.d/ | xargs -r rm -f'
+      - run: pnpm exec playwright install --with-deps chromium webkit firefox
+      - run: pnpm test:smoke:prod
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: prod-smoke-report
+          path: playwright-report/
