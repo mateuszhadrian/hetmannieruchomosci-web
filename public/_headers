@@ -1,0 +1,8 @@
+# Podgląd i adresy *.pages.dev poza indeksem wyszukiwarek. Domena główna
+# NIE ma tu wpisu — po przełączeniu domeny jest indeksowana normalnie.
+https://:project.pages.dev/*
+  X-Robots-Tag: noindex
+https://:version.:project.pages.dev/*
+  X-Robots-Tag: noindex
+https://nowa.hetmannieruchomosci.com/*
+  X-Robots-Tag: noindex
