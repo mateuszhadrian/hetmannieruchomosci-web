@@ -1,0 +1,74 @@
+{
+  "name": "hetmannieruchomosci-web",
+  "type": "module",
+  "version": "0.0.1",
+  "packageManager": "pnpm@11.6.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "lint-staged": {
+    "*.{astro,js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,mdx,css}": [
+      "prettier --write"
+    ]
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "build:visual": "OFFERS_DATA_DIR=./tests/fixtures/offers astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "typecheck": "astro check",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "pnpm test:unit && pnpm test:e2e && pnpm test:visual",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:e2e": "playwright test tests/e2e",
+    "test:visual": "playwright test tests/visual",
+    "test:visual:update": "playwright test tests/visual --update-snapshots",
+    "test:smoke:prod": "BASE_URL=https://nowa.hetmannieruchomosci.com playwright test tests/e2e --grep @prod-smoke",
+    "sync": "echo 'pnpm sync: skrypt powstaje w Etapie 2' && exit 1",
+    "sync:dry": "echo 'pnpm sync:dry: skrypt powstaje w Etapie 2' && exit 1",
+    "fixtures:build": "echo 'pnpm fixtures:build: skrypt powstaje w Etapie 2' && exit 1",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@astrojs/sitemap": "^3.7.3",
+    "@fontsource-variable/archivo": "^5.3.0",
+    "@fontsource-variable/manrope": "^5.3.0",
+    "@tailwindcss/vite": "^4.3.1",
+    "astro": "^6.4.6",
+    "tailwindcss": "^4.3.1",
+    "typescript": "^6.0.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
+    "@commitlint/cli": "^21.0.2",
+    "@commitlint/config-conventional": "^21.0.2",
+    "@eslint/js": "^10.0.1",
+    "@lhci/cli": "^0.15.1",
+    "@playwright/test": "~1.61.1",
+    "eslint": "^10.4.1",
+    "eslint-plugin-astro": "^1.7.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "globals": "^17.6.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.7",
+    "playwright": "~1.61.1",
+    "prettier": "^3.8.4",
+    "prettier-plugin-astro": "^0.14.1",
+    "prettier-plugin-tailwindcss": "^0.8.0",
+    "sharp": "^0.35.2",
+    "subset-font": "^2.5.0",
+    "typescript-eslint": "^8.61.0",
+    "vitest": "^4.1.10"
+  }
+}

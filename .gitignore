@@ -1,0 +1,53 @@
+# build output
+dist/
+# generated types
+.astro/
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# environment variables
+.env*
+.env
+.env.production
+# lokalne sekrety Wranglera (Pages Functions)
+.dev.vars*
+
+# macOS-specific files
+.DS_Store
+
+# jetbrains setting folder
+.idea/
+
+# REPO JEST PUBLICZNE: baza wiedzy i pliki planu żyją wyłącznie lokalnie
+# (indeks i zasady: docs/README.md)
+docs/kb/
+docs/plan/
+
+# ciężkie obrazy i wideo z eksportu designu — tylko do lokalnego podglądu
+# (css i js eksportu SĄ śledzone; tabela nazw i mapa plik→trasa
+# w docs/design/README.md)
+docs/design/export/assets/img/
+docs/design/export/assets/video/
+
+# wyjście lokalnych przebiegów syncu (nigdy do repo)
+.sync-out/
+
+# artefakty Playwright (raporty i wyniki przebiegów; baseline'y wizualne
+# w tests/visual/__screenshots__/ SĄ commitowane)
+test-results/
+playwright-report/
+
+# artefakty Lighthouse CI
+.lighthouseci/
+
+# osobiste ustawienia Claude Code
+.claude/settings.local.json
+.claude/scheduled_tasks.lock

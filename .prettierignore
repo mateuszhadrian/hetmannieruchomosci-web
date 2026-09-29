@@ -1,0 +1,13 @@
+dist
+.astro
+pnpm-lock.yaml
+docs
+# artefakty Playwright
+test-results
+playwright-report
+# artefakty Lighthouse CI
+.lighthouseci
+# JSON-y danych pisze skrypt syncu / fixtures:build (własny układ plików)
+data
+tests/fixtures/offers
+.sync-out
