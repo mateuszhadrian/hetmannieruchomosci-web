@@ -1,0 +1,329 @@
+---
+// Stopka — granat z designu, wspólna dla wszystkich tras. Telefon i e-mail
+// przez sloty antyscrapingowe (lib/contact-details). Firma nie prowadzi
+// profili w mediach społecznościowych — stopka nie ma sekcji social.
+//
+// STAN Etapu 0: wersja robocza — komplet linków i danych z designu na
+// jednym markupie responsywnym. Wygląd docelowy i komplet danych firmy
+// wymaganych w stopce rozstrzyga mini-analiza chrome'u (Etap 4.1).
+import { footerNavItems } from "@/i18n/nav";
+import { CONTACT_PATH, HOME_PATH, POLICY_PATH } from "@/lib/routes";
+import { BUSINESS } from "@/lib/jsonld";
+import logo from "@/assets/logo/logo-silver.webp";
+
+const MAPS_URL =
+  "https://maps.google.com/?q=" +
+  encodeURIComponent(
+    `${BUSINESS.street}, ${BUSINESS.postalCode} ${BUSINESS.locality}`,
+  );
+const NIP = BUSINESS.vatID.replace(/\D/g, "");
+---
+
+<footer class="ft">
+  <div class="ft-main">
+    <div class="ft-top">
+      <a
+        class="ft-logo"
+        href={HOME_PATH}
+        aria-label="Hetman Nieruchomości — strona główna"
+      >
+        <img
+          src={logo.src}
+          width={logo.width}
+          height={logo.height}
+          alt="Hetman Nieruchomości"
+          loading="lazy"
+          decoding="async"
+        />
+      </a>
+      <p class="ft-motto">
+        Nieruchomości, dokumenty i sprawy prawne — w jednym miejscu.
+      </p>
+      {
+        /* numer i href składane w JS (antyscraping); bez JS kotwica
+           zostaje ukryta, a do kontaktu prowadzi przycisk obok */
+      }
+      <a class="ft-tel" data-tel href={CONTACT_PATH} hidden>Telefon</a>
+      <a class="ft-cta" href={CONTACT_PATH}>Skontaktuj się z nami</a>
+    </div>
+
+    <nav class="ft-nav" aria-label="Mapa strony">
+      {footerNavItems.map((item) => <a href={item.href}>{item.label}</a>)}
+    </nav>
+
+    <div class="ft-data">
+      <address class="ft-row">
+        <span class="ft-k">Biuro:</span>
+        <a href={MAPS_URL} target="_blank" rel="noopener noreferrer">
+          {BUSINESS.street}, {BUSINESS.postalCode}
+          {BUSINESS.locality}
+        </a>
+      </address>
+      <span class="ft-row">
+        <span class="ft-k">Godziny:</span>
+        <span>pon.–pt. 11:00–17:00, inne terminy po ustaleniu</span>
+      </span>
+      <span class="ft-row">
+        <span class="ft-k">E-mail:</span>
+        <a data-mail="biuro" href={CONTACT_PATH} hidden>E-mail</a>
+      </span>
+      <span class="ft-row">
+        <span class="ft-k">Firma:</span>
+        <span>{BUSINESS.legalName}, NIP {NIP}, REGON {BUSINESS.regon}</span>
+      </span>
+    </div>
+  </div>
+
+  <div class="ft-bot">
+    <div class="ft-bot-in">
+      <span>© 2026 Hetman Nieruchomości</span>
+      <a class="ft-policy" href={POLICY_PATH}>Polityka prywatności</a>
+      <span class="ft-made">
+        Realizacja:
+        <a href="https://hadrianm.pl" target="_blank" rel="noopener">hadrianm</a
+        > — pracownia stron i aplikacji
+      </span>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .ft {
+    background: var(--navy);
+    color: #fff;
+    font-family: var(--font-body);
+  }
+  .ft a {
+    color: #fff;
+    text-decoration: none;
+  }
+  .ft a:focus-visible {
+    outline: 2px solid var(--copper-light);
+    outline-offset: 3px;
+  }
+
+  .ft-main {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(20px, 5.6vw, 26px);
+    max-width: var(--col);
+    margin-inline: auto;
+    box-sizing: content-box;
+    padding: clamp(30px, 8.4vw, 38px) var(--pad) clamp(24px, 6.6vw, 30px);
+  }
+
+  .ft-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px clamp(24px, 3vw, 56px);
+  }
+  .ft-logo {
+    display: block;
+    flex: none;
+    height: clamp(22px, 6.2vw, 26px);
+  }
+  .ft-logo img {
+    display: block;
+    width: auto;
+    height: 100%;
+  }
+  .ft-motto {
+    flex: 1 1 100%;
+    order: 3;
+    margin: 0;
+    max-width: 32ch;
+    font-size: 15px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.78);
+    text-wrap: pretty;
+  }
+  .ft-tel {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-left: auto;
+    font-family: var(--font-label);
+    font-weight: 500;
+    font-size: clamp(18px, 5.2vw, 21px);
+    line-height: 1;
+    letter-spacing: -0.01em;
+    border-bottom: 1px solid rgba(201, 130, 54, 0.7);
+  }
+  .ft-tel[hidden],
+  .ft-row a[hidden] {
+    display: none;
+  }
+  .ft-cta {
+    order: 4;
+    flex: 1 1 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    border: 1px solid rgba(255, 255, 255, 0.42);
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .ft-tel:hover,
+  .ft-nav a:hover,
+  .ft-row a:hover,
+  .ft-made a:hover {
+    color: var(--copper-light);
+  }
+  .ft-cta:hover {
+    border-color: var(--copper-light);
+    color: var(--copper-light);
+  }
+
+  .ft-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: clamp(16px, 4.6vw, 20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+  }
+  .ft-nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 14px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    font-size: 15px;
+  }
+
+  .ft-data {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: clamp(16px, 4.6vw, 20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+    font-size: 13px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.78);
+  }
+  .ft-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 8px;
+    min-height: 32px;
+    font-style: normal;
+  }
+  .ft-k {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .ft-bot {
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.14);
+  }
+  .ft-bot-in {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: var(--col);
+    margin-inline: auto;
+    box-sizing: content-box;
+    padding: clamp(14px, 4vw, 18px) var(--pad);
+    font-size: 12px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.78);
+  }
+  .ft-policy {
+    order: -1;
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.24);
+  }
+  .ft-made a {
+    border-bottom: 1px solid rgba(201, 130, 54, 0.7);
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .ft-main {
+      gap: clamp(26px, 2.6vw, 38px);
+      padding: clamp(36px, 3.6vw, 54px) var(--pad) clamp(28px, 2.8vw, 40px);
+    }
+    .ft-logo {
+      height: clamp(22px, 2.2vw, 30px);
+    }
+    .ft-motto {
+      flex: 0 1 auto;
+      order: 0;
+      font-size: clamp(14px, 1.4vw, 17px);
+    }
+    .ft-tel {
+      min-height: 48px;
+      font-size: clamp(24px, 2.5vw, 34px);
+      letter-spacing: -0.02em;
+      border-bottom: none;
+    }
+    .ft-cta {
+      order: 0;
+      flex: none;
+      display: inline-flex;
+      min-height: 44px;
+      padding: 0 clamp(16px, 1.6vw, 22px);
+      border-color: rgba(255, 255, 255, 0.4);
+      font-weight: 400;
+    }
+    /* bez JS telefon jest ukryty — przycisk sam dosuwa się do prawej */
+    .ft-tel[hidden] + .ft-cta {
+      margin-left: auto;
+    }
+
+    .ft-nav {
+      gap: clamp(20px, 2.4vw, 44px);
+      padding: clamp(16px, 1.8vw, 24px) 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+    }
+    .ft-nav a {
+      min-height: 32px;
+      padding: 0;
+      border: none;
+      font-family: var(--font-label);
+      font-size: 13px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .ft-data {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 6px clamp(20px, 2.6vw, 48px);
+      padding-top: 0;
+      border-top: none;
+      font-size: 14px;
+    }
+
+    .ft-bot-in {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: clamp(16px, 2vw, 32px);
+      padding: clamp(14px, 1.4vw, 20px) var(--pad);
+      font-size: 13px;
+    }
+    .ft-policy {
+      order: 0;
+      align-self: auto;
+      min-height: 0;
+    }
+    .ft-made {
+      margin-left: auto;
+    }
+  }
+</style>
+
+<script>
+  import { fillContactSlots } from "@/lib/contact-details";
+
+  // Telefon/mail stopki (antyscraping). Idempotentne względem wypełnienia
+  // z Navbara (te same wartości do tych samych slotów).
+  fillContactSlots();
+</script>

@@ -1,0 +1,583 @@
+---
+// Chrome globalny — pasek FIXED + menu mobilne jako bottom sheet na
+// szkielecie scripts/overlay.ts (focus-trap, Esc, scrim, swipe-down,
+// blokada scrolla — mechanika wspólna, NIE ruszać).
+//
+// STAN Etapu 0: wersja robocza — działająca nawigacja po wszystkich
+// trasach, kolory i kroje z tokenów, logo z designu. Wygląd docelowy
+// (efekt liter przy hover, wariant strony głównej przemalowywany pozycją
+// scrolla, logo jasne/ciemne, dopracowany sheet) powstaje w Etapie 4.1.
+//
+// Stany paska: [data-hero] (strona ma hero pod paskiem — pasek startuje
+// przezroczysty), [data-solid] (szklane tło + linia), [data-open] (sheet).
+import { mainNavItems } from "@/i18n/nav";
+import { CONTACT_PATH, HOME_PATH } from "@/lib/routes";
+import logo from "@/assets/logo/logo-color.webp";
+
+// Normalizacja ukośnika — w dev Astro.url.pathname bywa bez końcowego "/".
+const currentPath = Astro.url.pathname.endsWith("/")
+  ? Astro.url.pathname
+  : `${Astro.url.pathname}/`;
+
+/** Pozycja jest bieżąca także dla adresów POD nią (listy i detale ofert
+ *  pod /oferty/). */
+const isCurrent = (href: string) =>
+  href === HOME_PATH ? currentPath === href : currentPath.startsWith(href);
+
+const t = {
+  nav: "Menu główne",
+  mobileNav: "Menu główne",
+  openMenu: "Otwórz menu",
+  closeMenu: "Zamknij menu",
+  menu: "Menu",
+  call: "Zadzwoń",
+  home: "Hetman Nieruchomości — strona główna",
+  brand: "Hetman Nieruchomości",
+};
+---
+
+<header class="hdr" data-nav>
+  {/* szklane tło paska (design: półprzezroczysta szarość + blur) */}
+  <span class="hdr-bg" aria-hidden="true"></span>
+
+  <a class="hdr-logo" href={HOME_PATH} aria-label={t.home}>
+    <img
+      src={logo.src}
+      width={logo.width}
+      height={logo.height}
+      alt={t.brand}
+      decoding="async"
+    />
+  </a>
+
+  <nav class="hdr-nav" aria-label={t.nav}>
+    {
+      mainNavItems.map((item) => (
+        <a
+          class="nav-link"
+          href={item.href}
+          aria-current={isCurrent(item.href) ? "page" : undefined}
+        >
+          {item.label}
+        </a>
+      ))
+    }
+    {
+      /* numer i href składane w JS (antyscraping — lib/contact-details);
+         bez JS pozycja zostaje ukryta */
+    }
+    <a class="hdr-tel" data-tel href={CONTACT_PATH} hidden>Telefon</a>
+  </nav>
+
+  <button
+    class="mbtn"
+    type="button"
+    data-burger
+    aria-expanded="false"
+    aria-controls="nav-sheet"
+    aria-label={t.openMenu}
+    data-open-label={t.openMenu}
+    data-close-label={t.closeMenu}
+  >
+    <i aria-hidden="true"><b></b><b></b></i>
+  </button>
+</header>
+
+{/* Bottom sheet menu — kontrakt overlay.ts (portalowany do <body>). */}
+<div
+  class="sheet-ov"
+  id="nav-sheet"
+  data-overlay
+  data-overlay-kind="sheet"
+  role="dialog"
+  aria-modal="true"
+  aria-label={t.menu}
+  hidden
+>
+  <div class="sheet" data-overlay-panel tabindex="-1">
+    <div class="sheet-in" data-overlay-scroll>
+      <div class="sheet-head" data-overlay-drag>
+        <span class="sheet-grab" aria-hidden="true"></span>
+      </div>
+      <nav aria-label={t.mobileNav}>
+        {
+          mainNavItems.map((item) => (
+            <a
+              class="m-link"
+              href={item.href}
+              aria-current={isCurrent(item.href) ? "page" : undefined}
+            >
+              {item.sheetLabel ?? item.label}
+            </a>
+          ))
+        }
+      </nav>
+      <div class="sheet-call">
+        <a data-tel href={CONTACT_PATH} hidden>
+          <b>{t.call}</b>
+          <span data-slot>Telefon</span>
+        </a>
+        <img
+          class="sheet-logo"
+          src={logo.src}
+          width={logo.width}
+          height={logo.height}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* ── pasek ── */
+  .hdr {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    height: var(--hdr-h);
+    padding-inline: var(--pad);
+    box-sizing: border-box;
+  }
+
+  /* Szklane tło: widoczne ZAWSZE, poza stronami z hero pod paskiem
+     ([data-hero] nadaje skrypt, gdy strona ma [data-navref]) — tam wjeżdża
+     po zjechaniu z hero ([data-solid]). Bez JS tło po prostu jest. */
+  .hdr-bg {
+    position: absolute;
+    inset: 0;
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(22px);
+    backdrop-filter: blur(22px);
+    border-bottom: 1px solid var(--glass-line);
+    transition: opacity 0.3s ease;
+  }
+  .hdr[data-hero]:not([data-solid]) .hdr-bg {
+    opacity: 0;
+  }
+
+  .hdr-logo {
+    position: relative;
+    display: block;
+    flex: none;
+    height: clamp(37.3px, 10.769vw, 56px);
+  }
+  .hdr-logo img {
+    display: block;
+    width: auto;
+    height: 100%;
+  }
+  .hdr-logo:hover {
+    opacity: 0.8;
+  }
+  .hdr-logo:focus-visible {
+    outline: 2px solid var(--navy);
+    outline-offset: 4px;
+  }
+
+  .hdr-nav {
+    display: none;
+  }
+
+  /* ── przycisk menu (mobile): 2 kreski → X ── */
+  .mbtn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--navy);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mbtn:focus-visible {
+    outline: 2px solid var(--navy);
+    outline-offset: 2px;
+  }
+  .mbtn i {
+    position: relative;
+    display: block;
+    width: 38px;
+    height: 13px;
+  }
+  .mbtn i b {
+    position: absolute;
+    left: 0;
+    width: 38px;
+    height: 2.5px;
+    background: currentColor;
+    transition: transform 0.34s cubic-bezier(0.3, 0, 0.2, 1);
+  }
+  .mbtn i b:nth-child(1) {
+    top: 0;
+  }
+  .mbtn i b:nth-child(2) {
+    top: 10.5px;
+  }
+  .hdr[data-open] .mbtn i b:nth-child(1) {
+    transform: translateY(5.25px) rotate(45deg);
+  }
+  .hdr[data-open] .mbtn i b:nth-child(2) {
+    transform: translateY(-5.25px) rotate(-45deg);
+  }
+
+  /* ── bottom sheet menu ── */
+  .sheet-ov {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: flex-end;
+    background: rgba(8, 16, 30, 0.26);
+    opacity: 0;
+    transition: opacity 0.34s ease;
+  }
+  .sheet-ov[hidden] {
+    display: none;
+  }
+  .sheet-ov.is-open {
+    opacity: 1;
+  }
+
+  .sheet {
+    position: relative;
+    width: 100%;
+    border-radius: 18px 18px 0 0;
+    overflow: hidden;
+    /* Design: szkło .39 + blur. Tu podkład gęstszy, żeby tekst trzymał
+       kontrast AA nad dowolną treścią strony — strojenie w Etapie 4.1. */
+    background: rgba(243, 242, 239, 0.96);
+    -webkit-backdrop-filter: blur(22px);
+    backdrop-filter: blur(22px);
+    box-shadow: 0 -18px 44px rgba(0, 0, 0, 0.4);
+    /* grab + pierwszy link zawsze widoczne — zapas na notch (safe-area)
+       i dynamiczny pasek przeglądarki (svh). */
+    max-height: 92vh;
+    max-height: min(92svh, calc(100svh - env(safe-area-inset-top, 0px) - 20px));
+    display: flex;
+    transform: translateY(101%);
+    transition: transform 0.42s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  .sheet-ov.is-open .sheet {
+    transform: none;
+  }
+  /* Panel bywa programowo fokusowany przy otwarciu dotykiem (tabindex=-1) —
+     bez pierścienia; to kontener, nie kontrolka. */
+  .sheet:focus {
+    outline: none;
+  }
+  .sheet-in {
+    position: relative;
+    width: 100%;
+    max-width: var(--col);
+    margin-inline: auto;
+    padding: 0 var(--pad) calc(30px + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  .sheet-head {
+    /* strefa chwytu gestu swipe-down — pełna szerokość, powiększona;
+       touch-action:none blokuje natywny scroll podczas gestu. */
+    padding: 9px 0 0;
+    touch-action: none;
+    cursor: grab;
+  }
+  .sheet-head:active {
+    cursor: grabbing;
+  }
+  .sheet-grab {
+    display: block;
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(24, 58, 107, 0.26);
+    margin: 0 auto 8px;
+  }
+  .sheet-in nav {
+    display: flex;
+    flex-direction: column;
+  }
+  .m-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 64px;
+    box-sizing: border-box;
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: clamp(21px, 6.154vw, 30px);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    color: var(--navy);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(24, 58, 107, 0.14);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .sheet-in nav > .m-link:last-child {
+    border-bottom: none;
+  }
+  .m-link[aria-current="page"] {
+    font-weight: 600;
+  }
+  .m-link:focus-visible {
+    outline: 2px solid var(--navy);
+    outline-offset: 2px;
+  }
+
+  /* stopka sheeta: telefon + znak */
+  .sheet-call {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 58px;
+    margin-top: clamp(6px, 2.051vw, 10px);
+    padding-top: clamp(12px, 3.59vw, 16px);
+    border-top: 1px solid rgba(24, 58, 107, 0.2);
+  }
+  .sheet-call a {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-decoration: none;
+    color: var(--navy);
+  }
+  .sheet-call a[hidden] {
+    display: none;
+  }
+  .sheet-call a b {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .sheet-call a span {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: clamp(18px, 5.128vw, 24px);
+    letter-spacing: 0.01em;
+  }
+  .sheet-logo {
+    display: block;
+    width: auto;
+    height: clamp(16px, 4.872vw, 24px);
+    margin: 0 0 clamp(10px, 3.077vw, 14px) auto;
+    opacity: 0.85;
+  }
+
+  /* ════ DESKTOP ≥1025 (para: NAV_DESKTOP_MIN_PX w nav-config.ts) ════ */
+  @media (min-width: 1025px) {
+    .hdr {
+      padding-inline: var(--g);
+    }
+    .hdr-logo {
+      height: 42px;
+    }
+
+    .hdr-nav {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: clamp(22px, 2.36vw, 34px);
+    }
+
+    .nav-link {
+      position: relative;
+      display: inline-flex;
+      align-items: baseline;
+      padding: 10px 0;
+      white-space: nowrap;
+      text-decoration: none;
+      font-family: var(--font-label);
+      font-weight: 500;
+      font-size: clamp(12px, 1.02vw, 13px);
+      line-height: 1;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink);
+      transition: color 0.35s ease;
+    }
+    /* podkreślenie wjeżdżające od lewej; bieżąca strona = miedź */
+    .nav-link::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0.16em;
+      bottom: 3px;
+      height: 1px;
+      background: currentColor;
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .nav-link:hover,
+    .nav-link:focus-visible,
+    .nav-link[aria-current="page"] {
+      color: var(--navy);
+    }
+    .nav-link:hover::after,
+    .nav-link:focus-visible::after,
+    .nav-link[aria-current="page"]::after {
+      transform: scaleX(1);
+    }
+    .nav-link[aria-current="page"]::after {
+      background: var(--copper);
+    }
+    .nav-link:focus-visible {
+      outline: 2px solid var(--navy);
+      outline-offset: 4px;
+    }
+
+    .hdr-tel {
+      display: flex;
+      align-items: center;
+      padding: 12px 22px;
+      border-radius: 999px;
+      background: var(--navy);
+      color: #fff;
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: 14px;
+      line-height: 1;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .hdr-tel[hidden] {
+      display: none;
+    }
+    .hdr-tel:hover {
+      opacity: 0.88;
+    }
+    .hdr-tel:focus-visible {
+      outline: 2px solid var(--navy);
+      outline-offset: 3px;
+    }
+
+    .mbtn,
+    .sheet-ov {
+      display: none;
+    }
+  }
+
+  /* ── reduced motion ── */
+  @media (prefers-reduced-motion: reduce) {
+    .hdr-bg,
+    .mbtn i b,
+    .sheet-ov,
+    .sheet,
+    .nav-link,
+    .nav-link::after {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  import "@/scripts/overlay";
+  import { fillContactSlots } from "@/lib/contact-details";
+  import {
+    NAV_DESKTOP_MIN_PX,
+    NAV_SOLID_FALLBACK_PX,
+    NAV_SOLID_HERO_PAD_PX,
+  } from "@/components/navbar/nav-config";
+
+  const hdr = document.querySelector<HTMLElement>("[data-nav]");
+  if (hdr) {
+    const burger = hdr.querySelector<HTMLButtonElement>("[data-burger]")!;
+    const SHEET_ID = "nav-sheet";
+    const desktopMQ = matchMedia(`(min-width:${NAV_DESKTOP_MIN_PX}px)`);
+
+    // telefon w pasku, sheecie i stopce (antyscraping — lib/contact-details)
+    fillContactSlots();
+
+    // Wysokość paska jako zmienna globalna — statyczny fallback siedzi
+    // w global.css (:root), JS doprecyzowuje pomiarem.
+    const setHdrH = () =>
+      document.documentElement.style.setProperty(
+        "--hdr-h",
+        `${Math.round(hdr.getBoundingClientRect().height)}px`,
+      );
+    new ResizeObserver(setHdrH).observe(hdr);
+    setHdrH();
+
+    // ── stan „solid" ──
+    // Sheet menu blokuje scroll przez `body{position:fixed;top:-scrollY}`
+    // (overlay.ts) — to ZERUJE window.scrollY i odpala zdarzenie `scroll`,
+    // więc bez tej flagi setSolid() gasiłby tło paska dokładnie w chwili
+    // otwarcia menu. Deklaracja MUSI stać przed onScroll — pierwsze
+    // wywołanie leci jeszcze przed sekcją menu (TDZ).
+    let sheetOpen = false;
+    function setSolid(s: boolean) {
+      hdr!.toggleAttribute("data-solid", s);
+    }
+    // Próg stanu solid: wysokość hero ([data-navref]) minus zapas; bez hero
+    // — zaraz po ruszeniu scrolla.
+    const navref = document.querySelector<HTMLElement>("[data-navref]");
+    hdr.toggleAttribute("data-hero", !!navref);
+    const solidAt = () =>
+      navref
+        ? navref.offsetHeight - NAV_SOLID_HERO_PAD_PX
+        : NAV_SOLID_FALLBACK_PX;
+
+    function onScroll() {
+      // KAŻDA nakładka blokuje scroll przez `body{position:fixed}` —
+      // zamrażamy stan paska na czas otwartej nakładki.
+      if (sheetOpen || document.body.style.position === "fixed") return;
+      setSolid(window.scrollY > solidAt());
+    }
+    addEventListener("scroll", onScroll, { passive: true });
+    addEventListener("resize", onScroll, { passive: true });
+    onScroll();
+
+    // ── menu mobilne: bottom sheet przez overlay.ts ──
+    let isOpen = false;
+    function setMenuState(open: boolean) {
+      isOpen = open;
+      // podnosimy flagę PRZED blokadą scrolla i zdejmujemy PO jej zdjęciu,
+      // żeby żadne z dwóch zdarzeń `scroll` wywołanych przez overlay.ts nie
+      // przeliczyło progu na pozycji 0
+      sheetOpen = open;
+      hdr!.toggleAttribute("data-open", open);
+      burger.setAttribute("aria-expanded", String(open));
+      burger.setAttribute(
+        "aria-label",
+        (open ? burger.dataset.closeLabel : burger.dataset.openLabel) || "",
+      );
+    }
+    burger.addEventListener("click", () => {
+      if (isOpen) {
+        window.overlay?.close(SHEET_ID);
+      } else {
+        setMenuState(true);
+        // onClose łapie KAŻDĄ drogę zamknięcia (Esc, scrim, swipe, link)
+        window.overlay?.open(SHEET_ID, {
+          onClose: () => setMenuState(false),
+        });
+      }
+    });
+
+    // zmiana progu: domknij sheet (spójny stan nakładek)
+    desktopMQ.addEventListener("change", (e) => {
+      if (e.matches && isOpen) window.overlay?.close(SHEET_ID);
+      onScroll();
+    });
+  }
+</script>
