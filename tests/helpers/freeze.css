@@ -1,0 +1,13 @@
+/* Determinizm zrzutów: wyłącza CZASOWE animacje i przejścia CSS (marquee
+ * logotypów, crossfade hero, reveale). Ruch sterowany SCROLLEM zostaje —
+ * to go testujemy, a przy ustalonej pozycji scrolla jest deterministyczny.
+ * UWAGA: ten arkusz nie zatrzymuje pętli rAF (home-scroll.ts i *-motion.ts
+ * liczą transformy w JS) — zielony przebieg po jednej próbie nie jest więc
+ * dowodem przy zmianach w modułach ruchu.
+ * Wideo NIE jest chowane stylem — maskujemy je w toHaveScreenshot (mask). */
+*,
+*::before,
+*::after {
+  animation: none !important;
+  transition: none !important;
+}
