@@ -1,0 +1,508 @@
+/* ==========================================================================
+   Hetman Nieruchomości — arkusz wspólny (wersja referencyjna)
+   Tu trafia tylko to, czego nie da się zapisać stylem inline:
+   pseudostany (:hover/:focus), stany menu, zapytania kontenerowe
+   i przełączanie gałęzi mobile/desktop.
+   ========================================================================== */
+
+/* --- podstawy ------------------------------------------------------------ */
+/* text-size-adjust: none — przeglądarki mobilne oparte na WebView (m.in.
+   DuckDuckGo) mają włączone automatyczne skalowanie tekstu i przeliczają je
+   przy każdej zmianie wysokości viewportu (pojawianie się paska adresu),
+   co skokowo powiększało i zmniejszało treść. */
+html {
+  -webkit-text-size-adjust: none;
+  -moz-text-size-adjust: none;
+  text-size-adjust: none;
+}
+
+body {
+  margin: 0;
+  background: #f3f2ef;
+  color: #1c1b19;
+  font-family: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: #1c1b19; }
+a:hover { color: #6b6864; }
+
+/* kontener dla jednostek cqw/cqh — odpowiednik kadru w symulatorze */
+.page { container-type: inline-size; }
+
+/* --- stabilna wysokość viewportu ----------------------------------------
+   Na telefonie pasek adresu chowa się i wraca w trakcie przewijania, co
+   zmienia wysokość viewportu — sekcje pełnoekranowe rosły i malały skokowo.
+   Wysokość trzyma zmienna --vph: skrypt zapisuje w niej raz zmierzoną
+   wartość w pikselach i odświeża ją tylko przy prawdziwej zmianie kadru
+   (obrót ekranu, zmiana szerokości, na desktopie także wysokości okna).
+   Bez skryptu zostaje statyczny svh. !important, bo nadpisujemy style
+   inline przeniesione z symulatorów. */
+:root { --vph: 100vh; }
+@supports (height: 100svh) { :root { --vph: 100svh; } }
+
+.vp-full { min-height: var(--vph) !important; }
+.vp-full-h { height: var(--vph) !important; }
+.vp-74 { min-height: calc(var(--vph) * 0.74) !important; }
+.vp-66 { min-height: calc(var(--vph) * 0.66) !important; }
+.vp-880 { min-height: max(880px, var(--vph)) !important; }
+
+/* --- gałęzie: mobile ≤ 1024 px, desktop ≥ 1025 px ------------------------ */
+.br-d { display: none; }
+
+@media (min-width: 1025px) {
+  .br-m { display: none; }
+  .br-d { display: block; }
+}
+
+/* --- navbar desktop ------------------------------------------------------ */
+.hn {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  height: 96px;
+  margin-bottom: -96px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.hn-white {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(221, 221, 221, 0.39);
+  -webkit-backdrop-filter: blur(22px);
+  backdrop-filter: blur(22px);
+  border-bottom: 1px solid rgba(24, 58, 107, 0.12);
+  pointer-events: none;
+}
+
+.hn-logo {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 196px;
+  height: 52px;
+  pointer-events: auto;
+}
+
+.hn-logo:hover { opacity: 0.8; }
+
+.hn-logo img {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: block;
+  width: auto;
+  height: 42px;
+}
+
+.hn-links {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 34px;
+  pointer-events: auto;
+}
+
+.hn-l {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: baseline;
+  white-space: nowrap;
+  font: 500 13px/1 "Archivo", system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
+  letter-spacing: 0.16em;
+  text-decoration: none;
+  color: #1a1a1a;
+  transition: color 0.35s ease;
+}
+
+.hn-l:hover,
+.hn-l:focus-visible { color: #183a6b; }
+
+.hn-l::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0.16em;
+  bottom: -7px;
+  height: 1px;
+  background: #1a1a1a;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hn-l:hover::after,
+.hn-l:focus-visible::after { transform: scaleX(1); }
+
+.hn-l[aria-current="page"],
+.hn-l[aria-current="page"]:hover,
+.hn-l[aria-current="page"]:focus-visible { color: #183a6b; }
+
+.hn-l[aria-current="page"]::after {
+  transform: scaleX(1);
+  background: #c98236;
+}
+
+/* podjazd liter przy hoverze */
+.hn-ch {
+  position: relative;
+  display: inline-block;
+  clip-path: inset(0);
+  line-height: 1;
+  vertical-align: baseline;
+}
+
+.hn-ch > span {
+  display: block;
+  transition: transform 0.42s cubic-bezier(0.76, 0, 0.24, 1);
+  transition-delay: var(--d, 0s);
+}
+
+.hn-ch > span:nth-child(2) {
+  position: absolute;
+  top: 100%;
+  left: 0;
+}
+
+.hn-l:hover .hn-ch > span,
+.hn-l:focus-visible .hn-ch > span { transform: translateY(-100%); }
+
+.hn-sp { display: inline-block; width: 0.3em; }
+
+/* opóźnienie kolejnych liter (odpowiednik index * 0.028s) */
+.hn-l > :nth-child(1) { --d: 0s; }
+.hn-l > :nth-child(2) { --d: 0.028s; }
+.hn-l > :nth-child(3) { --d: 0.056s; }
+.hn-l > :nth-child(4) { --d: 0.084s; }
+.hn-l > :nth-child(5) { --d: 0.112s; }
+.hn-l > :nth-child(6) { --d: 0.140s; }
+.hn-l > :nth-child(7) { --d: 0.168s; }
+.hn-l > :nth-child(8) { --d: 0.196s; }
+.hn-l > :nth-child(9) { --d: 0.224s; }
+.hn-l > :nth-child(10) { --d: 0.252s; }
+.hn-l > :nth-child(11) { --d: 0.280s; }
+.hn-l > :nth-child(12) { --d: 0.308s; }
+.hn-l > :nth-child(13) { --d: 0.336s; }
+.hn-l > :nth-child(14) { --d: 0.364s; }
+.hn-l > :nth-child(15) { --d: 0.392s; }
+
+.hn-tel {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: #183a6b;
+  color: #fff;
+  border-radius: 999px;
+  padding: 12px 22px;
+  font: 500 14px/1 "Manrope", system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
+  text-decoration: none;
+}
+
+.hn-tel:hover { opacity: 0.88; color: #fff; }
+
+/* --- navbar desktop: wariant strony głównej (przemalowanie scrollem) ----- */
+.hn--home .hn-white { opacity: 0; }
+
+.hn-scrim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 190px;
+  background: linear-gradient(to bottom, rgba(12, 11, 10, 0.55), rgba(12, 11, 10, 0.22) 46%, rgba(12, 11, 10, 0));
+  pointer-events: none;
+}
+
+.hn--home .hn-logo-light { filter: drop-shadow(0 1px 6px rgba(0, 0, 0, 0.35)); }
+.hn--home .hn-logo-dark { opacity: 0; }
+
+.hn--home .hn-l {
+  color: var(--nc, rgba(255, 255, 255, 0.88));
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+}
+
+.hn--home .hn-l:hover,
+.hn--home .hn-l:focus-visible { color: var(--nch, var(--nc, rgba(255, 255, 255, 0.88))); }
+
+.hn--home .hn-l::before {
+  content: "";
+  position: absolute;
+  inset: -16px -20px;
+  z-index: -1;
+  border-radius: 40px;
+  background: radial-gradient(closest-side, rgba(var(--nglow, 255, 255, 255), calc(0.32 * var(--nhalo, 1))) 0%, rgba(0, 0, 0, 0) 75%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.hn--home .hn-l:hover::before,
+.hn--home .hn-l:focus-visible::before { opacity: 1; }
+
+.hn--home .hn-l::after { background: var(--nc, currentColor); }
+.hn--home .hn-tel { box-shadow: 0 2px 14px rgba(0, 0, 0, 0.22); }
+
+.hn--home .hn-l[aria-current="page"]::after {
+  transform: scaleX(1);
+  background: #c98236;
+}
+
+.hn-col-desc { display: block; }
+
+@container (max-width: 1200px) {
+  .hn { padding: 0 32px; }
+  .hn-links { gap: 22px; }
+  .hn-l { font-size: 12px; }
+}
+
+@container (max-height: 700px) {
+  .hn-col-desc { display: none; }
+}
+
+/* --- navbar mobile + menu (bottom sheet) -------------------------------- */
+.hb {
+  position: absolute;
+  top: 50%;
+  right: 22px;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.hb-bar {
+  display: block;
+  width: 38px;
+  height: 2.5px;
+  background: #183a6b;
+  transition: transform 0.34s cubic-bezier(0.3, 0, 0.2, 1);
+}
+
+.hb--home .hb-bar { background: #dddddd; }
+
+[data-open="1"] .hb-bar:first-child { transform: translateY(5.25px) rotate(45deg); }
+[data-open="1"] .hb-bar:last-child { transform: translateY(-5.25px) rotate(-45deg); }
+
+.mnav {
+  position: sticky;
+  bottom: 0;
+  height: 0;
+  z-index: 40;
+}
+
+/* menu mobilne otwarte → strona pod nim nie scrolluje.
+   Bez zmiany overflow (to psuje sticky navbar/sheet) — blokada gestem. */
+html.mnav-lock {
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+.mnav-ov {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  pointer-events: none;
+  visibility: hidden;
+  transition: visibility 0s linear 0.45s;
+}
+
+[data-open="1"] .mnav-ov {
+  pointer-events: auto;
+  visibility: visible;
+  transition: visibility 0s linear 0s;
+}
+
+.mnav-scrim {
+  position: absolute;
+  inset: 0;
+  background: #08101e;
+  opacity: 0;
+  transition: opacity 0.34s ease;
+}
+
+[data-open="1"] .mnav-scrim { opacity: 0.26; }
+
+.mnav-sheet {
+  overscroll-behavior: contain;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  transform: translateY(101%);
+  transition: transform 0.42s cubic-bezier(0.22, 0.61, 0.36, 1);
+  border-radius: 18px 18px 0 0;
+  overflow: hidden;
+  box-shadow: 0 -18px 44px rgba(0, 0, 0, 0.4);
+  background: rgba(221, 221, 221, 0.39);
+  -webkit-backdrop-filter: blur(22px);
+  backdrop-filter: blur(22px);
+}
+
+[data-open="1"] .mnav-sheet { transform: translateY(0); }
+
+.mnav-list {
+  display: flex;
+  flex-direction: column;
+  font-family: "Manrope", system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
+  padding: clamp(16px, 4.615cqw, 24px) clamp(17.8px, 5.128cqw, 26.7px) 0;
+}
+
+.mnav-list a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  box-sizing: border-box;
+  border-bottom: 1px solid rgba(221, 221, 221, 0.4);
+  color: #183a6b;
+  text-decoration: none;
+  font-size: clamp(21px, 6.154cqw, 30px);
+  line-height: 1.15;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.mnav-list a:last-child { border-bottom: 0; }
+.mnav-list a[aria-current="page"] { font-weight: 600; }
+
+.mnav-foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: clamp(12px, 3.59cqw, 16px) clamp(17.8px, 5.128cqw, 26.7px) clamp(22px, 6.41cqw, 30px);
+  margin-top: clamp(6px, 2.051cqw, 10px);
+  border-top: 1px solid #dddddd;
+}
+
+/* --- pseudostany treści (odpowiednik style-hover / style-focus) ---------
+   Deklaracje mają !important, bo nadpisują style inline przeniesione
+   z symulatorów (inline zawsze wygrywa ze zwykłą regułą, także w :hover). */
+.hv-op9:hover { opacity: 0.9 !important; color: #fff !important; }
+.hv-lift:hover { transform: translateY(-6px) !important; color: #fff !important; }
+.hv-slide:hover { transform: translateX(8px) !important; background: rgba(221, 221, 221, 0.2) !important; color: #fff !important; }
+.hv-amber:hover { color: #e0a86a !important; }
+.hv-copper:hover { color: #c98236 !important; }
+.hv-copper-bd:hover { border-color: #c98236 !important; color: #c98236 !important; }
+.hv-white:hover { color: #fff !important; }
+.hv-tile:hover { background: rgba(221, 221, 221, 0.1) !important; color: #fff !important; }
+.hv-cta-copper:hover { background: #d9964c !important; }
+.hv-cta-copper-w:hover { background: #d9964c !important; color: #fff !important; }
+.hv-cta-copper-w2:hover { background: #e0a86a !important; color: #fff !important; }
+.hv-bd-copper:hover { border-color: #c98236 !important; }
+.hv-cta-ghost:hover { background: rgba(221, 221, 221, 0.18) !important; }
+.hv-tile-copper:hover { background: rgba(201, 130, 54, 0.22) !important; }
+.hv-btn-copper:hover { background: #e0a86a !important; }
+
+.fld:focus {
+  border-color: #c98236 !important;
+  box-shadow: 0 0 0 2px rgba(201, 130, 54, 0.22) !important;
+}
+
+/* nota pod zablokowanym formularzem (wersja referencyjna) */
+.ref-note {
+  margin: 0;
+  padding: 12px 14px;
+  background: rgba(24, 58, 107, 0.08);
+  border-left: 2px solid #c98236;
+  color: #183a6b;
+  font: 600 14px/1.5 "Manrope", system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+/* --- ograniczenie ruchu ------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .hn-ch > span { transition: none !important; }
+  .hn-l:hover .hn-ch > span,
+  .hn-l:focus-visible .hn-ch > span { transform: none; }
+  .hn-l::after { transition: none; }
+}
+
+/* ==========================================================================
+   Podstrona „Oferty" — warianty layoutu i stany filtrów
+   ========================================================================== */
+
+/* trzy warianty listy: telefon < 768, tablet 768–1024, desktop ≥ 1025 */
+.vp-phone,
+.vp-tablet,
+.js-grid,
+.js-list,
+.js-more,
+.js-moreclosed,
+.js-sortmenu { display: contents; }
+
+@media (min-width: 768px) { .vp-phone { display: none; } }
+@media (max-width: 767px) { .vp-tablet { display: none; } }
+
+[data-view="grid"] .js-list,
+[data-view="list"] .js-grid { display: none; }
+
+[data-more="0"] .js-more,
+[data-more="1"] .js-moreclosed { display: none; }
+
+[data-sortopen="0"] .js-sortmenu { display: none; }
+
+/* pseudostany wygenerowane z podstrony Oferty */
+[data-hv="o1"]:hover { transform: translateY(-4px) !important; box-shadow: 0 18px 40px rgba(24, 58, 107, 0.14) !important; }
+[data-hv="o2"]:hover { border-color: #183a6b !important; }
+[data-hv="o3"]:hover { background: #b5732d !important; }
+[data-hv="o4"]:hover { background: #f3f2ef !important; }
+
+
+/* ==========================================================================
+   Animacje po scrollu — odsłanianie treści i parallax zdjęć
+   Atrybuty [data-rv] i [data-px] nadaje skrypt (moduł 10 w site.js), i tylko
+   na podstronach z atrybutem data-anim na <body>. Bez skryptu nic nie znika:
+   reguły dotyczą wyłącznie elementów oznaczonych w czasie działania strony.
+   ========================================================================== */
+/* mobile: 22 px wjazdu od dołu, krycie 0.7s ease kończy się 0.1s przed ruchem;
+   bez transition-delay — kaskada bierze się z tego, że każdy blok przecina
+   próg na innej wysokości */
+[data-rv] {
+  opacity: 0;
+  transform: translate3d(0, 22px, 0);
+  transition: opacity 0.7s ease,
+              transform 0.8s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+[data-rv].is-in { opacity: 1; transform: none; }
+
+/* duże bloki obrazowe — sam fade, bez wjazdu od dołu */
+[data-rv="soft"],
+[data-rv="soft"].is-in { transform: none; }
+
+/* desktop: dłuższy dojazd, większy dystans i delikatne dociągnięcie skalą */
+@media (min-width: 1025px) {
+  [data-rv] {
+    transform: translate3d(0, 44px, 0) scale(0.984);
+    transition: opacity 0.95s cubic-bezier(0.16, 1, 0.3, 1) var(--rvd, 0s),
+                transform 1.05s cubic-bezier(0.16, 1, 0.3, 1) var(--rvd, 0s);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-rv],
+  [data-rv].is-in { opacity: 1 !important; transform: none !important; transition: none !important; }
+  [data-px] { transform: none !important; }
+}
