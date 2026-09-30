@@ -4,6 +4,8 @@ import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 
+import redirects from "./src/integrations/redirects";
+
 // https://astro.build/config
 export default defineConfig({
   // Canonical i sitemapa wskazują domenę główną także na podglądzie —
@@ -16,6 +18,8 @@ export default defineConfig({
     sitemap({
       filter: (page) => !/\/404\/?$/.test(new URL(page).pathname),
     }),
+    // `dist/_redirects` z danych ofert (OFFERS_DATA_DIR) — po buildzie.
+    redirects(),
   ],
 
   vite: {
