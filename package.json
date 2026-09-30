@@ -33,9 +33,11 @@
     "test:visual": "playwright test tests/visual",
     "test:visual:update": "playwright test tests/visual --update-snapshots",
     "test:smoke:prod": "BASE_URL=https://nowa.hetmannieruchomosci.com playwright test tests/e2e --grep @prod-smoke",
+    "test:redirects:prod": "tsx scripts/probe-redirects.ts",
     "sync": "echo 'pnpm sync: skrypt powstaje w Etapie 2' && exit 1",
     "sync:dry": "echo 'pnpm sync:dry: skrypt powstaje w Etapie 2' && exit 1",
     "fixtures:build": "echo 'pnpm fixtures:build: skrypt powstaje w Etapie 2' && exit 1",
+    "redirects:legacy": "tsx scripts/collect-legacy.ts",
     "prepare": "husky"
   },
   "dependencies": {
@@ -45,7 +47,10 @@
     "@fontsource-variable/manrope": "^5.3.0",
     "@tailwindcss/vite": "^4.3.1",
     "astro": "^6.4.6",
+    "htmlparser2": "^12.0.0",
+    "sanitize-html": "^2.17.7",
     "tailwindcss": "^4.3.1",
+    "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "zod": "^4.4.3"
   },
@@ -56,6 +61,7 @@
     "@eslint/js": "^10.0.1",
     "@lhci/cli": "^0.15.1",
     "@playwright/test": "~1.61.1",
+    "@types/sanitize-html": "^2.16.2",
     "eslint": "^10.4.1",
     "eslint-plugin-astro": "^1.7.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
