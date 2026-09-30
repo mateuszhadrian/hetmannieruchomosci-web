@@ -4,10 +4,16 @@ Harness odziedziczony z szablonu projektu (konfiguracja
 Playwright/Vitest/axe/LHCI, 6 profili, helpery); liczby szablonu NIE
 obowiązują — baseline'y i budżety powstają od nowa w Etapie 3.
 
-STAN po Etapie 0: unit — `contact-details`, `contact-form`,
-`fonts-subset`, `img`, `jsonld`; e2e — `navigation`, `seo`, `a11y`,
-`smoke`, `not-found` na 8 trasach-szkieletach; visual — `chrome`
-i `not-found` (BEZ baseline'ów — powstają w Etapie 3). Fixture ofert
+STAN po S2a (Etap 2): unit — `contact-details`, `contact-form`,
+`fonts-subset`, `img`, `jsonld` oraz kontrakt danych ofert:
+`offers-allowlist`, `offers-schema`, `offers-status` (realne tytuły,
+8/21/13/3), `offers-format`, `offers-urls`, `sync-normalize`,
+`sync-sanitize`, `sync-locations`, `sync-ledger`, `redirects`,
+`collect-legacy` — wszystkie na danych SYNTETYCZNYCH z
+`tests/fixtures/raw/` (helper `tests/helpers/raw.ts`); e2e —
+`navigation`, `seo`, `a11y`, `smoke`, `not-found` na 8
+trasach-szkieletach; visual — `chrome` i `not-found` (BEZ baseline'ów —
+powstają w Etapie 3). Fixture ofert (`tests/fixtures/offers/`)
 i katalog `data/` jeszcze nie istnieją. Specy widoków powstają razem
 z widokami (Etapy 4–5): widok dostaje WŁASNY spec e2e i visual.
 

@@ -1,0 +1,227 @@
+[
+  {
+    "title": "Winogrady, Os. Pod Lipami - kawalerka, 8p.",
+    "transaction": "sprzedaz",
+    "expectedStatus": "aktywna"
+  },
+  {
+    "title": "Winogrady Os. Pod Lipami 3 pokoje 65m2 piwnica",
+    "transaction": "sprzedaz",
+    "expectedStatus": "aktywna"
+  },
+  {
+    "title": "Piątkowo - super 4 pokoje 90m2 balkon parking",
+    "transaction": "wynajem",
+    "expectedStatus": "aktywna"
+  },
+  {
+    "title": "Piątkowo - 2 pokoje ok. 55m² balkon wysoki parter",
+    "transaction": "wynajem",
+    "expectedStatus": "aktywna"
+  },
+  {
+    "title": "Batorego 2 pokoje ponad 50m2 balkon garaż",
+    "transaction": "wynajem",
+    "expectedStatus": "aktywna"
+  },
+  {
+    "title": "SPRZEDANE - Wilda APARTAMENT ok. 150m2",
+    "transaction": "sprzedaz",
+    "expectedStatus": "sprzedana"
+  },
+  {
+    "title": "SPRZEDANE 0% Wilda - 4 pokoje, duży balkon",
+    "transaction": "sprzedaz",
+    "expectedStatus": "sprzedana"
+  },
+  {
+    "title": "REZERWACJA Wilda -duży lokal 100m², witryny",
+    "transaction": "sprzedaz",
+    "expectedStatus": "rezerwacja"
+  },
+  {
+    "title": "SPRZEDANE Bliźniak 220m² 4 sypialnie ogród garaż",
+    "transaction": "sprzedaz",
+    "expectedStatus": "sprzedana"
+  },
+  {
+    "title": "REZERWACJA City Park 2 pokoje, ok. 70m2, parking",
+    "transaction": "wynajem",
+    "expectedStatus": "rezerwacja"
+  },
+  {
+    "title": "Winogrady, Cytadela - 2 pokoje ok 45m² z ogródkiem",
+    "transaction": "wynajem",
+    "expectedStatus": "aktywna"
+  },
+  {
+    "title": "SPRZEDANE Szczepankowo - ok. 100m2, bliźniak",
+    "transaction": "sprzedaz",
+    "expectedStatus": "sprzedana"
+  },
+  {
+    "title": "0% Szczepankowo - ok. 100m², 4 pokoje, 2 łazienki",
+    "transaction": "sprzedaz",
+    "expectedStatus": "aktywna"
+  },
+  {
+    "title": "SPRZEDANE Bliźniak 4 pokoje ogród do wprowadzenia",
+    "transaction": "sprzedaz",
+    "expectedStatus": "sprzedana"
+  },
+  {
+    "title": "WYNAJĘTE Naramowice, Błażeja - 2 pokoje, balkon",
+    "transaction": "wynajem",
+    "expectedStatus": "wynajeta"
+  },
+  {
+    "title": "WYNAJĘTE Batorego 3 pokoje 60m2 balkon super układ",
+    "transaction": "wynajem",
+    "expectedStatus": "wynajeta"
+  },
+  {
+    "title": "WYNAJĘTE Poznań, Winogrady - 3 pokoje, 50m2 balkon",
+    "transaction": "wynajem",
+    "expectedStatus": "wynajeta"
+  },
+  {
+    "title": "SPRZEDANE 73m2, 4 pokoje + piwnica Starołęka",
+    "transaction": "sprzedaz",
+    "expectedStatus": "sprzedana"
+  },
+  {
+    "title": "WYNAJĘTE kawalerka po remoncie 33m2 niski czynsz",
+    "transaction": "wynajem",
+    "expectedStatus": "wynajeta"
+  },
+  {
+    "title": "WYNAJĘTE Wilczak 20, 56m2, 2 pokoje, balkon",
+    "transaction": "wynajem",
+    "expectedStatus": "wynajeta"
+  },
+  {
+    "title": "SPRZEDANE Dwupoziomowe ok. 90 m2, 3 pokoje parking",
+    "transaction": "sprzedaz",
+    "expectedStatus": "sprzedana"
+  },
+  {
+    "title": "WYNAJĘTE Jeżyce dwa pokoje 45m2 super układ balkon",
+    "transaction": "wynajem",
+    "expectedStatus": "wynajeta"
+  },
+  {
+    "title": "SPRZEDANE Baranowo - bliźniak z ogrodem garaż",
+    "transaction": "sprzedaz",
+    "expectedStatus": "sprzedana"
+  },
+  {
+    "title": "SPRZEDANE Działka 540m² Kórnik Bnin jezioro OKAZJA",
+    "transaction": "sprzedaz",
+    "expectedStatus": "sprzedana"
+  },
+  {
+    "title": "WYNAJĘTE Kawalerka ul. S. Maczka 30 m² - Winiary",
+    "transaction": "wynajem",
+    "expectedStatus": "wynajeta"
+  },
+  {
+    "title": "SPRZEDANE Wilda - 2 pokoje 50m2 loggia",
+    "transaction": "sprzedaz",
+    "expectedStatus": "sprzedana"
+  },
+  {
+    "title": "WYNAJĘTE Rataje - dwa pokoje 50m², balkon, piwnica",
+    "transaction": "wynajem",
+    "expectedStatus": "wynajeta"
+  },
+  {
+    "title": "Piątkowo - 2 pokoje ok. 55m² balkon wysoki parter",
+    "transaction": "wynajem",
+    "expectedStatus": "aktywna"
+  },
+  {
+    "title": "WYNAJĘTE Sołacz - kawalerka 33m² parking komórka",
+    "transaction": "wynajem",
+    "expectedStatus": "wynajeta"
+  },
+  {
+    "title": "SPRZEDANE Podolany, dom wolnostojący z ogrodem",
+    "transaction": "sprzedaz",
+    "expectedStatus": "sprzedana"
+  },
+  {
+    "title": "SPRZEDANE centrum Chwaliszewo 2 pokoje parking",
+    "transaction": "sprzedaz",
+    "expectedStatus": "sprzedana"
+  },
+  {
+    "title": "SPRZEDANE Wilczak ok 50m² 2 pokoje balkon parking",
+    "transaction": "sprzedaz",
+    "expectedStatus": "sprzedana"
+  },
+  {
+    "title": "REZERWACJA - Rataje 70m² 3 pokoje NOWE taras",
+    "transaction": "sprzedaz",
+    "expectedStatus": "rezerwacja"
+  },
+  {
+    "title": "SPRZEDANE 4700 m² Dworzyska Radzewo Kórnik las",
+    "transaction": "sprzedaz",
+    "expectedStatus": "sprzedana"
+  },
+  {
+    "title": "WYNAJĘTE kawalerka w centrum ul. Kościuszki",
+    "transaction": "wynajem",
+    "expectedStatus": "wynajeta"
+  },
+  {
+    "title": "SPRZEDEDANE w sąsiedztwie lasu Skoki - ok. 750m2",
+    "transaction": "sprzedaz",
+    "expectedStatus": "sprzedana"
+  },
+  {
+    "title": "SPRZEDANE Wilda 3 pokoje ok 55 m2 balkon",
+    "transaction": "sprzedaz",
+    "expectedStatus": "sprzedana"
+  },
+  {
+    "title": "SPRZEDANE Dwa pokoje prawie 50 m2 Starołęka",
+    "transaction": "sprzedaz",
+    "expectedStatus": "sprzedana"
+  },
+  {
+    "title": "SPRZEDANE Starołęka kawalerka ponad 30 m²",
+    "transaction": "sprzedaz",
+    "expectedStatus": "sprzedana"
+  },
+  {
+    "title": "SPRZEDANE 2 pokoje ok. 50m² Starołęka I p.",
+    "transaction": "sprzedaz",
+    "expectedStatus": "sprzedana"
+  },
+  {
+    "title": "SPRZEDANE Starołęka 2 pokoje ok 40 m² parter",
+    "transaction": "sprzedaz",
+    "expectedStatus": "sprzedana"
+  },
+  {
+    "title": "SPRZEDANE Kawalerka 36 m² po generalnym remoncie",
+    "transaction": "sprzedaz",
+    "expectedStatus": "sprzedana"
+  },
+  {
+    "title": "WYNAJĘTE 2 niezależne pokoje, loggia - centrum",
+    "transaction": "wynajem",
+    "expectedStatus": "wynajeta"
+  },
+  {
+    "title": "WYNAJĘTE 3 pokoje 67 m² garderoba balkon parking",
+    "transaction": "wynajem",
+    "expectedStatus": "wynajeta"
+  },
+  {
+    "title": "WYNAJĘTE Naramowice 3 pokoje 70 m² balkon garaż",
+    "transaction": "wynajem",
+    "expectedStatus": "wynajeta"
+  }
+]

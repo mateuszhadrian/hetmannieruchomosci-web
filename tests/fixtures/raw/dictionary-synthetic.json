@@ -1,0 +1,81 @@
+{
+  "success": true,
+  "data": {
+    "binary": { "0": "Nie", "1": "Tak", "27": "Nie", "28": "Tak" },
+    "custom": { "154": "Tak", "155": "Nie" },
+    "currency": { "1": "EUR", "2": "PLN", "3": "USD" },
+    "market": { "10": "Pierwotny", "11": "Wtórny" },
+    "transaction": { "131": "Sprzedaż", "132": "Wynajem" },
+    "status": { "3": "Aktualna", "9": "Wycofana", "52": "Robocza" },
+    "types": {
+      "1": "Dom",
+      "2": "Mieszkanie",
+      "3": "Działka",
+      "4": "Inny komercyjny",
+      "6": "Wolnostojący",
+      "12": "Bliźniak",
+      "16": "Blok mieszkalny",
+      "19": "Wieżowiec",
+      "30": "Leśna",
+      "31": "Rekreacyjna",
+      "32": "Usługowa",
+      "38": "Biuro",
+      "39": "Lokal handlowy/usługowy",
+      "40": "Magazyn",
+      "49": "Apartamentowiec",
+      "50": "Półbliźniak",
+      "52": "Willa",
+      "57": "Budowlana",
+      "67": "Inne",
+      "74": "Pod zabudowę jednorodzinną"
+    },
+    "ownership": {
+      "32": "Własność",
+      "33": "Spółdzielcze własnościowe",
+      "35": "Spółdzielcze własnościowe z KW",
+      "187": "Udział",
+      "516": "Spółdzielcze z możliwością założenia KW"
+    },
+    "buildingCondition": {
+      "61": "Idealny",
+      "66": "Do remontu",
+      "188": "Po remoncie",
+      "189": "Deweloperski",
+      "286": "Bardzo dobry",
+      "287": "Dobry",
+      "288": "Do odświeżenia"
+    },
+    "heating": { "139": "CO miejskie", "141": "Gazowe" },
+    "buildingMaterials": {
+      "68": "Cegła",
+      "69": "Pustak",
+      "73": "Wielka płyta",
+      "572": "Silikat"
+    },
+    "roofMaterials": { "300": "Dachówka" },
+    "kitchenTypes": {
+      "417": "Zamykana z oknem",
+      "418": "Z oknem otwarta na salon",
+      "420": "Bez okna otwarta na salon",
+      "421": "W przejściu",
+      "422": "Aneks",
+      "460": "Z oknem"
+    },
+    "apartmentEquipments": {
+      "584": "Pralka",
+      "585": "Lodówka",
+      "586": "Kuchenka",
+      "587": "Piekarnik",
+      "588": "Telewizor",
+      "589": "Zmywarka"
+    },
+    "fence": { "94": "Brak", "98": "Mieszane", "495": "Metalowe" },
+    "road": {
+      "100": "Polna",
+      "102": "Asfaltowa",
+      "359": "Utwardzona gruntowa"
+    },
+    "developmentArea": { "107": "Brak", "109": "Mieszkalna", "112": "Inna" },
+    "ownershipGround": { "36": "Własność", "38": "Dzierżawa" }
+  }
+}
