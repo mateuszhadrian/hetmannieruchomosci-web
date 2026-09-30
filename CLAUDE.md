@@ -184,6 +184,53 @@ co zostało.
   jest spod niej wyłączony; resztę katalogu pilnuje hook `guard-data.sh`.
   Źródła ikon (`src/assets/logo/source/`) i pełny eksport designu zostają
   w repo.
+- **Etap 1 (chmura) — W TOKU** (stan na 2026-09-30): repo publiczne na
+  GitHubie; ruleset ochrony `main` (wymagany check `quality`, bez
+  wyjątków — bypass dla bota syncu dojdzie w 2.0); projekt Cloudflare
+  Pages `hetmannieruchomosci-web` (deploy z `main` działa; nagłówek
+  noindex i Pages Function `/api/kontakt` potwierdzone; `_headers`
+  i `_routes.json` Pages wczytuje jako konfigurację i nie serwuje — 404
+  pod tymi ścieżkami to stan poprawny); domena
+  `nowa.hetmannieruchomosci.com` Active w Pages (CNAME w panelu
+  rejestratora dodany 2026-09-30, reszta strefy nietknięta); workflow
+  `prod-smoke` włączony i zielony. ZOSTAŁO: Resend (konto klientki,
+  domena `send.`) — planowane na 2026-10-01.
+- **Etap 2 / S2a (dane ofert, kroki 2.1–2.3) — WYKONANY** (2026-09-30,
+  gałąź `feat/sync-s2a`): allow-lista i skan pól zabronionych
+  (`src/lib/offers/public-fields.ts`), schemat Zod strict w dwóch
+  wariantach — pełny i po normalizacji (`schema.ts`), parser statusu
+  z tytułu (`status.ts`, sprawdzony na realnych tytułach 8/21/13/3),
+  formattery (`format.ts`), adresy jako opakowania nad `routes.ts`
+  (`urls.ts`), `slugify`, czysta funkcja `_redirects` (`redirects.ts`)
+  i integracja Astro `src/integrations/redirects.ts` zapisująca
+  `dist/_redirects` po buildzie (P17; sprawdzona: bez `data/` = 3 reguły
+  stałe, z danymi = krótkie adresy, stare ścieżki, dawne adresy; zły plik
+  wywraca build); w `scripts/sync/`: `normalize.ts` (słownik API jako
+  parametr — P15; daty ISO Europe/Warsaw bez biblioteki; ostrzeżenia
+  z kodami, numer oferty poza `message`), `sanitize.ts` (sanitize-html,
+  style → klasy), `locations.ts` (drzewo z nazw, liczniki, ulice, kolizje
+  slugów), `ledger.ts` (rejestr tylko dopisuje), `warnings.ts`,
+  `dictionary.ts`, `dates.ts`; `scripts/collect-legacy.ts`
+  (`pnpm redirects:legacy`, parser HTML listy) i `scripts/probe-redirects.ts`
+  (`pnpm test:redirects:prod`, nieuruchamiana w sesji). Fixture'y
+  w `tests/fixtures/raw/`: 4 rekordy syntetyczne z wartownikami w polach
+  zabronionych, słownik syntetyczny (prawdziwego `slownik-api.json` nie
+  było), 45 realnych tytułów bez numerów, 3 karty listy bez `tel:`
+  i `mailto:`. Zależności: `tsx`, `sanitize-html`, `htmlparser2`
+  (dependencies), `@types/sanitize-html`. Testy: 11 nowych plików unit
+  (154 testy razem), format/lint/typecheck/build zielone. Reguła
+  `data-sync.md` uzupełniona o mapę kodu i konwencje. DECYZJE W TRAKCIE:
+  (1) id sygnału umowy do W1/W2 NIE jest w repo — `normalize` dostaje go
+  w `agreementSignalId` (wartość pola z `FORBIDDEN_FIELDS`, zasada 4);
+  skąd go weźmie sync — do ustalenia w S2b/S2c. (2) `locations.json` bez
+  pola `version` (zasada „bez znaczników czasu w plikach commitowanych").
+  (3) `formatLocation` przyjmuje `streetType` (`ul.`/`os.`). (4) Wpisy
+  w `surroundings` to pełne nazwy pól (`recreationForest`), w `security`
+  i `media` — bez prefiksu. UWAGI dla S2b/S2c: `OfferSchema` wymaga
+  zdjęć z `r2Key/etag/width/height` (2.5); `data.ts` i `test:dist`
+  nie istnieją; integracja `_redirects` czyta `offers.json` lekkim
+  schematem (numer, typ, transakcja, slug) — pełną walidację ma dać
+  `data.ts`; `tests/helpers/offers.ts` nadal minimalny.
 
 ## Dokumentacja
 
