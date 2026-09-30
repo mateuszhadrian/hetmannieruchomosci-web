@@ -1,0 +1,362 @@
+{
+  "SW127970": {
+    "legacyId": 108,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-sprzedaz/poznan-chwaliszewo/108",
+      "/offer/offer/108",
+      "/offer/offer-print/108"
+    ]
+  },
+  "SW149199": {
+    "legacyId": 98,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-wynajem/poznan/98",
+      "/offer/offer/98",
+      "/offer/offer-print/98"
+    ]
+  },
+  "SW184702": {
+    "legacyId": 94,
+    "paths": [
+      "/nieruchomosci/dzialka-na-sprzedaz/kornik-bnin/94",
+      "/offer/offer/94",
+      "/offer/offer-print/94"
+    ]
+  },
+  "SW190492": {
+    "legacyId": 141,
+    "paths": [
+      "/nieruchomosci/dom-na-sprzedaz/przezmierowo/141",
+      "/offer/offer/141",
+      "/offer/offer-print/141"
+    ]
+  },
+  "SW199017": {
+    "legacyId": 89,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-wynajem/poznan-piatkowo/89",
+      "/offer/offer/89",
+      "/offer/offer-print/89"
+    ]
+  },
+  "SW209448": {
+    "legacyId": 106,
+    "paths": [
+      "/nieruchomosci/dzialka-na-sprzedaz/dworzyska/106",
+      "/offer/offer/106",
+      "/offer/offer-print/106"
+    ]
+  },
+  "SW216373": {
+    "legacyId": 97,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-sprzedaz/poznan-naramowice/97",
+      "/offer/offer/97",
+      "/offer/offer-print/97"
+    ]
+  },
+  "SW249207": {
+    "legacyId": 131,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-sprzedaz/poznan-wilda/131",
+      "/offer/offer/131",
+      "/offer/offer-print/131"
+    ]
+  },
+  "SW275503": {
+    "legacyId": 115,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-sprzedaz/poznan-staroleka/115",
+      "/offer/offer/115",
+      "/offer/offer-print/115"
+    ]
+  },
+  "SW298538": {
+    "legacyId": 136,
+    "paths": [
+      "/nieruchomosci/dom-na-sprzedaz/poznan-szczepankowo/136",
+      "/offer/offer/136",
+      "/offer/offer-print/136"
+    ]
+  },
+  "SW303888": {
+    "legacyId": 182,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-sprzedaz/poznan-wilda/182",
+      "/offer/offer/182",
+      "/offer/offer-print/182"
+    ]
+  },
+  "SW316696": {
+    "legacyId": 119,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-wynajem/poznan-winogrady/119",
+      "/offer/offer/119",
+      "/offer/offer-print/119"
+    ]
+  },
+  "SW323984": {
+    "legacyId": 114,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-sprzedaz/poznan-staroleka/114",
+      "/offer/offer/114",
+      "/offer/offer-print/114"
+    ]
+  },
+  "SW326650": {
+    "legacyId": 81,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-sprzedaz/poznan-staroleka/81",
+      "/offer/offer/81",
+      "/offer/offer-print/81"
+    ]
+  },
+  "SW332840": {
+    "legacyId": 88,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-wynajem/poznan-solacz/88",
+      "/offer/offer/88",
+      "/offer/offer-print/88"
+    ]
+  },
+  "SW349452": {
+    "legacyId": 144,
+    "paths": [
+      "/nieruchomosci/dom-na-sprzedaz/poznan-szczepankowo/144",
+      "/offer/offer/144",
+      "/offer/offer-print/144"
+    ]
+  },
+  "SW359559": {
+    "legacyId": 90,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-wynajem/poznan-rataje/90",
+      "/offer/offer/90",
+      "/offer/offer-print/90"
+    ]
+  },
+  "SW372150": {
+    "legacyId": 128,
+    "paths": [
+      "/nieruchomosci/lokal-obiekt-komercyjny-na-sprzedaz/poznan-wilda/128",
+      "/offer/offer/128",
+      "/offer/offer-print/128"
+    ]
+  },
+  "SW375366": {
+    "legacyId": 85,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-wynajem/poznan-naramowice/85",
+      "/offer/offer/85",
+      "/offer/offer-print/85"
+    ]
+  },
+  "SW381507": {
+    "legacyId": 100,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-sprzedaz/poznan-staroleka/100",
+      "/offer/offer/100",
+      "/offer/offer-print/100"
+    ]
+  },
+  "SW392603": {
+    "legacyId": 126,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-wynajem/poznan-grunwald/126",
+      "/offer/offer/126",
+      "/offer/offer-print/126"
+    ]
+  },
+  "SW426096": {
+    "legacyId": 111,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-wynajem/poznan-lazarz/111",
+      "/offer/offer/111",
+      "/offer/offer-print/111"
+    ]
+  },
+  "SW462699": {
+    "legacyId": 109,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-wynajem/poznan-naramowice/109",
+      "/offer/offer/109",
+      "/offer/offer-print/109"
+    ]
+  },
+  "SW484202": {
+    "legacyId": 82,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-wynajem/poznan-winogrady/82",
+      "/offer/offer/82",
+      "/offer/offer-print/82"
+    ]
+  },
+  "SW486462": {
+    "legacyId": 206,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-sprzedaz/poznan-winogrady/206",
+      "/offer/offer/206",
+      "/offer/offer-print/206"
+    ]
+  },
+  "SW498023": {
+    "legacyId": 101,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-sprzedaz/poznan-wilda/101",
+      "/offer/offer/101",
+      "/offer/offer-print/101"
+    ]
+  },
+  "SW509202": {
+    "legacyId": 95,
+    "paths": [
+      "/nieruchomosci/dom-na-sprzedaz/baranowo/95",
+      "/offer/offer/95",
+      "/offer/offer-print/95"
+    ]
+  },
+  "SW545693": {
+    "legacyId": 50,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-sprzedaz/poznan-rataje/50",
+      "/offer/offer/50",
+      "/offer/offer-print/50"
+    ]
+  },
+  "SW564562": {
+    "legacyId": 172,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-wynajem/poznan-piatkowo/172",
+      "/offer/offer/172",
+      "/offer/offer-print/172"
+    ]
+  },
+  "SW594869": {
+    "legacyId": 103,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-wynajem/poznan-centrum/103",
+      "/offer/offer/103",
+      "/offer/offer-print/103"
+    ]
+  },
+  "SW622811": {
+    "legacyId": 91,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-sprzedaz/poznan-wilda/91",
+      "/offer/offer/91",
+      "/offer/offer-print/91"
+    ]
+  },
+  "SW631266": {
+    "legacyId": 113,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-sprzedaz/poznan-staroleka/113",
+      "/offer/offer/113",
+      "/offer/offer-print/113"
+    ]
+  },
+  "SW640910": {
+    "legacyId": 86,
+    "paths": [
+      "/nieruchomosci/dom-na-sprzedaz/poznan-podolany/86",
+      "/offer/offer/86",
+      "/offer/offer-print/86"
+    ]
+  },
+  "SW669597": {
+    "legacyId": 107,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-sprzedaz/poznan-winogrady/107",
+      "/offer/offer/107",
+      "/offer/offer-print/107"
+    ]
+  },
+  "SW688942": {
+    "legacyId": 102,
+    "paths": [
+      "/nieruchomosci/dzialka-na-sprzedaz/szczodrochowo/102",
+      "/offer/offer/102",
+      "/offer/offer-print/102"
+    ]
+  },
+  "SW749560": {
+    "legacyId": 152,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-wynajem/poznan-piatkowo/152",
+      "/offer/offer/152",
+      "/offer/offer-print/152"
+    ]
+  },
+  "SW767044": {
+    "legacyId": 112,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-sprzedaz/poznan-staroleka/112",
+      "/offer/offer/112",
+      "/offer/offer-print/112"
+    ]
+  },
+  "SW795245": {
+    "legacyId": 96,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-wynajem/poznan-jezyce/96",
+      "/offer/offer/96",
+      "/offer/offer-print/96"
+    ]
+  },
+  "SW844035": {
+    "legacyId": 110,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-wynajem/poznan-naramowice/110",
+      "/offer/offer/110",
+      "/offer/offer-print/110"
+    ]
+  },
+  "SW909301": {
+    "legacyId": 99,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-wynajem/poznan-staroleka/99",
+      "/offer/offer/99",
+      "/offer/offer-print/99"
+    ]
+  },
+  "SW921603": {
+    "legacyId": 84,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-wynajem/poznan-piatkowo/84",
+      "/offer/offer/84",
+      "/offer/offer-print/84"
+    ]
+  },
+  "SW962717": {
+    "legacyId": 74,
+    "paths": [
+      "/nieruchomosci/dom-na-sprzedaz/rokietnica/74",
+      "/offer/offer/74",
+      "/offer/offer-print/74"
+    ]
+  },
+  "SW964944": {
+    "legacyId": 204,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-sprzedaz/poznan-winogrady/204",
+      "/offer/offer/204",
+      "/offer/offer-print/204"
+    ]
+  },
+  "SW967501": {
+    "legacyId": 93,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-wynajem/poznan-winiary/93",
+      "/offer/offer/93",
+      "/offer/offer-print/93"
+    ]
+  },
+  "SW977788": {
+    "legacyId": 210,
+    "paths": [
+      "/nieruchomosci/mieszkanie-na-wynajem/poznan-piatkowo/210",
+      "/offer/offer/210",
+      "/offer/offer-print/210"
+    ]
+  }
+}
