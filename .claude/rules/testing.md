@@ -4,11 +4,19 @@ Harness odziedziczony z szablonu projektu (konfiguracja
 Playwright/Vitest/axe/LHCI, 6 profili, helpery); liczby szablonu NIE
 obowiązują — baseline'y i budżety powstają od nowa w Etapie 3.
 
-STAN po S2a (Etap 2): unit — `contact-details`, `contact-form`,
-`fonts-subset`, `img`, `jsonld` oraz kontrakt danych ofert:
+STAN po S2b (Etap 2): unit — `contact-details`, `contact-form`,
+`fonts-subset`, `img` (warianty `card`/`hero`/`og`, tryby dev i fixture),
+`jsonld`, `media-r2` (kształt adresów; klucze R2 z `data/` i fixture
+przez `helpers/offers.ts` — skip, gdy danych nie ma; `CHECK_REMOTE_MEDIA=1`
+→ HEAD na oryginały, tylko poza ścieżką PR) oraz kontrakt danych ofert:
 `offers-allowlist`, `offers-schema`, `offers-status` (realne tytuły,
 8/21/13/3), `offers-format`, `offers-urls`, `sync-normalize`,
-`sync-sanitize`, `sync-locations`, `sync-ledger`, `redirects`,
+`sync-sanitize`, `sync-locations`, `sync-ledger`, `sync-esti-client`
+(atrapa fetch; słownik realny czytany SPOZA repo przez
+`readDictionaryForTests`, fallback syntetyczny), `sync-visibility`,
+`sync-photos` (JPEG-i generowane sharpem, atrapy fetch i R2), `sync-r2`
+(atrapa `send()`), `sync-maps` (7 ofert = 1 żądanie), `sync-report`
+(wyjście publiczne bez numerów i wartości kontrolnych), `redirects`,
 `collect-legacy` — wszystkie na danych SYNTETYCZNYCH z
 `tests/fixtures/raw/` (helper `tests/helpers/raw.ts`); e2e —
 `navigation`, `seo`, `a11y`, `smoke`, `not-found` na 8
@@ -22,6 +30,7 @@ z widokami (Etapy 4–5): widok dostaje WŁASNY spec e2e i visual.
 | Zmiana                                                                | Warstwa (komenda)                       |
 | --------------------------------------------------------------------- | --------------------------------------- |
 | `scripts/sync/**`, `src/lib/offers/**` (allow-lista, schemat, parser) | `pnpm test:unit` (kontrakt danych)      |
+| `src/lib/img.ts`, `MEDIA_BASE`, `IMG_VARIANTS`                        | `pnpm test:unit` (`img`, `media-r2`)    |
 | `src/i18n/**`, `src/lib/*.ts` (img, routes, contact-form, jsonld, …)  | `pnpm test:unit`                        |
 | `scripts/subset-fonts.mjs`, `src/styles/fonts.css`                    | `pnpm test:unit` (kontrakt subsetów)    |
 | `src/scripts/**`, navbar, stopka, wyszukiwarka, galeria, formularze   | `pnpm build && pnpm test:e2e`           |

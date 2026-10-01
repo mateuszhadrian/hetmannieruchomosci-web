@@ -28,6 +28,11 @@ export const WARNING_CODES = {
   STREET_TYPE: "nieznany typ ulicy",
   /** kolizja slugu lokalizacji — dopisany sufiks */
   SLUG_COLLISION: "kolizja slugu lokalizacji",
+  /** zdjęcia nie udało się pobrać — zostaje poprzednia kopia albo
+   *  zdjęcie wypada z oferty (2.5) */
+  PHOTO_FETCH: "nie udało się pobrać zdjęcia",
+  /** mapy nie udało się pobrać — oferta bez mapy do następnego syncu (2.6) */
+  MAP_FETCH: "nie udało się pobrać mapy",
 } as const;
 
 export type WarningCode = keyof typeof WARNING_CODES;

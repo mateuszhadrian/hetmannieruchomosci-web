@@ -24,6 +24,10 @@ export default defineConfig({
 
   vite: {
     plugins: [tailwindcss()],
+    // `MEDIA_SOURCE=fixture` (skrypt `build:visual`) przełącza imgAt() na
+    // lokalne kopie zdjęć fixture'u — bez prefiksu PUBLIC_ Vite nie
+    // wpuściłby zmiennej do import.meta.env.
+    envPrefix: ["PUBLIC_", "MEDIA_SOURCE"],
     build: {
       // Fonty NIGDY nie wchodzą do CSS jako base64. Domyślny
       // assetsInlineLimit Vite (4096 B) wciągnąłby polski subset Manrope

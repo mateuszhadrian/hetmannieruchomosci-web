@@ -71,7 +71,7 @@ export const PhotoDraftSchema = z.strictObject({
 
 /** Zdjęcie pełne (po kroku 2.5 syncu). */
 export const OfferPhotoSchema = PhotoDraftSchema.extend({
-  /** offers/{crmId}/{id}-{etagHash}.jpg */
+  /** offers/{crmId}/{id}-{sha256[:8]}.jpg (wzorzec: `PHOTO_R2_KEY` niżej) */
   r2Key: z.string().regex(/^offers\/\d+\/\d+-[0-9a-f]{8}\.jpg$/),
   etag: z.string().min(1),
   width: z.number().int().positive(),
@@ -233,6 +233,58 @@ export type OfferPhoto = z.infer<typeof OfferPhotoSchema>;
 export type PhotoDraft = z.infer<typeof PhotoDraftSchema>;
 export type OfferLocation = z.infer<typeof OfferLocationSchema>;
 export type NormalizedOffer = z.infer<typeof NormalizedOfferSchema>;
+
+// ── Manifest zdjęć (`data/photos.json`, part3 §3.4 z odstępstwem) ───────
+/** sha256 treści w hex */
+const sha256Hex = z.string().regex(/^[0-9a-f]{64}$/);
+/** Klucz R2 zdjęcia: offers/{crmId}/{photoId}-{sha256[:8]}.jpg */
+export const PHOTO_R2_KEY = /^offers\/\d+\/\d+-[0-9a-f]{8}\.jpg$/;
+
+/** Wpis manifestu per adres źródłowy zdjęcia. Bez `seenAt` — jedyna data
+ *  to `goneSince`: od kiedy zdjęcia nie ma w widocznych ofertach (po 30
+ *  dniach obiekt w R2 jest kasowany). */
+export const PhotoManifestEntrySchema = z.strictObject({
+  etag: z.string().min(1),
+  bytes: nonNegInt,
+  sha256: sha256Hex,
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+  r2Key: z.string().regex(PHOTO_R2_KEY),
+  goneSince: isoDate.optional(),
+  /** poprzednie klucze tego zdjęcia (zmiana treści = nowy klucz); stary
+   *  obiekt żyje jeszcze 30 dni, bo cache wariantów może go wskazywać */
+  replaced: z
+    .array(
+      z.strictObject({
+        r2Key: z.string().regex(PHOTO_R2_KEY),
+        goneSince: isoDate,
+      }),
+    )
+    .optional(),
+});
+export const PhotosFileSchema = z.record(z.url(), PhotoManifestEntrySchema);
+export type PhotoManifestEntry = z.infer<typeof PhotoManifestEntrySchema>;
+export type PhotoManifest = z.infer<typeof PhotosFileSchema>;
+
+// ── Manifest map (`data/maps.json`, D36) ────────────────────────────────
+/** Klucz R2 mapy: maps/{hash}.webp (hash z klucza współrzędnych i trybu
+ *  znacznika) */
+export const MAP_R2_KEY = /^maps\/[0-9a-f]{16}\.webp$/;
+/** Klucz współrzędnych `lat,lon` z pięcioma miejscami (`coordKey()`). */
+export const COORD_KEY = /^-?\d{1,2}\.\d{5},-?\d{1,3}\.\d{5}$/;
+
+export const MapEntrySchema = z.strictObject({
+  r2Key: z.string().regex(MAP_R2_KEY),
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+  goneSince: isoDate.optional(),
+});
+export const MapsFileSchema = z.record(
+  z.string().regex(COORD_KEY),
+  MapEntrySchema,
+);
+export type MapEntry = z.infer<typeof MapEntrySchema>;
+export type MapManifest = z.infer<typeof MapsFileSchema>;
 
 // ── Drzewo lokalizacji (`data/locations.json`, part3 §4.2) ──────────────
 export const LOCATION_LEVELS = [
