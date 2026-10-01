@@ -73,3 +73,25 @@ export function listPath(
 export function shortPaths(number: string): [string, string] {
   return [`/${number.toUpperCase()}`, `/${number.toLowerCase()}`];
 }
+
+export interface OfferRoutes {
+  /** listy typ×transakcja oraz typ×transakcja×lokalizacja (tylko z ≥ 1
+   *  ofertą), posortowane */
+  lists: string[];
+  /** detale w kolejności ofert */
+  details: string[];
+}
+
+/** Komplet adresów ofert do zbudowania (SSG) z danych — używany przez
+ *  stronę (`getStaticPaths`) i testy (sitemapa, smoke). */
+export function offerRoutes(offers: readonly OfferAddressable[]): OfferRoutes {
+  const lists = new Set<string>();
+  for (const offer of offers) {
+    lists.add(listPath(offer, { withLocation: false }));
+    lists.add(listPath(offer));
+  }
+  return {
+    lists: [...lists].sort(),
+    details: offers.map((o) => offerPath(o)),
+  };
+}

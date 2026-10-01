@@ -48,3 +48,37 @@ describe("urls", () => {
     expect(shortPaths("SW486462")).toEqual(["/SW486462", "/sw486462"]);
   });
 });
+
+describe("offerRoutes() i offerStaticPaths()", async () => {
+  const { offerRoutes } = await import("../../src/lib/offers/urls");
+  const { offerStaticPaths, restParam } =
+    await import("../../src/lib/offers/static-paths");
+  const { syntheticFullOffers } = await import("../helpers/raw");
+  const offers = syntheticFullOffers();
+
+  it("listy: typ×transakcja i typ×transakcja×lokalizacja, bez duplikatów; detale per oferta", () => {
+    const routes = offerRoutes(offers);
+    expect(routes.details).toHaveLength(offers.length);
+    expect(new Set(routes.lists).size).toBe(routes.lists.length);
+    expect(routes.lists).toContain("/oferty/mieszkanie-na-sprzedaz/");
+    expect(routes.lists).toContain(
+      "/oferty/mieszkanie-na-sprzedaz/poznan-winogrady/",
+    );
+    expect(routes.lists.length).toBeGreaterThan(routes.details.length / 2);
+  });
+
+  it("static paths: każda lista ma ≥ 1 ofertę, parametr bez prefiksu i ukośników", () => {
+    const paths = offerStaticPaths(offers);
+    expect(paths.filter((p) => p.props.kind === "detail")).toHaveLength(
+      offers.length,
+    );
+    for (const p of paths) {
+      expect(p.params.path).not.toMatch(/^\/|\/$/);
+      if (p.props.kind === "list")
+        expect(p.props.offers.length).toBeGreaterThan(0);
+    }
+    expect(restParam("/oferty/dom-na-sprzedaz/baranowo/sw900003/")).toBe(
+      "dom-na-sprzedaz/baranowo/sw900003",
+    );
+  });
+});
