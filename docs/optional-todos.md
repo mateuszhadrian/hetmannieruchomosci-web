@@ -9,7 +9,7 @@
 
 | Co                                                        | Jak często                        | Po co                                                                                                  |
 | --------------------------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Kontrola harmonogramu nocnego syncu                       | raz w miesiącu                    | harmonogram w repo publicznym bywa wyłączany po dłuższym braku aktywności; sprawdź, czy workflow biega |
+| Kontrola harmonogramu nocnego syncu                       | raz w miesiącu                    | harmonogram w repo publicznym bywa wyłączany po dłuższym braku aktywności; sprawdź, czy workflow biega; docelowo sekret `HEARTBEAT_URL` (usługa do wyboru) |
 | Rotacja tokenu konta technicznego (bota syncu)            | przed datą wygaśnięcia tokenu     | wygasły token = sync nie zapisze danych; strona stoi na ostatniej dobrej wersji                        |
 | Przegląd zużycia transformacji obrazów                    | raz w miesiącu, po każdym dużym przyroście ofert | darmowy próg jest wspólny dla całego konta; po przekroczeniu nowe rozmiary zdjęć przestają powstawać |
 | Kopia zapasowa zasobnika mediów                           | raz na kwartał                    | oryginały zdjęć ofert są archiwum niezależnym od źródła danych                                         |
@@ -24,7 +24,7 @@
 | Realne budżety Lighthouse (dziś progi luźne, tymczasowe)  | Etap 3                                          |
 | Baseline'y wizualne (linux + darwin)                      | Etap 3                                          |
 | Klucz publiczny Turnstile (dziś pusty)                    | Etap 5                                          |
-| Host mediów `MEDIA_BASE` (dziś pusty)                     | Etap 2                                          |
+| Przepięcie hosta mediów `MEDIA_BASE` na domenę klientki (dziś host tymczasowy) | Etap 8                                     |
 | Dopasowanie modułu ruchu do reveali z designu             | pierwszy widok z animacją wejścia (Etap 4)      |
 | Re-enkodowanie `hero.webm` (2,0 MB wobec 0,9 MB w MP4)    | Etap 4.4, razem z osadzeniem wideo              |
 | Panel treści, blog, przełącznik „Praca" w panelu          | faza 2 — poza zakresem tej budowy               |

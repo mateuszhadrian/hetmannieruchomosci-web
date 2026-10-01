@@ -4,7 +4,7 @@ Harness odziedziczony z szablonu projektu (konfiguracja
 Playwright/Vitest/axe/LHCI, 6 profili, helpery); liczby szablonu NIE
 obowiązują — baseline'y i budżety powstają od nowa w Etapie 3.
 
-STAN po S2b (Etap 2): unit — `contact-details`, `contact-form`,
+STAN po S2c (Etap 2): unit — `contact-details`, `contact-form`,
 `fonts-subset`, `img` (warianty `card`/`hero`/`og`, tryby dev i fixture),
 `jsonld`, `media-r2` (kształt adresów; klucze R2 z `data/` i fixture
 przez `helpers/offers.ts` — skip, gdy danych nie ma; `CHECK_REMOTE_MEDIA=1`
@@ -17,25 +17,37 @@ przez `helpers/offers.ts` — skip, gdy danych nie ma; `CHECK_REMOTE_MEDIA=1`
 `sync-photos` (JPEG-i generowane sharpem, atrapy fetch i R2), `sync-r2`
 (atrapa `send()`), `sync-maps` (7 ofert = 1 żądanie), `sync-report`
 (wyjście publiczne bez numerów i wartości kontrolnych), `redirects`,
-`collect-legacy` — wszystkie na danych SYNTETYCZNYCH z
-`tests/fixtures/raw/` (helper `tests/helpers/raw.ts`); e2e —
-`navigation`, `seo`, `a11y`, `smoke`, `not-found` na 8
-trasach-szkieletach; visual — `chrome` i `not-found` (BEZ baseline'ów —
-powstają w Etapie 3). Fixture ofert (`tests/fixtures/offers/`)
-i katalog `data/` jeszcze nie istnieją. Specy widoków powstają razem
-z widokami (Etapy 4–5): widok dostaje WŁASNY spec e2e i visual.
+`collect-legacy`, `sync-index` (orkiestracja w trybie plikowym, katalogi
+tymczasowe, bezpieczniki, dry-run, CLI i `GITHUB_OUTPUT`),
+`sync-fixtures` (`buildFixture()` do katalogu tymczasowego, nadpisania,
+kopie WebP), `offers-data` (`data.ts`: brak katalogu, pusta tablica,
+błędny rekord), `offers-time-rules`, `offers-contract` (data/ ORAZ
+fixture, skip bez danych) — wszystkie na danych SYNTETYCZNYCH z
+`tests/fixtures/raw/` (helpery `tests/helpers/raw.ts`, w tym
+`syntheticFullOffers()`); dist — `tests/dist/dist.test.ts`
+(`pnpm test:dist`, osobny `vitest.dist.config.ts`, wymaga `pnpm build`);
+e2e — `navigation`, `seo` (sitemapa = trasy statyczne + trasy ofert
+z danych), `a11y`, `smoke`, `not-found`, `offers-skeleton` (detal
+i lista pierwszej oferty z `data/`, skip przy zerze ofert; `/{NUMER}` →
+301 tylko z `BASE_URL`); visual — `chrome` i `not-found` (BEZ
+baseline'ów — powstają w Etapie 3). Fixture ofert ma dotąd tylko
+`selection.json` (`pnpm fixtures:build` uruchamia Mateusz), `data/` tylko
+`legacy-redirects.json` (pierwszy sync — 2.11). Specy widoków powstają
+razem z widokami (Etapy 4–5): widok dostaje WŁASNY spec e2e i visual.
 
 ## Co zmieniasz → co uruchamiasz
 
-| Zmiana                                                                | Warstwa (komenda)                       |
-| --------------------------------------------------------------------- | --------------------------------------- |
-| `scripts/sync/**`, `src/lib/offers/**` (allow-lista, schemat, parser) | `pnpm test:unit` (kontrakt danych)      |
-| `src/lib/img.ts`, `MEDIA_BASE`, `IMG_VARIANTS`                        | `pnpm test:unit` (`img`, `media-r2`)    |
-| `src/i18n/**`, `src/lib/*.ts` (img, routes, contact-form, jsonld, …)  | `pnpm test:unit`                        |
-| `scripts/subset-fonts.mjs`, `src/styles/fonts.css`                    | `pnpm test:unit` (kontrakt subsetów)    |
-| `src/scripts/**`, navbar, stopka, wyszukiwarka, galeria, formularze   | `pnpm build && pnpm test:e2e`           |
-| Każda zmiana wyglądu                                                  | `pnpm build:visual && pnpm test:visual` |
-| Przed release                                                         | pełne `pnpm test` + `/release-check`    |
+| Zmiana                                                                  | Warstwa (komenda)                                                                 |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `scripts/sync/**`, `src/lib/offers/**` (allow-lista, schemat, parser)   | `pnpm test:unit` (kontrakt danych)                                                |
+| `src/lib/img.ts`, `MEDIA_BASE`, `IMG_VARIANTS`                          | `pnpm test:unit` (`img`, `media-r2`)                                              |
+| `src/lib/offers/data.ts`, `redirects.ts`, integracje, `[...path].astro` | `pnpm test:unit && pnpm build && pnpm test:dist`                                  |
+| `scripts/sync/pipeline.ts`, `index.ts`, `fixtures.ts`, `sync.yml`       | `pnpm test:unit` (`sync-index`, `sync-fixtures`); workflow NIE uruchamiać w sesji |
+| `src/i18n/**`, `src/lib/*.ts` (img, routes, contact-form, jsonld, …)    | `pnpm test:unit`                                                                  |
+| `scripts/subset-fonts.mjs`, `src/styles/fonts.css`                      | `pnpm test:unit` (kontrakt subsetów)                                              |
+| `src/scripts/**`, navbar, stopka, wyszukiwarka, galeria, formularze     | `pnpm build && pnpm test:e2e`                                                     |
+| Każda zmiana wyglądu                                                    | `pnpm build:visual && pnpm test:visual`                                           |
+| Przed release                                                           | pełne `pnpm test` + `/release-check`                                              |
 
 ## Zasady twarde
 
@@ -60,6 +72,10 @@ z widokami (Etapy 4–5): widok dostaje WŁASNY spec e2e i visual.
   są przechwytywane (`page.route`) i zastępowane zaślepką. Test mediów
   zdalnych (`CHECK_REMOTE_MEDIA=1`) biega tylko poza ścieżką PR
   i w `/release-check` (zewnętrzna sieć = flaky).
+- **`test:dist` to warstwa na ZBUDOWANYM `dist/`** (po `pnpm build`
+  z danymi produkcyjnymi): bramka syncu PRZED commitem bota i job
+  `quality`. Skan nazw z `FORBIDDEN_FIELDS` dotyczy HTML i JSON; przy
+  zerze ofert sprawdza same reguły stałe `_redirects`.
 - **Test NIE MOŻE wywracać się na danych z CRM.** Oferty czyta się
   wyłącznie przez `tests/helpers/offers.ts` — nigdy gołym
   `readFileSync`/`readdirSync` na `data/`: pliku może nie być, a goły
