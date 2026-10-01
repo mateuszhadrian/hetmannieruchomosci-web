@@ -1,0 +1,1082 @@
+{
+  "https://static.esticrm.pl/public/images/offers/11355/10638119/92083793_max.jpg": {
+    "etag": "\"682b0542-7bb3d\"",
+    "bytes": 506685,
+    "sha256": "5375ae7edfe1cb0c98996f0efe532fe8ca7b477f4671f6d2b1581af7335498c7",
+    "width": 1200,
+    "height": 801,
+    "r2Key": "offers/10638119/92083793-5375ae7e.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/10638119/92083796_max.jpg": {
+    "etag": "\"682b0542-73c79\"",
+    "bytes": 474233,
+    "sha256": "7acdb64c4a35c948301a1aa3e821a9fff1c0ae12303992958e0e2a468dcd91bd",
+    "width": 1200,
+    "height": 670,
+    "r2Key": "offers/10638119/92083796-7acdb64c.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/10638119/92083799_max.jpg": {
+    "etag": "\"682b0542-3d713\"",
+    "bytes": 251667,
+    "sha256": "8f0f15828ef86ae0ecbc8e8d083109cb155add87a736e983bf7c3d1600bd526f",
+    "width": 900,
+    "height": 1200,
+    "r2Key": "offers/10638119/92083799-8f0f1582.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/10638119/92083802_max.jpg": {
+    "etag": "\"682b0542-463d3\"",
+    "bytes": 287699,
+    "sha256": "8e231495bf5117031e1770f13c0a8d2fb84c60ca4972ff50c8a988ba55ff9b96",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/10638119/92083802-8e231495.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/10638119/92083805_max.jpg": {
+    "etag": "\"682b0542-40fe7\"",
+    "bytes": 266215,
+    "sha256": "360d84bb700cb8bbd456ac80f553a46fca73b33b5f42322f96aa60783cdf4e9d",
+    "width": 1200,
+    "height": 901,
+    "r2Key": "offers/10638119/92083805-360d84bb.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/10638119/92083808_max.jpg": {
+    "etag": "\"682b0542-35cc2\"",
+    "bytes": 220354,
+    "sha256": "e16091a36876049a5c08de6928c568e34005978820360bc675cddd793db5c0b1",
+    "width": 1200,
+    "height": 901,
+    "r2Key": "offers/10638119/92083808-e16091a3.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/10638119/92083811_max.jpg": {
+    "etag": "\"682b0542-3d57a\"",
+    "bytes": 251258,
+    "sha256": "f247bd551baa35a9e8311670a00722b68b4410b4d856bab86455baba99367187",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/10638119/92083811-f247bd55.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/10638119/92083814_max.jpg": {
+    "etag": "\"682b0542-44469\"",
+    "bytes": 279657,
+    "sha256": "427fca861cfba368a529da0e7ad69b70649c84847edf3bc8d203b05dffb88d45",
+    "width": 1200,
+    "height": 901,
+    "r2Key": "offers/10638119/92083814-427fca86.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/10638119/92083817_max.jpg": {
+    "etag": "\"682b0542-433a0\"",
+    "bytes": 275360,
+    "sha256": "ac1456e2d741c076076e6ae95e3811c6548e7a3807a1bd2ed07437d00700337d",
+    "width": 1200,
+    "height": 901,
+    "r2Key": "offers/10638119/92083817-ac1456e2.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/10638119/92083820_max.jpg": {
+    "etag": "\"682b0542-8d51e\"",
+    "bytes": 578846,
+    "sha256": "738663bb794a5fd5f027ee3d45f7cc9b8304978d46fce9e3b703bffd2baf894f",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/10638119/92083820-738663bb.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/10638119/92083823_max.jpg": {
+    "etag": "\"682b0542-436ff\"",
+    "bytes": 276223,
+    "sha256": "7d96c0d07380553b6f84c8bcbd9395e76e302eddbb7f742ba1d6676a239c90cf",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/10638119/92083823-7d96c0d0.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/10638119/92083826_max.jpg": {
+    "etag": "\"682b0542-3ea3d\"",
+    "bytes": 256573,
+    "sha256": "1f35b7fbd8bf55a0820a5b5250eb883c1188fbb4d6fdaaa1ec4a7d2ccea8bce3",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/10638119/92083826-1f35b7fb.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/10638119/92083829_max.jpg": {
+    "etag": "\"682b0542-3ccad\"",
+    "bytes": 249005,
+    "sha256": "a309a721c2402dec71127165821ce44457e360b4f783c4964a0be4dab9c6d79a",
+    "width": 900,
+    "height": 1200,
+    "r2Key": "offers/10638119/92083829-a309a721.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/12308189/112531307_max.jpg": {
+    "etag": "\"6a7b6c99-23400\"",
+    "bytes": 144384,
+    "sha256": "a6f82dfd2613abb775afa159f6b4734375eec6d510a03689b81d8b4e828a59e0",
+    "width": 1200,
+    "height": 799,
+    "r2Key": "offers/12308189/112531307-a6f82dfd.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/12308189/112531316_max.jpg": {
+    "etag": "\"6a7b6c98-23434\"",
+    "bytes": 144436,
+    "sha256": "d4c136b2ecd6c2be317bcd3f17381f63e7aff123ff4405c922099863e6df7934",
+    "width": 1200,
+    "height": 799,
+    "r2Key": "offers/12308189/112531316-d4c136b2.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/12308189/112531322_max.jpg": {
+    "etag": "\"6a7b6c97-24c32\"",
+    "bytes": 150578,
+    "sha256": "0bfc9499e85fdaf762b26d12dbcb8c569718290060839c1704544b6842a0b007",
+    "width": 1200,
+    "height": 799,
+    "r2Key": "offers/12308189/112531322-0bfc9499.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/12308189/112531331_max.jpg": {
+    "etag": "\"6a7b6c96-25722\"",
+    "bytes": 153378,
+    "sha256": "2a7b2101dc791e4a95c9e98c6559aa06c58aeb86e7425b4f0f38ae722c5d2d2c",
+    "width": 1200,
+    "height": 799,
+    "r2Key": "offers/12308189/112531331-2a7b2101.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/12308189/112531343_max.jpg": {
+    "etag": "\"6a7b6c99-18e32\"",
+    "bytes": 101938,
+    "sha256": "1367f226c95e75a640bed44dc3bc9526428db0a1030197f35690916d59faf206",
+    "width": 1200,
+    "height": 799,
+    "r2Key": "offers/12308189/112531343-1367f226.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/12308189/112531352_max.jpg": {
+    "etag": "\"6a7b6c9a-13c1b\"",
+    "bytes": 80923,
+    "sha256": "754366cdcabed727d4296e35d4565c3a4a3e2646ab4f7dd36bedf4aa827379a1",
+    "width": 1200,
+    "height": 799,
+    "r2Key": "offers/12308189/112531352-754366cd.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/12308189/112531361_max.jpg": {
+    "etag": "\"6a7b6c9b-25a3e\"",
+    "bytes": 154174,
+    "sha256": "32cc6cb15e3b233de91429f33b44f9cdd7e830ce49e3012c8aa3081b3246567e",
+    "width": 1200,
+    "height": 799,
+    "r2Key": "offers/12308189/112531361-32cc6cb1.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/12308189/112531370_max.jpg": {
+    "etag": "\"6a7b6c9c-3d028\"",
+    "bytes": 249896,
+    "sha256": "9cbf4eebb882eab9a886adb431628411b7373eb2c97841f4c55408055709bb42",
+    "width": 1200,
+    "height": 799,
+    "r2Key": "offers/12308189/112531370-9cbf4eeb.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/12308189/112531382_max.jpg": {
+    "etag": "\"6a7b6c9c-63555\"",
+    "bytes": 406869,
+    "sha256": "5f09e04433afe44cedb07846402722ce3b6768c64f8d1107ed090acd696b861d",
+    "width": 1200,
+    "height": 801,
+    "r2Key": "offers/12308189/112531382-5f09e044.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/12308189/112531391_max.jpg": {
+    "etag": "\"6a7b6c9d-606d5\"",
+    "bytes": 394965,
+    "sha256": "15d744921c05d9b9fa369e0442e533a5786d91a72b91e14be0f7b2c7b89ae6fa",
+    "width": 1200,
+    "height": 798,
+    "r2Key": "offers/12308189/112531391-15d74492.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/12308189/112636538_max.jpg": {
+    "etag": "\"6a7c3209-50172\"",
+    "bytes": 328050,
+    "sha256": "07f5e7d084d9960a349c735512240f8058a2597e8357cef27ed6598ffb3f04c0",
+    "width": 1200,
+    "height": 798,
+    "r2Key": "offers/12308189/112636538-07f5e7d0.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/12308189/112636583_max.jpg": {
+    "etag": "\"6a7c320f-5b365\"",
+    "bytes": 373605,
+    "sha256": "98354bffd2cf4662545c8248afbf930bbd7045b3b47d6b875071c9e09babe9fc",
+    "width": 1200,
+    "height": 800,
+    "r2Key": "offers/12308189/112636583-98354bff.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6274776/46189131_max.jpg": {
+    "etag": "\"66d24b5f-3b0ae\"",
+    "bytes": 241838,
+    "sha256": "5a21d638fa8fb4f9210a7ea6d0aeb41be1796650dfb0f728a65b19e4eb97000c",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6274776/46189131-5a21d638.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6274776/46189137_max.jpg": {
+    "etag": "\"66d24b60-36c72\"",
+    "bytes": 224370,
+    "sha256": "a3be7aa8acdb1e11be6042e144bccb98b2aeea5be9e35394ec979604c9802b7d",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6274776/46189137-a3be7aa8.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6274776/46189143_max.jpg": {
+    "etag": "\"66d24b5e-4cd00\"",
+    "bytes": 314624,
+    "sha256": "7dcc491e5f63eb4fe404c56b122d8996eba62e8789c83bb2bbabf882597392d2",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6274776/46189143-7dcc491e.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6274776/46189146_max.jpg": {
+    "etag": "\"66d24b5f-44277\"",
+    "bytes": 279159,
+    "sha256": "f636cb0f117fad4ee87eaf4f07f64d46fb31c5aa5404b302c3f191cb17a4b33f",
+    "width": 900,
+    "height": 1200,
+    "r2Key": "offers/6274776/46189146-f636cb0f.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6274776/46189152_max.jpg": {
+    "etag": "\"66d24b60-43da1\"",
+    "bytes": 277921,
+    "sha256": "8f3563822ae1d7a9e721b5a0b2b17363dc0fbb72ea6f5f4211155e1c33a7de26",
+    "width": 900,
+    "height": 1200,
+    "r2Key": "offers/6274776/46189152-8f356382.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6274776/46189155_max.jpg": {
+    "etag": "\"66d24b5d-4b0c7\"",
+    "bytes": 307399,
+    "sha256": "6c9c3f136c43a5bfea5d16e046a6b3ffe1c39d88230ddea356b3bde0586d1e35",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6274776/46189155-6c9c3f13.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6274776/46189164_max.jpg": {
+    "etag": "\"66d24b61-4f86a\"",
+    "bytes": 325738,
+    "sha256": "91571928bb6467e24b86021b00dc841c4eefcf46903a1350a5a098d6a194adfa",
+    "width": 900,
+    "height": 1200,
+    "r2Key": "offers/6274776/46189164-91571928.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6274776/46189167_max.jpg": {
+    "etag": "\"66d24b61-38bb4\"",
+    "bytes": 232372,
+    "sha256": "28d0901f8345fe09f1417d9a5d1cb8a16800e93f45c37fa81db95d0549c003dc",
+    "width": 900,
+    "height": 1200,
+    "r2Key": "offers/6274776/46189167-28d0901f.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6274776/46189173_max.jpg": {
+    "etag": "\"66d24b5d-373b4\"",
+    "bytes": 226228,
+    "sha256": "1de975336a7a5f875e656f7b078aae0b8e4aef6141c2b327b56d130ccd0e753f",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6274776/46189173-1de97533.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6274776/46189179_max.jpg": {
+    "etag": "\"66d24b5c-35a1c\"",
+    "bytes": 219676,
+    "sha256": "b7054ec5fc0099e5bdd191dc5c476e8b059386df2586f97c3931c761ec941053",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6274776/46189179-b7054ec5.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6274776/46189281_max.jpg": {
+    "etag": "\"66d24b62-2b7f9\"",
+    "bytes": 178169,
+    "sha256": "79021dd0c266f0a4e5a3cebed7429921e72cf34cb22ab1e6938acb1859d2af12",
+    "width": 850,
+    "height": 563,
+    "r2Key": "offers/6274776/46189281-79021dd0.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6274776/46189284_max.jpg": {
+    "etag": "\"66d24b62-28571\"",
+    "bytes": 165233,
+    "sha256": "815879215b4796c897d6c2a8cb0c4afebb8be1e8b1d4a846531e2e4588f35240",
+    "width": 770,
+    "height": 510,
+    "r2Key": "offers/6274776/46189284-81587921.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6329577/46191360_max.jpg": {
+    "etag": "\"66d24b85-3d3ad\"",
+    "bytes": 250797,
+    "sha256": "6523218de514429bd8f73a523d5188d4c9c523f450afedcf882f09b659512073",
+    "width": 1200,
+    "height": 566,
+    "r2Key": "offers/6329577/46191360-6523218d.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6329577/46191366_max.jpg": {
+    "etag": "\"66d24b87-6bb1c\"",
+    "bytes": 441116,
+    "sha256": "d7a2c189254ea131d24c276f7fbba183e504b9452582ddb89ea2fbe65fd8fb05",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6329577/46191366-d7a2c189.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6329577/46191375_max.jpg": {
+    "etag": "\"66d24b88-560f7\"",
+    "bytes": 352503,
+    "sha256": "b60391c720f795667a2e902ef489a63d65bac41726af28d2ced2c65a1f146de5",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6329577/46191375-b60391c7.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6329577/46191384_max.jpg": {
+    "etag": "\"66d24b88-67f2f\"",
+    "bytes": 425775,
+    "sha256": "9cab3fac071e9f2275ca40ddba3c717ec9caee998692bd376dd93bf1dd2bc9de",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6329577/46191384-9cab3fac.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6329577/46191393_max.jpg": {
+    "etag": "\"66d24b86-44736\"",
+    "bytes": 280374,
+    "sha256": "6466041f8b0cff3aefc73e7757d333dc73edbb5326cd162b01dc5e871f503208",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6329577/46191393-6466041f.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6329577/46191399_max.jpg": {
+    "etag": "\"66d24b86-54d44\"",
+    "bytes": 347460,
+    "sha256": "5e705942ce33b9076e6933998abb2800470e537da38ea32759047ceacc22da8d",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6329577/46191399-5e705942.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6329577/46191486_max.jpg": {
+    "etag": "\"66d24b89-3ed5d\"",
+    "bytes": 257373,
+    "sha256": "44e0a7b85330bfcd207fd5a351650b7a80912948ef25283e6998fdb6338186ab",
+    "width": 1200,
+    "height": 904,
+    "r2Key": "offers/6329577/46191486-44e0a7b8.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6329577/46191501_max.jpg": {
+    "etag": "\"66d24b89-35cdc\"",
+    "bytes": 220380,
+    "sha256": "5929dd8fea4d2e43d7d9fbce4da5bfc14a8208d42d7be7835e1a2a8a6c50c3d3",
+    "width": 1200,
+    "height": 940,
+    "r2Key": "offers/6329577/46191501-5929dd8f.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6329577/46191504_max.jpg": {
+    "etag": "\"66d24b8a-333b2\"",
+    "bytes": 209842,
+    "sha256": "11acb03abfa242890229c8f52d676ac3928414b7dceccf3029d7ca1b73c5d2d5",
+    "width": 1200,
+    "height": 964,
+    "r2Key": "offers/6329577/46191504-11acb03a.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6329577/46191507_max.jpg": {
+    "etag": "\"66d24b8a-351de\"",
+    "bytes": 217566,
+    "sha256": "cbbd1b16b5c07bd98d86340b0c8bae8338ebc3cff679fa1207f9e7d735b0cddb",
+    "width": 1200,
+    "height": 937,
+    "r2Key": "offers/6329577/46191507-cbbd1b16.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6329577/46191513_max.jpg": {
+    "etag": "\"66d24b8b-266a6\"",
+    "bytes": 157350,
+    "sha256": "fcddfa2b08390e61bd514aed213067ba040c43bf023d5479e5c5261834a0af26",
+    "width": 1200,
+    "height": 894,
+    "r2Key": "offers/6329577/46191513-fcddfa2b.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6329577/46191516_max.jpg": {
+    "etag": "\"66d24b8b-34834\"",
+    "bytes": 215092,
+    "sha256": "dd546e759670230f56289d21b28616974c3076ee37017d79d6cb93eb87b7ef4c",
+    "width": 1200,
+    "height": 844,
+    "r2Key": "offers/6329577/46191516-dd546e75.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6329628/63852254_max.jpg": {
+    "etag": "\"66d24b8e-33b77\"",
+    "bytes": 211831,
+    "sha256": "13a7ffb1ad22cd4cc9faa531de6a0956e929c8145b3a07217ad10b817cece4d7",
+    "width": 900,
+    "height": 1200,
+    "r2Key": "offers/6329628/63852254-13a7ffb1.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6329628/63852266_max.jpg": {
+    "etag": "\"66d24b8d-3f988\"",
+    "bytes": 260488,
+    "sha256": "d937a2aeca8457df16ec51ec25850546018ac0081b05a6a035d56c173874e6d8",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6329628/63852266-d937a2ae.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6329628/63852278_max.jpg": {
+    "etag": "\"66d24b8e-3fdc8\"",
+    "bytes": 261576,
+    "sha256": "dcf7864333b2033096d8a234435a9fd2fb48027f0b9321189b194a805ccc92fe",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6329628/63852278-dcf78643.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6329628/63852290_max.jpg": {
+    "etag": "\"66d24b8d-3e44f\"",
+    "bytes": 255055,
+    "sha256": "5c50b7d75fd1db0f93c9f018348595e9d91441fc535d9d5dfdf3c1a0e38c327f",
+    "width": 1200,
+    "height": 902,
+    "r2Key": "offers/6329628/63852290-5c50b7d7.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6329628/63852311_max.jpg": {
+    "etag": "\"66d24b8c-4d046\"",
+    "bytes": 315462,
+    "sha256": "5d16a1f0c2daeb25f153a8eee521cbc9676a6fb600bc3d2dfe109454021b39dd",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6329628/63852311-5d16a1f0.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6329628/63852320_max.jpg": {
+    "etag": "\"66d24b8f-2c78a\"",
+    "bytes": 182154,
+    "sha256": "218edf8d3342d3a4152aaeafb91e2387bf4772e440962852559cf6b376fdaf93",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6329628/63852320-218edf8d.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6475716/47542050_max.jpg": {
+    "etag": "\"66d24b9b-379fc\"",
+    "bytes": 227836,
+    "sha256": "e644de500490108b74ab1589b5c8d0f165bc338d2864c9634b3628a77ec39f1b",
+    "width": 1200,
+    "height": 675,
+    "r2Key": "offers/6475716/47542050-e644de50.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6475716/47542059_max.jpg": {
+    "etag": "\"66d24b9c-3b87e\"",
+    "bytes": 243838,
+    "sha256": "f0fedcb509144040d0c8c8b729c8ef52b714e6db423426f10860015e72af23ff",
+    "width": 1200,
+    "height": 675,
+    "r2Key": "offers/6475716/47542059-f0fedcb5.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6475716/47542080_max.jpg": {
+    "etag": "\"66d24b9c-41096\"",
+    "bytes": 266390,
+    "sha256": "cb80aef1da8ce511656daa5fa092d109e8885fb3226f4bac34320a4e71bf937c",
+    "width": 1200,
+    "height": 909,
+    "r2Key": "offers/6475716/47542080-cb80aef1.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6475716/47542086_max.jpg": {
+    "etag": "\"66d24ba0-3a7bc\"",
+    "bytes": 239548,
+    "sha256": "a996afc7652a775e66db345533461d37958b0aad4b295a20ae23be15ff2a4345",
+    "width": 1200,
+    "height": 997,
+    "r2Key": "offers/6475716/47542086-a996afc7.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6475716/47542224_max.jpg": {
+    "etag": "\"66d24b9e-89bcb\"",
+    "bytes": 564171,
+    "sha256": "c49ae064aaa3f697d3a74c8ad9014e25ca77b0dcb1882d0ff70d91e575cadeab",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6475716/47542224-c49ae064.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6475716/47542227_max.jpg": {
+    "etag": "\"66d24b9e-69f50\"",
+    "bytes": 434000,
+    "sha256": "eb9230afae1a187ee57aadcbad203f349137f00c9c4d9294e30b9db6ea529c82",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6475716/47542227-eb9230af.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6475716/47542233_max.jpg": {
+    "etag": "\"66d24b9f-7f861\"",
+    "bytes": 522337,
+    "sha256": "84a9128366a3d256e6c0584289fed2d6a1300def27b0cb4c0ea4a34dfb0116e5",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6475716/47542233-84a91283.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6475716/47542236_max.jpg": {
+    "etag": "\"66d24ba0-5ea75\"",
+    "bytes": 387701,
+    "sha256": "c4ddebd885ba82cc2b059fe6c34c3a9419aea934f36815bda2611bb5e6489dee",
+    "width": 1200,
+    "height": 842,
+    "r2Key": "offers/6475716/47542236-c4ddebd8.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6475716/47542506_max.jpg": {
+    "etag": "\"66d24b9d-8c0b5\"",
+    "bytes": 573621,
+    "sha256": "6bf09163dc4043241a8ad174d78a7d198f051846f7dd8bdb1495db47e66aa26b",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6475716/47542506-6bf09163.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6475716/47542509_max.jpg": {
+    "etag": "\"66d24b9d-48be5\"",
+    "bytes": 297957,
+    "sha256": "3e1063a8d6ea1203b29b92a409c36b7bf6bba10a47b15151b7827dcb64946e33",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6475716/47542509-3e1063a8.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6475716/48022686_max.jpg": {
+    "etag": "\"66d24b9b-3d5ff\"",
+    "bytes": 251391,
+    "sha256": "53ccc91cf49afcb1cb8f9f73c50bb7862ae8bb8dbd8c01ce8689269421469e90",
+    "width": 1200,
+    "height": 675,
+    "r2Key": "offers/6475716/48022686-53ccc91c.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6972948/52102287_max.jpg": {
+    "etag": "\"66d24bee-4c2b3\"",
+    "bytes": 311987,
+    "sha256": "09ebc8d81f712262c081638a423df1d69055a5316744ddf23407af8845696f35",
+    "width": 1200,
+    "height": 722,
+    "r2Key": "offers/6972948/52102287-09ebc8d8.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6972948/52102302_max.jpg": {
+    "etag": "\"66d24bea-7bcb7\"",
+    "bytes": 507063,
+    "sha256": "8c1b9d274b11052d7ed0543bdf8690ed670e73283e6687ce42ec9ffca6606091",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6972948/52102302-8c1b9d27.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6972948/52102308_max.jpg": {
+    "etag": "\"66d24bed-78f1b\"",
+    "bytes": 495387,
+    "sha256": "ab743e216ca8f2b83d4658315a817c28593a55bae65456ce6de8b7c6079e7df8",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6972948/52102308-ab743e21.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6972948/52102323_max.jpg": {
+    "etag": "\"66d24be5-2d3da\"",
+    "bytes": 185306,
+    "sha256": "3b847e42b64a790075de6dd1ed04eb3e22f78063cf296bbb3bfe3616d5f9e988",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6972948/52102323-3b847e42.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6972948/52102326_max.jpg": {
+    "etag": "\"66d24be8-24d9a\"",
+    "bytes": 150938,
+    "sha256": "b82abdec3b50707a333c433fd22d2fc31121ee5491a8dd138f36bb08294ddab6",
+    "width": 900,
+    "height": 1200,
+    "r2Key": "offers/6972948/52102326-b82abdec.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6972948/52102332_max.jpg": {
+    "etag": "\"66d24be9-403d0\"",
+    "bytes": 263120,
+    "sha256": "f370b76f36e36b062ef33d7931d245dadfb89f250110a38ff6dc86bb9871c553",
+    "width": 900,
+    "height": 1200,
+    "r2Key": "offers/6972948/52102332-f370b76f.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6972948/52102350_max.jpg": {
+    "etag": "\"66d24be0-48182\"",
+    "bytes": 295298,
+    "sha256": "4fba2d46d440acc04c4f9d55594421a291cc25636674e347fb2611f072951603",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6972948/52102350-4fba2d46.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6972948/52102362_max.jpg": {
+    "etag": "\"66d24bec-822ed\"",
+    "bytes": 533229,
+    "sha256": "5fc6d19bf10c56d47b11e82d4f58671abab898aa1b16e8cccaa414e86dc3ba1f",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6972948/52102362-5fc6d19b.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6972948/55521462_max.jpg": {
+    "etag": "\"66d24be9-553d0\"",
+    "bytes": 349136,
+    "sha256": "96524c3dce607ecfa444ab4448069b2f4e34e1ab0b498bc7b98ecc06e932a3ff",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6972948/55521462-96524c3d.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6972948/55521465_max.jpg": {
+    "etag": "\"66d24be5-4a2a8\"",
+    "bytes": 303784,
+    "sha256": "a704b973b40f6856b2deecec217f5518361fa1a59947e53fbf5739038e594e7f",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6972948/55521465-a704b973.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6972948/55521468_max.jpg": {
+    "etag": "\"66d24be0-7b253\"",
+    "bytes": 504403,
+    "sha256": "89f87a46379701269f02f4f4d0b3dfd0b1280be2c3788d7725f15122c4a0c1c2",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6972948/55521468-89f87a46.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6972948/55521471_max.jpg": {
+    "etag": "\"66d24bdf-7b61d\"",
+    "bytes": 505373,
+    "sha256": "15d6d18b9baec5f7877a76c05d515c8e9df18dffa75da7781705d759d93eee0b",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6972948/55521471-15d6d18b.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6972948/55521483_max.jpg": {
+    "etag": "\"66d24bec-80353\"",
+    "bytes": 525139,
+    "sha256": "76df24b73cf7ab3d6cb6d22ec3e699e33c4f41895bd64cc0e9fb4630f1aec1a0",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6972948/55521483-76df24b7.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6972948/55521489_max.jpg": {
+    "etag": "\"66d24beb-9ff31\"",
+    "bytes": 655153,
+    "sha256": "048bb2816a61e9aefa8e246665d8e3e2d5d2a2cc19b40f20dd7528594d2f10f1",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6972948/55521489-048bb281.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6972948/55521492_max.jpg": {
+    "etag": "\"66d24bea-63d04\"",
+    "bytes": 408836,
+    "sha256": "1508b0870960bc2afec761f9cc0556d1dcef274223ed70a44da51652b9f07270",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6972948/55521492-1508b087.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6972948/55521498_max.jpg": {
+    "etag": "\"66d24be2-4e96d\"",
+    "bytes": 321901,
+    "sha256": "d402b34c49c2c6a2f8fad922669b424f0aa66b43c01f9c76967daa0b8093518b",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6972948/55521498-d402b34c.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6972948/55521513_max.jpg": {
+    "etag": "\"66d24be2-543f4\"",
+    "bytes": 345076,
+    "sha256": "00928b4eb704e127d253f7bef9e634bf6102af3fff5ffbe6c6afb68b9e6f44ac",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6972948/55521513-00928b4e.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6972948/55521519_max.jpg": {
+    "etag": "\"66d24be3-51c92\"",
+    "bytes": 334994,
+    "sha256": "8399bc728810aeda084f1cb005860c6e66f5307814e6121f25041e7a9fdfe8c8",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6972948/55521519-8399bc72.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6972948/55521525_max.jpg": {
+    "etag": "\"66d24be1-5219a\"",
+    "bytes": 336282,
+    "sha256": "70427de8040e4ef7d929f6e4069770bfbad43fa19a1e078840c34a717462110c",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6972948/55521525-70427de8.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6972948/55521531_max.jpg": {
+    "etag": "\"66d24be1-5a6f4\"",
+    "bytes": 370420,
+    "sha256": "4746ea1d87ee22c202a6a2673307f5822b18fc4ca94e7a16a1969d73473e3601",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6972948/55521531-4746ea1d.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6972948/55521540_max.jpg": {
+    "etag": "\"66d24be4-5554f\"",
+    "bytes": 349519,
+    "sha256": "caa2bc161ed2e25f09085132164a75f59bdd9d948e540298900905ea68b567eb",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6972948/55521540-caa2bc16.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/6972948/55521555_max.jpg": {
+    "etag": "\"66d24be4-5c825\"",
+    "bytes": 378917,
+    "sha256": "6ee52ecd95352325a7753bb69f1e21ee1778e41097f72f6c6521e5ffe6213a6a",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/6972948/55521555-6ee52ecd.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9259430/75537665_max.jpg": {
+    "etag": "\"67b460d7-2b02d\"",
+    "bytes": 176173,
+    "sha256": "90530dae355e930a9fb5e86b54ba58b06d720b17ac1a17c581e105eff32a67ce",
+    "width": 1200,
+    "height": 801,
+    "r2Key": "offers/9259430/75537665-90530dae.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9259430/75537668_max.jpg": {
+    "etag": "\"67b460d9-2a8bc\"",
+    "bytes": 174268,
+    "sha256": "a04caa904ab6981e4677af3251e813c1bf4fe683f0cc2479d000a2741ae9ca66",
+    "width": 1200,
+    "height": 801,
+    "r2Key": "offers/9259430/75537668-a04caa90.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9259430/75537671_max.jpg": {
+    "etag": "\"67b460d8-26d59\"",
+    "bytes": 159065,
+    "sha256": "72d68897d596d62d52b5422c462ff91218b23e4e76757c4c06f2cd9a40faef57",
+    "width": 1200,
+    "height": 801,
+    "r2Key": "offers/9259430/75537671-72d68897.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9259430/75537674_max.jpg": {
+    "etag": "\"67b460db-33175\"",
+    "bytes": 209269,
+    "sha256": "e494c1417233991f1d1e7ee4aab0f9cb639a2c2e46fb8e189e6ad94411dd4142",
+    "width": 1200,
+    "height": 801,
+    "r2Key": "offers/9259430/75537674-e494c141.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9259430/75537677_max.jpg": {
+    "etag": "\"67b460de-347df\"",
+    "bytes": 215007,
+    "sha256": "fa3cf7114007d6ab1444f029639306754a4b9195638b22f1e972edcf9b410535",
+    "width": 1200,
+    "height": 801,
+    "r2Key": "offers/9259430/75537677-fa3cf711.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9259430/75537680_max.jpg": {
+    "etag": "\"67b460dd-2ae7b\"",
+    "bytes": 175739,
+    "sha256": "94df0f73bdf8fc90659f09f8a26d3b6507e15605f8403e1e8835854041aa98a1",
+    "width": 1200,
+    "height": 801,
+    "r2Key": "offers/9259430/75537680-94df0f73.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9259430/75537683_max.jpg": {
+    "etag": "\"67b460dc-25cfd\"",
+    "bytes": 154877,
+    "sha256": "3eb85f3e63dd4aaaa967c956a6a167820bda45a78073330d69aa86ad140927fa",
+    "width": 1200,
+    "height": 801,
+    "r2Key": "offers/9259430/75537683-3eb85f3e.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9259430/75537686_max.jpg": {
+    "etag": "\"67b460dc-28df2\"",
+    "bytes": 167410,
+    "sha256": "6a3459ea8a95867b04f86b56781e2d10f0cc53c89b91889c1048354fa34b0a00",
+    "width": 1200,
+    "height": 801,
+    "r2Key": "offers/9259430/75537686-6a3459ea.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9259430/75537689_max.jpg": {
+    "etag": "\"67b460e0-40766\"",
+    "bytes": 264038,
+    "sha256": "755122f8131d0e6527c7a1aa418786d5d5797c59eb3e7a5d5f73914e1c67853f",
+    "width": 1200,
+    "height": 801,
+    "r2Key": "offers/9259430/75537689-755122f8.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9259430/75537692_max.jpg": {
+    "etag": "\"67b460e0-45ece\"",
+    "bytes": 286414,
+    "sha256": "5b7ab2e897dc7da5c53782fcc95a16ea2bac790c703f761c8418962c48830d80",
+    "width": 1200,
+    "height": 801,
+    "r2Key": "offers/9259430/75537692-5b7ab2e8.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9259430/75537695_max.jpg": {
+    "etag": "\"67b460e1-5405f\"",
+    "bytes": 344159,
+    "sha256": "6f88b0c255bd2705627138ccce6ab32f01a60395beb992804d5b3242f65315f5",
+    "width": 1200,
+    "height": 675,
+    "r2Key": "offers/9259430/75537695-6f88b0c2.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9259430/75537707_max.jpg": {
+    "etag": "\"67b460e1-4cbbb\"",
+    "bytes": 314299,
+    "sha256": "67628963ef87a22fc6e91a97e7050c7d2230bb63eef8c5eee6e93be3d725bfc2",
+    "width": 849,
+    "height": 1108,
+    "r2Key": "offers/9259430/75537707-67628963.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9259430/75537710_max.jpg": {
+    "etag": "\"67b460e2-4c4e3\"",
+    "bytes": 312547,
+    "sha256": "c54f4ce6686234b5b4769a0f53b95e1be937ec9a4260d46965ff44643760c43d",
+    "width": 853,
+    "height": 1076,
+    "r2Key": "offers/9259430/75537710-c54f4ce6.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9259430/75537713_max.jpg": {
+    "etag": "\"67b460df-36d15\"",
+    "bytes": 224533,
+    "sha256": "43c5d71040b09d0b50bb0942384825ab099049abc3dba6f3ded60e0b059dd37a",
+    "width": 1200,
+    "height": 801,
+    "r2Key": "offers/9259430/75537713-43c5d710.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9259430/75537716_max.jpg": {
+    "etag": "\"67b460da-2900a\"",
+    "bytes": 167946,
+    "sha256": "d8bc367041045b312392281a5dd67e3980941bdb765b307328c2ed0ef01f54d8",
+    "width": 1200,
+    "height": 801,
+    "r2Key": "offers/9259430/75537716-d8bc3670.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9259430/81247884_max.jpg": {
+    "etag": "\"67b460d5-661ce\"",
+    "bytes": 418254,
+    "sha256": "49b1561c41e0b45878c55244181d83f6fc5eb7c07eb8beffd54e7fe19baf029a",
+    "width": 1200,
+    "height": 675,
+    "r2Key": "offers/9259430/81247884-49b1561c.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9259430/81248103_max.jpg": {
+    "etag": "\"67b460d6-5b173\"",
+    "bytes": 373107,
+    "sha256": "ebb116632e4d29d022d3f6eaca2b322310d036af9549f51d6cc3c89ab9016100",
+    "width": 1200,
+    "height": 675,
+    "r2Key": "offers/9259430/81248103-ebb11663.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9259430/81248106_max.jpg": {
+    "etag": "\"67b460d5-5cbdf\"",
+    "bytes": 379871,
+    "sha256": "8673da275441dee82c8570323db683614c6ea8136445a10336f14e791ac4de97",
+    "width": 1200,
+    "height": 675,
+    "r2Key": "offers/9259430/81248106-8673da27.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9724665/81250446_max.jpg": {
+    "etag": "\"681919a2-6e426\"",
+    "bytes": 451622,
+    "sha256": "abef98e68047af1cf4ce7db84a3806da62e86e9c4b3af75f281dd5ed2e981514",
+    "width": 1200,
+    "height": 779,
+    "r2Key": "offers/9724665/81250446-abef98e6.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9724665/81250449_max.jpg": {
+    "etag": "\"681919a4-7210b\"",
+    "bytes": 467211,
+    "sha256": "dcce01941daf85d8208140e88f7b00a6452128d021c13583bf809388b2391b37",
+    "width": 1200,
+    "height": 737,
+    "r2Key": "offers/9724665/81250449-dcce0194.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9724665/81250452_max.jpg": {
+    "etag": "\"681919a4-67f87\"",
+    "bytes": 425863,
+    "sha256": "031a5d2f9a8540e1532d42f1811566c8ea8a4cae027c240ec03bdc6034ccbcf1",
+    "width": 1200,
+    "height": 820,
+    "r2Key": "offers/9724665/81250452-031a5d2f.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9724665/81250455_max.jpg": {
+    "etag": "\"681919a5-5ca81\"",
+    "bytes": 379521,
+    "sha256": "3a055c6d0593997266fb429b21d79bc17048baad2730f61f2d669eb44737d241",
+    "width": 1200,
+    "height": 765,
+    "r2Key": "offers/9724665/81250455-3a055c6d.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9724665/81250458_max.jpg": {
+    "etag": "\"681919a6-4093f\"",
+    "bytes": 264511,
+    "sha256": "9fa66cd3a75dd32e7a20e87d0b9a443e9ed159986dc9e084a813fe59c760cab7",
+    "width": 1200,
+    "height": 669,
+    "r2Key": "offers/9724665/81250458-9fa66cd3.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9724665/81250461_max.jpg": {
+    "etag": "\"681919a6-4beb0\"",
+    "bytes": 310960,
+    "sha256": "d35a478b331b2adb7947648e898cd64eb5f2b87cc93eb80bd9b0eb69a18b4975",
+    "width": 1200,
+    "height": 642,
+    "r2Key": "offers/9724665/81250461-d35a478b.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9724665/81250464_max.jpg": {
+    "etag": "\"681919a7-75aa4\"",
+    "bytes": 481956,
+    "sha256": "a2c88d86dffa34ea346a19077b260d0e830727972a6bbcc4ec8cd2ab979471c8",
+    "width": 1200,
+    "height": 636,
+    "r2Key": "offers/9724665/81250464-a2c88d86.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9724665/81250467_max.jpg": {
+    "etag": "\"681919a1-65934\"",
+    "bytes": 416052,
+    "sha256": "597142992cce555c4986df682fa84b895e0fe801b96a36769986faebb2c9f091",
+    "width": 1200,
+    "height": 1004,
+    "r2Key": "offers/9724665/81250467-59714299.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9724665/81250470_max.jpg": {
+    "etag": "\"681919a0-47b90\"",
+    "bytes": 293776,
+    "sha256": "86eff31fbfe7cbe3259eb2db1f2d75952d14bc443c628d8005adc6aace724993",
+    "width": 1200,
+    "height": 872,
+    "r2Key": "offers/9724665/81250470-86eff31f.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9724665/81250473_max.jpg": {
+    "etag": "\"681919a3-484fa\"",
+    "bytes": 296186,
+    "sha256": "dd6b30de74b0438a89b077e7327131c83028768eb64357de228d40cfa9a0f53c",
+    "width": 1200,
+    "height": 875,
+    "r2Key": "offers/9724665/81250473-dd6b30de.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9724665/81250476_max.jpg": {
+    "etag": "\"681919a2-3ccd5\"",
+    "bytes": 249045,
+    "sha256": "f79844d8c464c1ccf3ef479261c146690fd176b2db4f0dee529ac61634ce5d17",
+    "width": 1200,
+    "height": 872,
+    "r2Key": "offers/9724665/81250476-f79844d8.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9725061/81251472_max.jpg": {
+    "etag": "\"6762b154-38623\"",
+    "bytes": 230947,
+    "sha256": "4464636abdac271b1386e831e0316cf85a533eda1d82ec9295183c951b5f9a6f",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/9725061/81251472-4464636a.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9725061/81251493_max.jpg": {
+    "etag": "\"6762b15b-42e52\"",
+    "bytes": 274002,
+    "sha256": "aa5c9f647a3c29472e4f567ffe3aed49b207aa06677720efebec7e201198a91c",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/9725061/81251493-aa5c9f64.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9725061/81251499_max.jpg": {
+    "etag": "\"6762b155-39046\"",
+    "bytes": 233542,
+    "sha256": "5699b83229ee1851e8a88e8d4f7a5a9476b737bc87513bf8f0d746cf15eeff7d",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/9725061/81251499-5699b832.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9725061/81251511_max.jpg": {
+    "etag": "\"6762b156-39eea\"",
+    "bytes": 237290,
+    "sha256": "6b681d9ff2ca36d9c5e5bf53e713fa601536b4d8c9031ed8604732444446bcfc",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/9725061/81251511-6b681d9f.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9725061/81251514_max.jpg": {
+    "etag": "\"6762b15c-4a1bf\"",
+    "bytes": 303551,
+    "sha256": "a8ca08d683b9f68f782659799d709c9e97eb06de9949b9fbb072bb41146a1490",
+    "width": 1200,
+    "height": 901,
+    "r2Key": "offers/9725061/81251514-a8ca08d6.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9725061/81251520_max.jpg": {
+    "etag": "\"6762b157-38f92\"",
+    "bytes": 233362,
+    "sha256": "99738a07c61c7a111cf8d96092f7d788d926c7a3bc8567191947c47e2c2cf0ff",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/9725061/81251520-99738a07.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9725061/81251526_max.jpg": {
+    "etag": "\"6762b15f-5bf81\"",
+    "bytes": 376705,
+    "sha256": "7e2d2d720acc111272badb5a20be4815110ace6d728305c63e821b484b2ce961",
+    "width": 1200,
+    "height": 905,
+    "r2Key": "offers/9725061/81251526-7e2d2d72.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9725061/81251529_max.jpg": {
+    "etag": "\"6762b153-2e583\"",
+    "bytes": 189827,
+    "sha256": "4138664799431379429bbc2f742b055336b60d5c2beed041e596e911c43c3973",
+    "width": 1200,
+    "height": 667,
+    "r2Key": "offers/9725061/81251529-41386647.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9725061/81251532_max.jpg": {
+    "etag": "\"6762b15e-47a12\"",
+    "bytes": 293394,
+    "sha256": "e6f9f434cd45a4babb63c57c985ccd4370b167d16a091f943dd77238f1bc3af0",
+    "width": 1200,
+    "height": 872,
+    "r2Key": "offers/9725061/81251532-e6f9f434.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9725061/81251538_max.jpg": {
+    "etag": "\"6762b152-42edf\"",
+    "bytes": 274143,
+    "sha256": "9a0f09d73b80f5334eccb1ac5b9efbf998d3e575b41a4f1f726a7cad826927e7",
+    "width": 1200,
+    "height": 869,
+    "r2Key": "offers/9725061/81251538-9a0f09d7.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9725061/81445260_max.jpg": {
+    "etag": "\"6762b15f-5ca81\"",
+    "bytes": 379521,
+    "sha256": "3a055c6d0593997266fb429b21d79bc17048baad2730f61f2d669eb44737d241",
+    "width": 1200,
+    "height": 765,
+    "r2Key": "offers/9725061/81445260-3a055c6d.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9725061/81445281_max.jpg": {
+    "etag": "\"6762b158-462e3\"",
+    "bytes": 287459,
+    "sha256": "6ad89062fb5e524e755604109dd366033193ae29f46dce7b50c8d2636a6fdde9",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/9725061/81445281-6ad89062.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9725061/81445332_max.jpg": {
+    "etag": "\"6762b155-3cae9\"",
+    "bytes": 248553,
+    "sha256": "41a81a652adcbae5210ceb574c0049c980c80f0f35c64b3a298b75057273604b",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/9725061/81445332-41a81a65.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9725061/81445362_max.jpg": {
+    "etag": "\"6762b159-4c29f\"",
+    "bytes": 311967,
+    "sha256": "e59f6aa8efe79c607b910af65d429f5f569cab99d269b7b4f77abade1fcd23b0",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/9725061/81445362-e59f6aa8.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9725061/81445380_max.jpg": {
+    "etag": "\"6762b15a-42c48\"",
+    "bytes": 273480,
+    "sha256": "cf082a5d7367358ccfea6d337421d3bef9e7de1853427a2dcec1218b2596fbdc",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/9725061/81445380-cf082a5d.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9725061/81445392_max.jpg": {
+    "etag": "\"6762b157-3f477\"",
+    "bytes": 259191,
+    "sha256": "42170276f282d92d9ece1fe72821cca691433eae3a24feb96e5bf9a8cf086797",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/9725061/81445392-42170276.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9725061/81445407_max.jpg": {
+    "etag": "\"6762b15d-5a42a\"",
+    "bytes": 369706,
+    "sha256": "b5633bc304cfb107a0acadc3bcfcfef43d2d7adaa20f320b37aaf663431d9297",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/9725061/81445407-b5633bc3.jpg"
+  },
+  "https://static.esticrm.pl/public/images/offers/11355/9725061/81445416_max.jpg": {
+    "etag": "\"6762b15c-54b9e\"",
+    "bytes": 347038,
+    "sha256": "9488ae355303964c52837d284e0fa580e93104991b216cdf94de76cf49a16376",
+    "width": 1200,
+    "height": 900,
+    "r2Key": "offers/9725061/81445416-9488ae35.jpg"
+  }
+}

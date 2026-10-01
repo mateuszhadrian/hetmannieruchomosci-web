@@ -1,0 +1,205 @@
+{
+  "nodes": [
+    {
+      "id": "wielkopolskie",
+      "level": "province",
+      "name": "Wielkopolskie",
+      "parent": null,
+      "count": 10
+    },
+    {
+      "id": "wielkopolskie/poznan",
+      "level": "county",
+      "name": "Poznań",
+      "parent": "wielkopolskie",
+      "count": 7
+    },
+    {
+      "id": "wielkopolskie/poznan/poznan",
+      "level": "city",
+      "name": "Poznań",
+      "parent": "wielkopolskie/poznan",
+      "communes": [
+        "Poznań-Grunwald",
+        "Poznań-Nowe Miasto",
+        "Poznań-Stare Miasto",
+        "Poznań-Wilda"
+      ],
+      "count": 7
+    },
+    {
+      "id": "wielkopolskie/poznan/poznan/grunwald",
+      "level": "district",
+      "name": "Grunwald",
+      "parent": "wielkopolskie/poznan/poznan",
+      "count": 1
+    },
+    {
+      "id": "wielkopolskie/poznan/poznan/grunwald/lazarz",
+      "level": "subdistrict",
+      "name": "Łazarz",
+      "label": "Poznań Łazarz",
+      "parent": "wielkopolskie/poznan/poznan/grunwald",
+      "count": 1
+    },
+    {
+      "id": "wielkopolskie/poznan/poznan/nowe-miasto",
+      "level": "district",
+      "name": "Nowe Miasto",
+      "parent": "wielkopolskie/poznan/poznan",
+      "count": 1
+    },
+    {
+      "id": "wielkopolskie/poznan/poznan/nowe-miasto/szczepankowo",
+      "level": "subdistrict",
+      "name": "Szczepankowo",
+      "label": "Poznań Szczepankowo",
+      "parent": "wielkopolskie/poznan/poznan/nowe-miasto",
+      "count": 1
+    },
+    {
+      "id": "wielkopolskie/poznan/poznan/stare-miasto",
+      "level": "district",
+      "name": "Stare Miasto",
+      "parent": "wielkopolskie/poznan/poznan",
+      "count": 3
+    },
+    {
+      "id": "wielkopolskie/poznan/poznan/stare-miasto/centrum",
+      "level": "subdistrict",
+      "name": "Centrum",
+      "label": "Poznań Centrum",
+      "parent": "wielkopolskie/poznan/poznan/stare-miasto",
+      "count": 1
+    },
+    {
+      "id": "wielkopolskie/poznan/poznan/stare-miasto/piatkowo",
+      "level": "subdistrict",
+      "name": "Piątkowo",
+      "label": "Poznań Piątkowo",
+      "parent": "wielkopolskie/poznan/poznan/stare-miasto",
+      "count": 1
+    },
+    {
+      "id": "wielkopolskie/poznan/poznan/stare-miasto/winogrady",
+      "level": "subdistrict",
+      "name": "Winogrady",
+      "label": "Poznań Winogrady",
+      "parent": "wielkopolskie/poznan/poznan/stare-miasto",
+      "count": 1
+    },
+    {
+      "id": "wielkopolskie/poznan/poznan/wilda",
+      "level": "district",
+      "name": "Wilda",
+      "label": "Poznań Wilda",
+      "parent": "wielkopolskie/poznan/poznan",
+      "count": 2
+    },
+    {
+      "id": "wielkopolskie/poznanski",
+      "level": "county",
+      "name": "poznański",
+      "parent": "wielkopolskie",
+      "count": 2
+    },
+    {
+      "id": "wielkopolskie/poznanski/kornik",
+      "level": "city",
+      "name": "Kórnik",
+      "parent": "wielkopolskie/poznanski",
+      "count": 2
+    },
+    {
+      "id": "wielkopolskie/poznanski/kornik/bnin",
+      "level": "district",
+      "name": "Bnin",
+      "label": "Kórnik Bnin",
+      "parent": "wielkopolskie/poznanski/kornik",
+      "count": 1
+    },
+    {
+      "id": "wielkopolskie/poznanski/kornik/dworzyska",
+      "level": "city",
+      "name": "Dworzyska",
+      "label": "Dworzyska",
+      "info": "gm. Kórnik, pow. poznański",
+      "parent": "wielkopolskie/poznanski/kornik",
+      "count": 1
+    },
+    {
+      "id": "wielkopolskie/wagrowiecki",
+      "level": "county",
+      "name": "wągrowiecki",
+      "parent": "wielkopolskie",
+      "count": 1
+    },
+    {
+      "id": "wielkopolskie/wagrowiecki/skoki",
+      "level": "commune",
+      "name": "Skoki",
+      "parent": "wielkopolskie/wagrowiecki",
+      "count": 1
+    },
+    {
+      "id": "wielkopolskie/wagrowiecki/skoki/szczodrochowo",
+      "level": "city",
+      "name": "Szczodrochowo",
+      "label": "Szczodrochowo",
+      "info": "gm. Skoki, pow. wągrowiecki",
+      "parent": "wielkopolskie/wagrowiecki/skoki",
+      "count": 1
+    }
+  ],
+  "streets": {
+    "wielkopolskie/poznan/poznan/grunwald/lazarz": [
+      {
+        "name": "Gąsiorowskich",
+        "type": "ul.",
+        "count": 1
+      }
+    ],
+    "wielkopolskie/poznan/poznan/nowe-miasto/szczepankowo": [
+      {
+        "name": "Przemyska",
+        "type": "ul.",
+        "count": 1
+      }
+    ],
+    "wielkopolskie/poznan/poznan/stare-miasto/centrum": [
+      {
+        "name": "Tadeusza Kościuszki",
+        "type": "ul.",
+        "count": 1
+      }
+    ],
+    "wielkopolskie/poznan/poznan/stare-miasto/piatkowo": [
+      {
+        "name": "Stefana Batorego",
+        "type": "os.",
+        "count": 1
+      }
+    ],
+    "wielkopolskie/poznan/poznan/stare-miasto/winogrady": [
+      {
+        "name": "Pod Lipami",
+        "type": "os.",
+        "count": 1
+      }
+    ],
+    "wielkopolskie/poznan/poznan/wilda": [
+      {
+        "name": "28 Czerwca 1956 r.",
+        "type": "ul.",
+        "count": 2
+      }
+    ],
+    "wielkopolskie/poznanski/kornik/bnin": [
+      {
+        "name": "Zwierzyniecka",
+        "type": "ul.",
+        "count": 1
+      }
+    ]
+  }
+}
