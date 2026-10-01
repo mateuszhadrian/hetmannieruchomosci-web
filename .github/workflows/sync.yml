@@ -1,0 +1,138 @@
+# Nocny sync ofert z systemu CRM (Etap 2, krok 2.10; D33).
+# Cron GitHuba jest w UTC: 02:15 UTC = 03:15 zimą / 04:15 latem czasu
+# polskiego. Harmonogram w repo publicznym bywa wyłączany po dłuższym braku
+# aktywności — kontrola w docs/optional-todos.md; krok heartbeat uruchamia
+# się tylko, gdy sekret HEARTBEAT_URL istnieje.
+#
+# ZASADY (log tego workflow jest PUBLICZNY):
+#  - sync wypisuje wyłącznie podsumowanie publiczne (kody i liczności);
+#    szczegóły idą mailem (Resend, konto Mateusza);
+#  - żaden krok nie wypisuje adresów z tokenem ani wartości sekretów;
+#  - bramka (test:unit + build + test:dist) stoi PRZED commitem (Z6): bot
+#    pushuje na main z pominięciem PR-a, więc required check go nie chroni;
+#  - błąd na dowolnym kroku = brak commita, strona zostaje na ostatniej
+#    dobrej wersji; mail o błędzie + standardowy mail GitHuba.
+name: Sync ofert
+on:
+  schedule:
+    - cron: "15 2 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Przebieg próbny: bez zapisu do R2, bez plików, bez commita"
+        type: boolean
+        default: false
+      force:
+        description: "Omiń bezpieczniki (0 ofert / spadek > 50 %)"
+        type: boolean
+        default: false
+      skip_photos:
+        description: "Nie pobieraj zdjęć (znane bez zmian, nowe odłożone)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # sekret opcjonalny — pusty, dopóki usługa nie jest wybrana
+      HEARTBEAT_URL: ${{ secrets.HEARTBEAT_URL }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          # token bota (bypass rulesetu) — push w kroku „Commit i push"
+          token: ${{ secrets.SYNC_PUSH_TOKEN }}
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Sync (pnpm sync)
+        id: sync
+        env:
+          ESTICRM_COMPANY: ${{ secrets.ESTICRM_COMPANY }}
+          ESTICRM_TOKEN: ${{ secrets.ESTICRM_TOKEN }}
+          SYNC_AGREEMENT_SIGNAL: ${{ secrets.SYNC_AGREEMENT_SIGNAL }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          GEOAPIFY_KEY: ${{ secrets.GEOAPIFY_KEY }}
+          REPORT_RESEND_API_KEY: ${{ secrets.REPORT_RESEND_API_KEY }}
+          REPORT_TO: ${{ secrets.REPORT_TO }}
+          REPORT_FROM: ${{ secrets.REPORT_FROM }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          FORCE: ${{ inputs.force }}
+          SKIP_PHOTOS: ${{ inputs.skip_photos }}
+        run: |
+          FLAGS=""
+          [ "$DRY_RUN" = "true" ] && FLAGS="$FLAGS --dry-run"
+          [ "$FORCE" = "true" ] && FLAGS="$FLAGS --force"
+          [ "$SKIP_PHOTOS" = "true" ] && FLAGS="$FLAGS --skip-photos"
+          echo "flagi: ${FLAGS:-(brak)}"
+          # w Actions sync pisze do data/ (GITHUB_ACTIONS=true) i zapisuje
+          # outcome/changed/rebuild w GITHUB_OUTPUT
+          pnpm sync $FLAGS
+
+      - name: Bramka przed commitem (test:unit + build + test:dist)
+        if: steps.sync.outputs.changed == 'true' && inputs.dry_run != true
+        run: |
+          pnpm test:unit
+          pnpm build
+          pnpm test:dist
+
+      - name: Commit i push (bot)
+        if: steps.sync.outputs.changed == 'true' && inputs.dry_run != true
+        run: |
+          git config user.name "hetman-sync-bot"
+          git config user.email "hetman-sync-bot@users.noreply.github.com"
+          git add data/offers.json data/locations.json data/photos.json data/maps.json data/url-ledger.json
+          git commit -m "chore(data): sync ofert $(TZ=Europe/Warsaw date +%F)"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+      # Push bota na main sam uruchamia build Pages. Hook jest potrzebny
+      # tylko wtedy, gdy dane się NIE zmieniły, a prezentacja zależna od
+      # daty zmienia się dziś (próg „Nowość", „dostępne od" — 2.8 pkt 10).
+      - name: Deploy hook (przebudowa bez zmiany danych)
+        if: steps.sync.outputs.rebuild == 'true' && steps.sync.outputs.changed != 'true' && inputs.dry_run != true
+        env:
+          PAGES_DEPLOY_HOOK: ${{ secrets.PAGES_DEPLOY_HOOK }}
+        run: |
+          curl -sf -X POST "$PAGES_DEPLOY_HOOK" -o /dev/null
+          echo "deploy hook: wywołany"
+
+      # Sync wysyła własny raport także przy swoim błędzie; ten krok łapie
+      # błędy pozostałych kroków (install, bramka, commit, push). Treść bez
+      # szczegółów — link do biegu wystarczy.
+      - name: Mail o błędzie workflow
+        if: failure()
+        env:
+          REPORT_RESEND_API_KEY: ${{ secrets.REPORT_RESEND_API_KEY }}
+          REPORT_TO: ${{ secrets.REPORT_TO }}
+          REPORT_FROM: ${{ secrets.REPORT_FROM }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "$REPORT_RESEND_API_KEY" ] || { echo "mail o błędzie: pominięty (brak konfiguracji Resend)"; exit 0; }
+          BODY=$(jq -n --arg from "$REPORT_FROM" --arg to "$REPORT_TO" --arg url "$RUN_URL" \
+            '{from: $from, to: [$to], subject: "[hetman sync] workflow zakończony błędem", text: ("Workflow sync ofert nie doszedł do końca (krok inny niż sam sync albo błąd przed raportem). Strona została na ostatniej dobrej wersji.\nLog biegu: " + $url)}')
+          curl -sf -o /dev/null -X POST https://api.resend.com/emails \
+            -H "Authorization: Bearer $REPORT_RESEND_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "$BODY" && echo "mail o błędzie: wysłany"
+
+      - name: Heartbeat (sync się odbył)
+        if: success() && env.HEARTBEAT_URL != ''
+        run: |
+          curl -sf -m 20 "$HEARTBEAT_URL" -o /dev/null
+          echo "heartbeat: wysłany"
