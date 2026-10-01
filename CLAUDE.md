@@ -105,7 +105,8 @@ formularz, nakładki) została, widoki powstają od nowa wg `docs/design/`.
 
 - `pnpm dev` — dev server (port 4321)
 - `pnpm build` / `pnpm preview`; `pnpm build:visual` — build na
-  zamrożonym fixture ofert (`OFFERS_DATA_DIR=./tests/fixtures/offers`)
+  zamrożonym fixture ofert (`OFFERS_DATA_DIR=./tests/fixtures/offers`,
+  `MEDIA_SOURCE=fixture` → `imgAt()` daje lokalne kopie zdjęć)
 - `pnpm typecheck` — `astro check` (obejmuje też `tests/` i `functions/`)
 - `pnpm lint` / `pnpm lint:fix` / `pnpm format` / `pnpm format:check`
 - Testy (kontrakt: `.claude/rules/testing.md`): `pnpm test` (wszystko);
@@ -246,6 +247,55 @@ co zostało.
   nie istnieją; integracja `_redirects` czyta `offers.json` lekkim
   schematem (numer, typ, transakcja, slug) — pełną walidację ma dać
   `data.ts`; `tests/helpers/offers.ts` nadal minimalny.
+- **Etap 2 / S2b (dane ofert, kroki 2.4–2.7) — WYKONANY** (2026-10-01,
+  gałąź `feat/sync-s2b`): `scripts/sync/esti-client.ts` (`basic-list`,
+  `list?take=100` ze stronicowaniem `skip` do `totalCount`, `dictionary`
+  walidowany `DictionarySchema`; `x-ratelimit-remaining: 0` → odczekanie,
+  jedno ponowienie po 429/5xx/błędzie sieci; `EstiApiError` bez adresu
+  zapytania), `visibility.ts` (`isVisible` wg `VISIBILITY_RULE`
+  w `site-config.ts` — Z9; `ALL_STATUSES`; W4; `diffVisibility` liczony
+  z samych numerów ofert widocznych), `photos.ts` (If-None-Match →
+  304/200, sha256, wymiary sharpem z korektą orientacji EXIF, klucz
+  `offers/{crmId}/{id}-{sha256[:8]}.jpg`, pula ≤ 4, manifest
+  `data/photos.json` z `goneSince` i `replaced` zamiast `seenAt`, W6 przy
+  przejściu aktywna ↔ nieaktywna bez zmiany ETagów, `PHOTO_FETCH`),
+  `r2.ts` (`@aws-sdk/client-s3`: put/list/remove, magazyn dry-run,
+  `cleanupGone` po 30 dniach także dla kluczy zastąpionych,
+  `findOrphans`), `maps.ts` + `src/lib/offers/map-key.ts` (`coordKey`
+  5 miejsc; jedno żądanie Geoapify per punkt; styl i zoom mapy kontaktu,
+  kadr 600×467 @2 → WebP bez kadrowania; klucz `maps/{hash16}.webp`
+  zależny od `MAP_MARKER`; manifest `data/maps.json`; `MAP_FETCH`),
+  `report.ts` (`publicSummary` ze strażnikiem `redactPublic`,
+  `privateReport` text + html, `sendReport` przez Resend z parametrem
+  `from`), `src/lib/img.ts` przepisany (`imgAt(r2Key, card|hero|og)`,
+  stały `format=webp`, `onerror=redirect`, dev → oryginał,
+  `MEDIA_SOURCE=fixture` → `/media/{klucz}.webp`; `envPrefix`
+  w `astro.config.mjs`, `src/env.d.ts`). Stała `MEDIA_BASE` wskazuje
+  host tymczasowy `hetman-media.hadrianm.pl`. Schemat: `PhotosFileSchema`,
+  `MapsFileSchema`, wzorce `PHOTO_R2_KEY`, `MAP_R2_KEY`, `COORD_KEY`;
+  nowe kody `PHOTO_FETCH`, `MAP_FETCH`. Zależności: `@aws-sdk/client-s3`
+  i `sharp` (0.35.2 → 0.35.5) w `dependencies`. Testy: 8 plików unit
+  nowych/przepisanych (235 testów, 7 skip bez danych),
+  format/lint/typecheck/build/build:visual zielone. DECYZJE W TRAKCIE
+  (domyślne z planu sesji, zatwierdzone): (1) prawdziwy słownik API
+  w testach czytany spoza repo (`readDictionaryForTests`), w repo tylko
+  syntetyczny; (2) bez geokodowania — schemat wymaga współrzędnych;
+  (3) wymuszony GET po zmianie daty eksportu galerii pominięty (ETag
+  niesie mtime, wymagałby pola kontrolnego w manifeście); (4) nadawca
+  raportu = sekret `REPORT_FROM` (czyta 2.8); (5) warianty obrazów card
+  640 / hero 1600 / og 1200×630 — do korekty w 4.2/4.3; (6) mapa oferty
+  = surowy Geoapify z wbudowanym znacznikiem w kolorze `--navy` (stała
+  w `maps.ts` W PARZE z tokenem), bez tintu i własnej pinezki mapy
+  kontaktu (prezentacja w 4.3). UWAGI dla S2c: (1) kopiowanie
+  `tests/fixtures/offers/media/` do `dist/media/` nie istnieje
+  (integracja albo `publicDir`); (2) `data.ts` waliduje `photos.json`
+  i `maps.json` nowymi schematami; (3) `syncPhotos` potrzebuje
+  `previousStatus` z poprzedniego `offers.json`, `diffVisibility` —
+  jego numerów; (4) składnia parametrów `marker`/`geometry` Geoapify
+  zweryfikowana wyłącznie testem kształtu adresu — pierwszy bieg
+  z `--skip-photos` ma to potwierdzić obrazem; (5) `--dry-run` powinien
+  dostać `createDryRunStore()` i pominąć wysyłkę raportu albo wysłać
+  z dopiskiem; (6) sekret `REPORT_FROM` do dodania przed 2.11.
 
 ## Dokumentacja
 
