@@ -49,6 +49,16 @@ export const AGENT = {
 } as const;
 
 // ── Media ───────────────────────────────────────────────────────────────
-/** Host zdjęć ofert (R2 + transformacje obrazów). Wartość wchodzi
- *  w Etapie 2; pusty ciąg = media jeszcze niepodłączone. */
-export const MEDIA_BASE: string = "";
+/** Host zdjęć ofert (R2 + transformacje obrazów), adres ABSOLUTNY bez
+ *  końcowego ukośnika — jedna stała (Z2): do Etapu 8 host tymczasowy,
+ *  potem domena klientki. Pusty ciąg = media niepodłączone (adresy
+ *  względne, build nie pada). */
+export const MEDIA_BASE: string = "https://hetman-media.hadrianm.pl";
+
+// ── Sync ────────────────────────────────────────────────────────────────
+/** Reguła widoczności oferty (Z9). `status-and-export` = status „aktywna
+ *  publikacja" ORAZ włączony eksport (dziś równoważne, korelacja 100 %);
+ *  `status-only` — gdyby pole eksportu nie przetrwało rezygnacji
+ *  z poprzedniego serwisu. Przestawia Mateusz po odpowiedzi dostawcy CRM. */
+export const VISIBILITY_RULE: "status-and-export" | "status-only" =
+  "status-and-export";
