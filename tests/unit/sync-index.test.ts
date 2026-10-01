@@ -374,6 +374,8 @@ describe("CLI", () => {
       prev: "data",
     });
     expect(parseArgs([]).source).toBe("api");
+    // pnpm przekazuje separator `--` dosłownie
+    expect(parseArgs(["--", "--report=stdout"]).report).toBe("stdout");
     expect(() => parseArgs(["--source=xml"])).toThrow();
     expect(() => parseArgs(["--nope"])).toThrow();
   });
