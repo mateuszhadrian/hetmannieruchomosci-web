@@ -32,8 +32,9 @@
 | `plan/hetmannieruchomosci-web-creation-process.md` | **Instrukcja wykonawcza** budowy strony: Część A (checklista), Część B (Etapy 0–9, w tym Etap 2 „dane" i wymienna sekcja przełączenia domeny), Część C (praca z EstiCRM + checklista testów klientki), Część D (backupy), Część E (sprawy poza kodem), zastrzeżenia do decyzji, mapa otwartych kwestii |
 | `plan/etap-4-prompty.md` | **Prompty startowe** części 4.1–4.7 i 5A–5B: kontekst wspólny, definition of done, szablon promptu korekty po testach klientki |
 | `plan/prompt-start-realizacji.md` | **Prompt startowy Etapu 0** + szablon promptu dla sesji Etapów 2, 3, 6 i kroku 7.6 |
-| `plan/prompt-s2a.md` | Prompt sesji S2a (Etap 2, kroki 2.1–2.3) — gotowy do wklejenia |
-| `plan/prompt-s2b.md` | Prompt sesji S2b (Etap 2, kroki 2.4–2.7) — do wklejenia po uzupełnieniu akapitu o chmurze |
+| `plan/prompt-s2a.md` | Prompt sesji S2a (Etap 2, kroki 2.1–2.3) — wykonany 2026-09-30 (PR #1–#2) |
+| `plan/prompt-s2b.md` | Prompt sesji S2b (Etap 2, kroki 2.4–2.7) — wykonany 2026-10-01 (PR #5) |
+| `plan/prompt-s2c.md` | Prompt sesji S2c (Etap 2, kroki 2.8–2.11) — gotowy do wklejenia; po sesji Mateusz uruchamia `fixtures:build` i pierwszy sync |
 | `plan/rozmowa-z-joanna-etap-1.md` | Scenariusz rozmowy z klientką w Etapie 1 (Resend + wizyta w home.pl), krok po kroku |
 
 ## 🔒 Tylko lokalnie — `docs/kb/` (poza git)
