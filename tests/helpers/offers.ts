@@ -1,7 +1,6 @@
 // Oferty czytane wprost z plików JSON — tak samo, jak robi to build.
-// WERSJA MINIMALNA (Etap 0): sam odporny odczyt. Selektory w rodzaju
-// `pickOffer({ status, withVideo })` i typ `Offer` dochodzą w Etapie 3,
-// gdy istnieje schemat (Etap 2).
+// Odporny odczyt (Etap 0) + adresy ofert z danych (S2c). Selektory
+// w rodzaju `pickOffer({ status, withVideo })` dochodzą w Etapie 3.
 //
 // PLIKÓW MOŻE NIE BYĆ. Katalog `data/` powstaje dopiero przy pierwszym
 // syncu, a fixture przy pierwszym `pnpm fixtures:build` — brak pliku jest
@@ -12,6 +11,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { OffersFileSchema } from "../../src/lib/offers/schema";
+import { offerRoutes } from "../../src/lib/offers/urls";
 
 /** Dane produkcyjne — pisze je wyłącznie bot syncu. */
 export const DATA_DIR = fileURLToPath(new URL("../../data", import.meta.url));
@@ -47,4 +48,29 @@ export function readOffers(): OfferRecord[] {
  *  gdy fixture jeszcze nie powstał. */
 export function readFixtureOffers(): OfferRecord[] {
   return readArray(FIXTURE_DIR, "offers.json");
+}
+
+/** Adresy ofert wyliczone z danych PRODUKCYJNYCH tak, jak robi to build
+ *  (`offerRoutes()` na `data/offers.json`); puste przy zerze ofert.
+ *  Oferty czytane odpornie, kształt adresowalny bierze `OfferSchema`
+ *  (zły plik ma wywrócić test — to realny błąd danych). */
+export function offerRoutesFromData(): { lists: string[]; details: string[] } {
+  const offers = readOffers();
+  if (offers.length === 0) return { lists: [], details: [] };
+  return offerRoutes(OffersFileSchema.parse(offers));
+}
+
+/** Adres pierwszej oferty z danych produkcyjnych albo `undefined`. */
+export function firstOfferPath(): string | undefined {
+  return offerRoutesFromData().details[0];
+}
+
+/** Adresy ofert z FIXTURE'U (zamrożony zestaw testów wizualnych). */
+export function offerRoutesFromFixture(): {
+  lists: string[];
+  details: string[];
+} {
+  const offers = readFixtureOffers();
+  if (offers.length === 0) return { lists: [], details: [] };
+  return offerRoutes(OffersFileSchema.parse(offers));
 }

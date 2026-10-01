@@ -4,6 +4,7 @@ import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 
+import fixtureMedia from "./src/integrations/fixture-media";
 import redirects from "./src/integrations/redirects";
 
 // https://astro.build/config
@@ -20,6 +21,8 @@ export default defineConfig({
     }),
     // `dist/_redirects` z danych ofert (OFFERS_DATA_DIR) — po buildzie.
     redirects(),
+    // MEDIA_SOURCE=fixture → kopia tests/fixtures/offers/media/ do dist/media/.
+    fixtureMedia(),
   ],
 
   vite: {
