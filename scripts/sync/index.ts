@@ -53,6 +53,8 @@ export function parseArgs(argv: readonly string[]): CliArgs {
     report: "mail",
   };
   for (const a of argv) {
+    // `pnpm sync -- --flaga` przekazuje separator `--` dosłownie — pomijamy
+    if (a === "--") continue;
     const [flag, value] = a.includes("=") ? a.split(/=(.*)/s) : [a, undefined];
     switch (flag) {
       case "--source":
