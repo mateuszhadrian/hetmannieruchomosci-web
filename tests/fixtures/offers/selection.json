@@ -1,0 +1,21 @@
+{
+  "$comment": "WEJŚCIE skryptu `pnpm fixtures:build` (2.9) — jedyny plik tego katalogu pisany ręcznie. Numery ofert z publicznej listy obecnej strony (stan 2026-09-28): mieszkanie sprzedaż/wynajem, dom, działki bez ulicy, lokal komercyjny; statusy aktywna/rezerwacja/sprzedana/wynajęta; z filmem i spacerem; parter; tytuły z „0%” i literówką w prefiksie; zdjęcia pionowe; oferty z największą (22) i najmniejszą (6) liczbą zdjęć. `overrides` pokrywają warianty, których w danych nie ma: zdjęcie typu plan, „Zapytaj o cenę”, obniżka, „Nowość” względem BUILD_NOW (2026-10-01). Zmiana tego pliku = ponowne `pnpm fixtures:build` + oba komplety baseline'ów w tym samym PR.",
+  "numbers": [
+    "SW486462",
+    "SW564562",
+    "SW303888",
+    "SW372150",
+    "SW349452",
+    "SW184702",
+    "SW688942",
+    "SW594869",
+    "SW426096",
+    "SW209448"
+  ],
+  "overrides": {
+    "SW372150": { "price": null },
+    "SW486462": { "previousPrice": 379000 },
+    "SW564562": { "addedAt": "2026-09-27T10:00:00+02:00" },
+    "SW303888": { "planPhotos": [-1] }
+  }
+}

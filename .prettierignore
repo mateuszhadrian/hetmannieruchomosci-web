@@ -1,4 +1,4 @@
-dist
+/dist
 .astro
 pnpm-lock.yaml
 docs

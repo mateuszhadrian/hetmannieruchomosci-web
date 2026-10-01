@@ -24,6 +24,8 @@ const { title, heading, description } = Astro.props;
   <main class="skel">
     <h1>{heading}</h1>
     <p>Strona w przygotowaniu.</p>
+    {/* treść szkieletowa tras ofert (2.8); trasy statyczne nic tu nie dają */}
+    <slot />
   </main>
   <Footer />
 </BaseLayout>

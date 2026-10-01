@@ -5,6 +5,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import type { Dictionary } from "../../scripts/sync/dictionary";
+import { buildLocations } from "../../scripts/sync/locations";
+import { normalize } from "../../scripts/sync/normalize";
+import { OfferSchema } from "../../src/lib/offers/schema";
 import type { RawRecord } from "../../src/lib/offers/public-fields";
 
 export const FORBIDDEN_SENTINEL = "FORBIDDEN_SENTINEL";
@@ -65,4 +68,28 @@ export function readDictionaryForTests(): {
     };
   }
   return { dictionary: readSyntheticDictionary(), real: false };
+}
+
+/** Oferty syntetyczne w PEŁNYM kształcie `Offer` (po kroku zdjęć):
+ *  normalizacja + lokalizacje + zmyślone dane pobrania zdjęć (klucz R2 wg
+ *  wzorca, ETag, wymiary). Do testów warstwy danych strony, która nie
+ *  pobiera niczego. */
+export function syntheticFullOffers(): import("../../src/lib/offers/schema").Offer[] {
+  const dictionary = readSyntheticDictionary();
+  const normalized = readSyntheticList().map(
+    (raw) => normalize(raw, { dictionary }).offer,
+  );
+  const { offers } = buildLocations(normalized);
+  return offers.map((offer) =>
+    OfferSchema.parse({
+      ...offer,
+      photos: offer.photos.map((p, i) => ({
+        ...p,
+        r2Key: `offers/${offer.crmId}/${p.id}-${(i + 1).toString(16).padStart(8, "0")}.jpg`,
+        etag: `"etag-${p.id}"`,
+        width: 1200,
+        height: 900,
+      })),
+    }),
+  );
 }

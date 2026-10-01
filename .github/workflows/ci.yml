@@ -25,6 +25,9 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test:unit
       - run: pnpm build
+      # Skan zbudowanej strony: nazwy pól zabronionych, spójność _redirects
+      # (ten sam krok stoi w bramce syncu PRZED commitem bota — sync.yml).
+      - run: pnpm test:dist
       - uses: actions/upload-artifact@v4
         with:
           name: dist

@@ -1,6 +1,6 @@
 // Strażniki wspólne dla testów Playwright.
 import { test, type Page } from "@playwright/test";
-import { readFixtureOffers } from "./offers";
+import { offerRoutesFromFixture, readFixtureOffers } from "./offers";
 
 /** Ile ofert ma zamrożony zestaw testów wizualnych
  *  (tests/fixtures/offers). Przez helper — fixture może jeszcze nie
@@ -8,10 +8,12 @@ import { readFixtureOffers } from "./offers";
  *  modułu (reguła testing.md). */
 const FIXTURE_OFFERS = readFixtureOffers().length;
 
-/** Znacznik jednej karty oferty w HTML-u listy. Kontrakt z widokiem
- *  `/oferty/` — widok powstaje w Etapie 4.2, strażnik dostaje pełną
- *  postać w Etapie 3. */
+/** Znacznik jednej karty oferty w HTML-u listy (szkielet S2c i widok
+ *  4.2 niosą `data-offer-card="{numer}"`). Sprawdzana strona: pierwsza
+ *  lista typ×transakcja z fixture'u — `/oferty/` do Etapu 4.2 jest
+ *  szkieletem bez kart. */
 const OFFER_CARD_MARKER = /data-offer-card=/g;
+const FIXTURE_LIST_PATH = offerRoutesFromFixture().lists[0];
 
 /** Strażnik preview: testy biegają na buildzie produkcyjnym (pnpm preview),
  *  NIGDY na dev serverze. Astro dev wstrzykuje klienta Vite — wykrywamy go
@@ -53,14 +55,20 @@ export function usePreviewGuard(): void {
  *  z nim — jedno czytelne zdanie.
  *  Dopóki fixture nie istnieje (Etapy 0–2), nie ma czego pilnować. */
 export async function assertVisualFixture(page: Page): Promise<void> {
-  if (FIXTURE_OFFERS === 0) return;
-  const res = await page.request.get("/oferty/");
-  if (!res.ok()) return; // brak strony diagnozuje assertPreview
+  if (FIXTURE_OFFERS === 0 || !FIXTURE_LIST_PATH) return;
+  const res = await page.request.get(FIXTURE_LIST_PATH);
+  if (!res.ok()) {
+    throw new Error(
+      `Testy wizualne wymagają buildu na zamrożonej treści: lista ` +
+        `${FIXTURE_LIST_PATH} z fixture'u nie istnieje w dist ` +
+        `(HTTP ${res.status()}). Odpal: pnpm build:visual && pnpm test:visual.`,
+    );
+  }
   const html = await res.text();
   const cards = (html.match(OFFER_CARD_MARKER) ?? []).length;
   if (cards === 0 || cards > FIXTURE_OFFERS) {
     throw new Error(
-      `Testy wizualne wymagają buildu na zamrożonej treści: /oferty/ ma ` +
+      `Testy wizualne wymagają buildu na zamrożonej treści: ${FIXTURE_LIST_PATH} ma ` +
         `${cards} kart, a tests/fixtures/offers ma ${FIXTURE_OFFERS} ofert. ` +
         `Odpal: pnpm build:visual && pnpm test:visual (zwykły pnpm build ` +
         `wciąga dane produkcyjne i rozjeżdża baseline'y).`,

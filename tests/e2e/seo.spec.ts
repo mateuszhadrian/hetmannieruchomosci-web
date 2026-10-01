@@ -3,10 +3,11 @@
 // tylko na chromium-1920.
 // STAN Etapu 0: JSON-LD nie jest jeszcze renderowany (wchodzi w Etapie 6,
 // węzeł per oferta w Etapie 4) — kontrakt pilnuje, że nie ma go nigdzie.
-// Oferty w sitemapie dochodzą razem z trasami ofert (Etap 2).
+// Oferty w sitemapie: trasy szkieletowe z danych (S2c, przez helper).
 import { type APIRequestContext, expect, test } from "@playwright/test";
 import { STATIC_PATHS } from "../../src/lib/routes";
 import { useChromium1920Only } from "../helpers/guards";
+import { offerRoutesFromData } from "../helpers/offers";
 import { gotoReady } from "../helpers/scroll";
 
 const SITE = "https://hetmannieruchomosci.com";
@@ -14,6 +15,14 @@ const SITE = "https://hetmannieruchomosci.com";
 // Wszystkie trasy statyczne mają własny canonical w domenie głównej
 // (także na podglądzie — podgląd chroni nagłówek noindex).
 const CANONICAL_ROUTES: readonly string[] = STATIC_PATHS;
+// Trasy ofert (szkielet S2c) budują się z danych produkcyjnych — przy
+// zerze ofert lista jest pusta i sitemapa = same trasy statyczne.
+const OFFER_ROUTES = offerRoutesFromData();
+const SITEMAP_ROUTES: readonly string[] = [
+  ...CANONICAL_ROUTES,
+  ...OFFER_ROUTES.lists,
+  ...OFFER_ROUTES.details,
+];
 
 useChromium1920Only(
   "meta/sitemap/crawl są niezależne od profilu — jeden projekt wystarczy",
@@ -182,9 +191,7 @@ test("sitemapa istnieje i zawiera dokładnie trasy z własnym canonicalem", asyn
       ),
     );
   }
-  expect(urls.sort()).toEqual(
-    CANONICAL_ROUTES.map((p) => `${SITE}${p}`).sort(),
-  );
+  expect(urls.sort()).toEqual(SITEMAP_ROUTES.map((p) => `${SITE}${p}`).sort());
 });
 
 test("wszystkie wewnętrzne linki odpowiadają < 400", async ({

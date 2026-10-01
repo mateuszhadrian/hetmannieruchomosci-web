@@ -116,8 +116,15 @@ formularz, nakładki) została, widoki powstają od nowa wg `docs/design/`.
   na 4399); `pnpm test:visual:update` (nowe baseline'y — TYLKO za zgodą
   Mateusza); `pnpm test:smoke:prod` (smoke przeciw adresowi produkcyjnemu
   bieżącej fazy)
-- `pnpm sync`, `pnpm sync:dry`, `pnpm fixtures:build` — dane ofert
-  (Etap 2; do tego czasu zaślepki kończące się błędem)
+- `pnpm sync` / `pnpm sync:dry` — sync ofert (`scripts/sync/index.ts`;
+  flagi `--source=api|file`, `--skip-photos`, `--skip-maps`, `--force`,
+  `--out=`, `--prev=`, `--report=mail|stdout|none`; lokalnie pisze do
+  `.sync-out/`, w Actions do `data/`; tryb `api` uruchamia wyłącznie
+  Mateusz albo workflow `sync.yml`); `pnpm fixtures:build` — fixture
+  ofert z zrzutu `ESTI_RAW_SNAPSHOT` (uruchamia Mateusz, żądania do sieci)
+- `pnpm test:dist` — skan zbudowanego `dist/` (nazwy pól zabronionych,
+  spójność `_redirects`); wymaga `pnpm build`; stoi w bramce syncu
+  i w jobie `quality`
 - `node scripts/optimize-images.mjs <src> <out.webp> [szer] [q]` — obrazy
   z eksportu designu → WebP do `src/assets/img/`
 - `node scripts/subset-fonts.mjs` — polskie subsety fontów
@@ -296,6 +303,70 @@ co zostało.
   z `--skip-photos` ma to potwierdzić obrazem; (5) `--dry-run` powinien
   dostać `createDryRunStore()` i pominąć wysyłkę raportu albo wysłać
   z dopiskiem; (6) sekret `REPORT_FROM` do dodania przed 2.11.
+- **Etap 2 / S2c (dane ofert, kroki 2.8–2.11) — WYKONANY** (2026-10-01,
+  gałąź `feat/sync-s2c`): `scripts/sync/pipeline.ts` (czysty przebieg
+  kroków 1–11 z zależnościami jako parametrami; bezpieczniki 0 ofert
+  i spadek > 50 % → `aborted` bez zapisu, `force` omija; porównanie
+  z poprzednim stanem po przepuszczeniu obu stron przez schematy
+  strict → „brak zmian"; przebudowa zależna od daty jako odcisk
+  wczoraj/dziś; czyszczenie R2 przed zapisem manifestów, błąd zasobnika
+  nie blokuje zapisu) + `index.ts` (CLI: `--source=api|file`, `--dry-run`,
+  `--skip-photos`, `--skip-maps`, `--force`, `--out=`, `--prev=`,
+  `--report=mail|stdout|none`; env = nazwy sekretów z 2.0,
+  `SYNC_AGREEMENT_SIGNAL` czytane tylko tu; wyjście lokalnie ZAWSZE
+  `.sync-out/`, w Actions `data/`; `outcome`/`changed`/`rebuild`
+  w `GITHUB_OUTPUT`; kody wyjścia 0/2/1); `src/lib/offers/data.ts`
+  (`loadOffersData(dir)` — jedyny odczyt danych, 6 plików strict, brak =
+  pusty stan, bufor per katalog, `BUILD_NOW` z env; integracja
+  `_redirects` czyta przez `data.ts`), `time-rules.ts` (`isNewOffer`,
+  `showsAvailableFrom`, `dateDependentFingerprint`, daty Europe/Warsaw),
+  `urls.ts` + `offerRoutes()`, `static-paths.ts`; szkielet
+  `src/pages/oferty/[...path].astro` (listy typ×transakcja
+  i z lokalizacją, detale: h1, numer, cena, pierwsze zdjęcie `card`,
+  mapa z `maps[coordKey()]`; znaczniki `data-offer-card`,
+  `data-offer-detail`, `data-offer-number`, `data-offer-price`;
+  `SkeletonPage` dostał `<slot />`); integracja
+  `src/integrations/fixture-media.ts` (kopia `tests/fixtures/offers/media/`
+  → `dist/media/` przy `MEDIA_SOURCE=fixture`); `scripts/sync/fixtures.ts`
+  (`pnpm fixtures:build`: ten sam pipeline w trybie plikowym, magazyn
+  plikowy WebP 400 px / mapy 600 px pod `fixtureMediaPath()`, `overrides`:
+  `price`, `previousPrice`, `addedAt`, `availableFrom`, `planPhotos`;
+  `FIXTURE_NOW` W PARZE z `BUILD_NOW` skryptu `build:visual`);
+  `tests/fixtures/offers/selection.json` (10 numerów, 4 nadpisania);
+  `.github/workflows/sync.yml` (cron 02:15 UTC + dispatch `dry_run`/
+  `force`/`skip_photos`, bramka test:unit + build + test:dist PRZED
+  commitem, commit bota, pull --rebase, push, deploy hook TYLKO gdy
+  `rebuild && !changed`, mail o błędzie przez curl, heartbeat warunkowy
+  przez `env.HEARTBEAT_URL`); `pnpm test:dist` (`vitest.dist.config.ts`,
+  `tests/dist/dist.test.ts`: skan `dist/**/*.{html,json}` pod kątem nazw
+  z `FORBIDDEN_FIELDS`, `_redirects` w limitach, bez pętli, każdy cel
+  plikiem w dist) także w jobie `quality`. Testy: `offers-data`,
+  `offers-time-rules`, `sync-index` (15), `sync-fixtures`,
+  `offers-contract` (data/ + fixture, skip bez danych), rozszerzone
+  `offers-urls`; e2e `offers-skeleton.spec.ts` (@prod-smoke, skip przy
+  zerze ofert; `/{NUMER}` → 301 tylko z `BASE_URL`); `seo.spec` sitemapa =
+  trasy statyczne + trasy ofert z danych (`offerRoutesFromData()`
+  w `tests/helpers/offers.ts`). Weryfikacja: format/lint/typecheck,
+  unit 263 (+29 skip), build na danych syntetycznych = 12 tras ofert,
+  11 reguł, sitemapa 20, `test:dist` zielony; `build:visual` zielony
+  z ostrzeżeniem o braku `media/`; e2e 81 (2 profile). DECYZJE W TRAKCIE:
+  (1) deploy hook nie jest wołany po pushu bota (push sam buduje Pages) —
+  rozjazd z 2.10 do akceptacji; (2) `/oferty/index.json` zostaje na 4.2;
+  (3) `--skip-photos`/`--skip-maps` = atrapy pobierania (znane bez zmian,
+  nowe odłożone z PHOTO_FETCH/MAP_FETCH); (4) `--dry-run` wysyła raport
+  z etykietą „przebieg próbny", `--report=stdout` ignorowane w Actions;
+  (5) poprzedni stan czytany ZAWSZE z `--prev` (domyślnie `data/`),
+  zły plik = błąd przebiegu; (6) `offers.json` sortowane po numerze.
+  UWAGI dla 2.9/2.11/Etapu 3: (1) fixture NIE jest zbudowany — `pnpm
+fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
+  `ESTI_DICTIONARY_FILE`, `GEOAPIFY_KEY`), potem commit generatów
+  i baseline'y w Etapie 3; (2) `data/` ma tylko `legacy-redirects.json` —
+  pierwszy sync (2.11) przez `workflow_dispatch`; (3) `sync.yml`
+  nieuruchamiany; składnia parametrów Geoapify nadal potwierdzona tylko
+  testem kształtu adresu; (4) mapa na detalu w trybie produkcyjnym to
+  oryginał z R2 (`mediaUrl`), w fixture kopia lokalna — prezentację
+  ustala 4.3; (5) `tests/helpers/offers.ts` zna `offerRoutesFromData()`
+  i `firstOfferPath()`, selektory po cechach nadal brak (Etap 3).
 
 ## Dokumentacja
 
