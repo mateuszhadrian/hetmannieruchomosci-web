@@ -184,17 +184,32 @@ co zostało.
   jest spod niej wyłączony; resztę katalogu pilnuje hook `guard-data.sh`.
   Źródła ikon (`src/assets/logo/source/`) i pełny eksport designu zostają
   w repo.
-- **Etap 1 (chmura) — W TOKU** (stan na 2026-09-30): repo publiczne na
-  GitHubie; ruleset ochrony `main` (wymagany check `quality`, bez
-  wyjątków — bypass dla bota syncu dojdzie w 2.0); projekt Cloudflare
-  Pages `hetmannieruchomosci-web` (deploy z `main` działa; nagłówek
-  noindex i Pages Function `/api/kontakt` potwierdzone; `_headers`
+- **Etap 1 (chmura) — WYKONANY** (2026-10-01): repo publiczne na
+  GitHubie; ruleset ochrony `main` (wymagany check `quality`; bypass
+  wyłącznie dla konta bota syncu — patrz 2.0 niżej); projekt Cloudflare
+  Pages `hetmannieruchomosci-web` (deploy z `main`; nagłówek noindex
+  i Pages Function `/api/kontakt` potwierdzone; `_headers`
   i `_routes.json` Pages wczytuje jako konfigurację i nie serwuje — 404
   pod tymi ścieżkami to stan poprawny); domena
-  `nowa.hetmannieruchomosci.com` Active w Pages (CNAME w panelu
-  rejestratora dodany 2026-09-30, reszta strefy nietknięta); workflow
-  `prod-smoke` włączony i zielony. ZOSTAŁO: Resend (konto klientki,
-  domena `send.`) — planowane na 2026-10-01.
+  `nowa.hetmannieruchomosci.com` Active z noindex; Resend klientki:
+  domena `send.` zweryfikowana, trzy rekordy dodane u rejestratora,
+  poczta klientki przetestowana (SPF/DKIM pass); workflow `prod-smoke`
+  zielony. Nazwy zasobów (bez wartości): `docs/kb/rejestr-konfiguracji.md`
+  (lokalnie).
+- **Etap 2 / 2.0 (chmura i konta) — WYKONANY** (2026-10-01): bucket R2
+  `hetman-media` (EU) z tokenem Object Read & Write (scope: ten bucket);
+  tymczasowy host mediów `hetman-media.hadrianm.pl` (Z2) Active —
+  transformacje potwierdzone nagłówkiem `cf-resized: internal=ok`; plan
+  Images: 9/5 000 transformacji w miesiącu → D29 wariant główny;
+  Geoapify: klucz zrotowany; deploy hook Pages `sync`; konto bota
+  `hetman-sync-bot` (collaborator Write, 2FA, classic PAT `public_repo`
+  ważny do 2027-10-01, User-bypass Always w rulesecie dodany przez API);
+  11 sekretów Actions: `ESTICRM_COMPANY`, `ESTICRM_TOKEN`,
+  `SYNC_AGREEMENT_SIGNAL`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`,
+  `R2_SECRET_ACCESS_KEY`, `GEOAPIFY_KEY`, `SYNC_PUSH_TOKEN`,
+  `REPORT_RESEND_API_KEY`, `REPORT_TO`, `PAGES_DEPLOY_HOOK`
+  (`HEARTBEAT_URL` — decyzja w S2c). `MEDIA_BASE` w `site-config.ts`
+  nadal pusty — wartość `https://hetman-media.hadrianm.pl` wpisuje S2b.
 - **Etap 2 / S2a (dane ofert, kroki 2.1–2.3) — WYKONANY** (2026-09-30,
   gałąź `feat/sync-s2a`): allow-lista i skan pól zabronionych
   (`src/lib/offers/public-fields.ts`), schemat Zod strict w dwóch
