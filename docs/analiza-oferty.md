@@ -493,3 +493,252 @@ prowizji", „Zapytaj o cenę" (part3 §2.5), formaty liczb (`format.ts`).
   — CSS `aspect-ratio: 3/2` i `object-fit: cover` rozstrzygają układ.
 - **Pigułki statusu w (a)** to informacja (liczniki trasy), nie
   przełączniki — bez `aria-pressed`; interakcja wchodzi z wyspą.
+
+## 12. Plan (b) — wyspa wyszukiwarki (`feat/oferty-wyspa`)
+
+> **Status:** plan ZAAKCEPTOWANY 2026-10-02 (wszystkie rekomendacje
+> 12.2–12.6), część (b) ZREALIZOWANA na gałęzi `feat/oferty-wyspa`
+> (uzupełnienia po implementacji: §12.9). Zakres z §0 (b) + z promptu
+> sesji: zależność pól od typu w UI i stan zero wyników (R23) weszły tu.
+
+### 12.1 Co powstaje
+
+| Plik | Rola |
+| --- | --- |
+| `src/components/offers/SearchIsland.tsx` (+ małe moduły w tym samym katalogu: `search-panel.tsx`, `location-field.tsx`, `sort-listbox.tsx`, `pagination.tsx`) | jedyna wyspa projektu: nagłówek z licznikiem (`h1` + `[data-offers-count]`, `aria-live`), panel filtrów (podstawowy + rozszerzony wg §1.2), pasek statusów (3 przełączniki `aria-pressed` z licznikami z `runSearch().counts`), sortowanie (przycisk + `role="listbox"`, klawiatura ↑↓ Home End Enter Esc, zamknięcie klikiem poza), siatka kart z `OfferCard.tsx`, paginacja (`<a href="?strona=N">` wszystkie numery + „Poprzednia"/„Następna" ikonami z `aria-label`, skrajna `aria-disabled`), stan zero wyników (`ZERO_RESULTS` z `offers-ui.ts`), skeleton |
+| `src/components/offers/OffersListPage.astro` | zostaje powłoką: sekcja `[data-offers-list][data-build-now]`, blok nawigacji (a) (`nav.ol-nav`) i CTA poza wyspą; `<SearchIsland client:load …/>`; `<noscript><style>` (patrz 12.3) |
+| `src/components/offers/offers.css` | style panelu (`op-*`), paska narzędzi, listboxa, paginacji, skeletonu, zera wyników; progi 1025/768 W PARZE z `site-config.ts` |
+| `src/lib/offers/filters.ts` | (1) **`locationSlug`** w `SearchState` — dokładne dopasowanie segmentu adresu listy (R18 niżej), parametr `resolveSlug` znika; (2) `targetPath(state, ctx)` — czysta reguła adresu dla `pushState` (12.2); (3) bez zmian reszty kontraktu |
+| `src/lib/offers/locations-ui.ts` (nowy) | czyste funkcje na drzewie z `index.json.locations`: `suggestLocations(nodes, query)` (poziomy miejscowość/dzielnica/poddzielnica, prefiks słowa po `normalizeText`, `info` ZAWSZE gdy węzeł je ma — part3 §4.2, licznik), `nodeLabel(node)`, `isLeaf(nodes, id)`, `streetsUnder(streets, id)` (kaskada ulicy: ulice wszystkich węzłów pod wybranym) |
+| `src/lib/offers/format.ts` | `formatShowCount(n)` → „Pokaż 1 ofertę / 2 oferty / 5 ofert" (biernik; `formatOffersCount` to mianownik nagłówka) |
+| `src/lib/offers/offers-ui.ts` | etykiety panelu (pola, opcje, „Więcej/Mniej filtrów", „Wyczyść", „Pokaż", podpowiedzi placeholderów z designu = PLACEHOLDER U9) |
+| `tests/unit/{offers-filters,offers-format,offers-locations-ui}.test.ts` | nowe reguły (12.4) |
+| `tests/e2e/oferty-wyspa.spec.ts` (nowy), `tests/e2e/oferty.spec.ts` (adaptacja), `tests/visual/oferty.spec.ts` (+4 zrzuty) | 12.4 |
+| `.claude/rules/{testing,sections}.md`, `CLAUDE.md`, `docs/README.md`, ten plik (§11 uzupełnienia) | dokumentacja |
+
+Nietknięte: `scripts/sync/**`, `data/**`, `tests/fixtures/offers/**`
+(poza propozycją 12.6, którą edytuje Mateusz), `overlay.ts`, `data.ts`,
+`schema.ts`, `index-entry.ts`, `OfferCard.tsx` (ta sama karta renderuje
+się w wyspie bez zmian), detal w `[...path].astro`, chrome, `lighthouserc*.cjs`.
+
+### 12.2 Architektura wyspy
+
+- **`client:load`, nie `client:idle`.** Wyspa jest właścicielem stanu
+  adresu: wejście z parametrami (`?strona=2`, `?cena-od=`) musi
+  przerenderować listę najszybciej, jak się da, a panel jest widoczny od
+  pierwszej klatki (SSR) — `idle` zostawiłoby okno, w którym kliknięcia
+  w panel giną. Koszt: moduł ~10–12 KB po gzipie (12.5) ładowany jako
+  `type=module` (nie blokuje LCP); hydratacja ≤ 46 kart to pojedyncze ms.
+- **Hydratacja na tym samym markupie.** Astro renderuje `SearchIsland`
+  przez Preact SSR i hydratuje TEN SAM komponent z tymi samymi propsami —
+  równość markupu wynika z konstrukcji. Propsy: `entries` (wpisy indeksu
+  TRASY — `toIndexEntry` jak w (a)), `complete` (`/oferty/` niesie
+  komplet → nigdy nie pobiera `index.json`), `locations` (drzewo, ~5 KB —
+  autocomplete i chipy działają od razu), `pathname` trasy, `nowIso`.
+  Stan początkowy = `parseSearch(pathname, "")` po obu stronach; po
+  montażu wyspa czyta `location.search` i przerenderowuje TYLKO gdy stan
+  różni się od domyślnego (test: zero mutacji DOM siatki przy wejściu bez
+  parametrów; CLS mierzone `PerformanceObserver` < 0,05).
+- **Dane spoza trasy** (`/oferty/index.json`): na listach SSG pobierane
+  w `requestIdleCallback` (fallback `setTimeout`) oraz natychmiast, gdy
+  stan z adresu ich wymaga; `/oferty/index-text.json` dopiero przy
+  pierwszym użyciu „szukaj w opisie" (także z adresu). **Skeleton** (12
+  placeholderów kart 3:2) wyłącznie wtedy, gdy wyspa nie umie wyrenderować
+  bieżącego stanu z tego, co ma (opis z adresu; zmiana rodzaju na liście
+  SSG przed nadejściem indeksu) — w stanie domyślnym skeleton nie
+  występuje (SSR). Licznik „Pokaż …" w czasie pobierania pokazuje „…"
+  i `aria-busy`.
+- **Panel = stan roboczy (draft), lista = stan zastosowany.** Pola panelu
+  (typ, transakcja, lokalizacja, ulica, cena, powierzchnia, pokoje,
+  piętro, rok, rynek, winda, umeblowane, liczba pięter, opis, numer)
+  zmieniają draft; licznik „Pokaż N ofert" liczy
+  `applyFilters(all, {...draft, statuses: stan.statuses})` na żywo;
+  „Pokaż" (i Enter w polu) stosuje draft. Pigułki statusu, sortowanie
+  i paginacja stosują się natychmiast (są poza panelem — jak w designie).
+  **„Wyczyść" = zeruje draft I stosuje** (jedno kliknięcie, lista nie
+  zostaje w stanie sprzed czyszczenia) — decyzja prezentacyjna, do
+  odwołania jednym wierszem.
+- **Zależność pól od typu w UI:** pole nieadekwatne do typu z draftu
+  (`isFieldRelevant`) znika z panelu rozszerzonego, a jego wartość
+  w drafcie jest kasowana (nie „wisi" ukryta); logika filtra bez zmian.
+- **Adres (`targetPath` + `serializeSearch`):** typ ∧ transakcja →
+  `/oferty/{typ}-na-{transakcja}/`; dodatkowo lokalizacja, gdy wybrany
+  węzeł jest LIŚCIEM drzewa i istnieje wpis tej kombinacji z tym slugiem
+  (= lista SSG istnieje) → `/…/{slug}/`; w pozostałych przypadkach
+  `/oferty/` albo ścieżka rodzaju + parametry (`?typ=`, `?transakcja=`,
+  `?lokalizacja={nodeId}`). Reszta zawsze w parametrach. `pushState`
+  przy każdej zmianie stanu zastosowanego, `popstate` → `parseSearch`
+  → render; nagłówek `h1`/`<title>` nie zmienia się przy `pushState`
+  poza `h1` wyspy (`listHeading` z nowego stanu) — canonical i meta
+  zostają z SSG (filtry w parametrach = ten sam canonical).
+- **Lokalizacja:** jeden wybór (parytet part2 §4.2 — jeden `location`),
+  chip z etykietą węzła (`label ?? name`) i X; pole = combobox
+  (`role="combobox"`, `aria-autocomplete="list"`, lista
+  `role="listbox"`, ↑↓ Enter Esc); podpowiedzi offline z `locations`
+  (12.1). Ulica: pole aktywne tylko z lokalizacją (kaskada), podpowiedzi
+  z `streetsUnder`, wpis wolny dozwolony (dopasowanie w `filters.ts`).
+- **Mobile w (b):** panel `display:none` < 1025 (W PARZE z
+  `DESKTOP_MIN_PX`), blok nawigacji (a) zostaje widoczny < 1025
+  i znika ≥ 1025 (panel go zastępuje); pigułki statusu i paginacja
+  działają na każdej szerokości; sortowanie na mobile dopiero z sheetem
+  (c). Kontrakt `expectBreakpointFlip(1025)` na `.ol-nav`/`.op`.
+- **Bez JS** (`<noscript><style>` w sekcji): karty od 13. (SSR `hidden`)
+  odkryte, paginacja i panel ukryte, nawigacja (a) widoczna także
+  ≥ 1025. Linki SSG i `/oferty/` działają jak w (a).
+
+### 12.3 Rozjazdy i decyzje tej sesji (ciąg dalszy §2)
+
+| # | Rozjazd | Rozstrzygnięcie |
+| --- | --- | --- |
+| R18 | Lista SSG z lokalizacją (a) = DOKŁADNIE oferty o danym slugu (`listPath`), a `parseSearch` z (a) mapowała slug → id węzła → dopasowanie PREFIKSOWE. Dla slugu miejscowości z dzielnicami (`…/poznan/`: 1 oferta SSG vs 19 prefiksem) hydratacja zmieniałaby zawartość strony | **Segment adresu listy = dopasowanie dokładne** (`locationSlug` w stanie), prefiks tylko dla `?lokalizacja=`; `resolveSlug` znika. Test unit + e2e (lista z lokalizacją po hydratacji = zbiór SSG) |
+| R19 | Budżet wyspy „< 15 KB" (§5.4: brutto). Runtime klienta Astro+Preact (`client.*.js`) to dziś 12 965 B brutto, więc brutto całości wyjdzie ok. 25–30 KB | **Raport w obu miarach**; bramką jest LHCI `script:size` 30 000 B, a serwer LHCI kompresuje (`compression` w `fallback-server.js`) → budżet LHCI i „< 15 KB" z part2 §9 czytam jako bajty PRZESYŁANE (gzip). Do potwierdzenia przez Mateusza po pomiarze (12.5) |
+| R20 | Design: „Wyczyść" tylko odmalowuje kontrolki | Zeruje draft i stosuje (12.2) |
+| R21 | Poziomy węzłów w podpowiedziach (obecna strona pozwala wybrać powiat/województwo) | Placeholder designu „Miejscowość lub dzielnica" → podpowiedzi = miejscowość / dzielnica / poddzielnica; powiat i województwo poza listą (`info` i tak niesie gminę i powiat). Jednowierszowa zmiana w `suggestLocations`, jeśli chcesz inaczej |
+| R22 | Design: etykieta „Pokaż" bez liczby (R10) | „Pokaż N ofert" biernikiem (`formatShowCount`) |
+| R23 | Stan zero wyników był w (c) | **Wchodzi w (b)** — bez niego filtr dający 0 wyników zostawia pustą siatkę; teksty `ZERO_RESULTS` (parytet part2 §4.3), zrzut `oferty-zero` |
+
+### 12.4 Testy
+
+- **Unit:** `offers-filters` — `locationSlug` (dokładny; koegzystencja
+  z `?lokalizacja=`; `serializeSearch` nigdy nie emituje slugu), `targetPath`
+  (liść z listą → ścieżka slugu; miejscowość z dzielnicami → parametr;
+  brak typu/transakcji → `/oferty/` + parametry); `offers-format`
+  (`formatShowCount` 1/2/5/12/22/25); `offers-locations-ui` (prefiks
+  słowa, diakrytyki, poziomy, `info` zawsze gdy jest, liść, ulice pod
+  węzłem) — synt. + fixture.
+- **E2E `oferty-wyspa.spec.ts`** (chromium-1920, dane produkcyjne,
+  `pickOffer` + `test.skip`, `useMediaStub`; oczekiwania liczone
+  `runSearch` na pobranym `/oferty/index.json` i `index-text.json`):
+  (1) hydratacja bez przerenderowania (MutationObserver na siatce = 0
+  mutacji) i CLS < 0,05; (2) każdy z 17 filtrów + status zawęża albo
+  zostawia liczbę = `runSearch` (część przez UI: pigułka typu, segment
+  transakcji, autocomplete lokalizacji → chip, cena + „Pokaż", „Więcej
+  filtrów" + pokoje + winda; reszta przez adres); (3) licznik „Pokaż N"
+  na żywo = liczba po „Pokaż"; (4) adres ↔ stan: po „Pokaż" adres =
+  `serializeSearch`, odświeżenie odtwarza kontrolki (aria-pressed,
+  wartości pól, chip) i liczbę; wstecz/dalej przywracają poprzedni
+  stan; (5) typ+transakcja → `pushState` na ścieżkę SSG; liść z listą →
+  ścieżka slugu, miejscowość z dzielnicami → `?lokalizacja=`; (6)
+  paginacja (skip ≤ 12): 12 widocznych, reszta `hidden`, `?strona=2`,
+  numery wszystkie, skrajne `aria-disabled`, strona poza zakresem = 0
+  widocznych + nagłówek N; (7) pigułki statusu: wyłączenie zmienia
+  liczbę i adres, wszystkie wyłączone = 0; (8) sortowanie: kolejność
+  widocznych = `sortEntries` dla 4 kluczy; (9) zero wyników: nagłówek
+  i 3 podpowiedzi; (10) lista SSG z lokalizacją po hydratacji = zbiór
+  SSG (R18); (11) klawiatura listboxa i combobox; (12) bez JS (surowy
+  HTML): `hidden` od 13., `<noscript>` ze stylem, panel w SSR; (13)
+  próg 1025: `.ol-nav` ↔ panel (`expectBreakpointFlip`); (14) zero
+  żądań do podmiotów trzecich także po interakcjach; (15) axe na
+  `/oferty/` z panelem rozwiniętym i otwartym listboxem (allowlista
+  pusta).
+- **Adaptacja `oferty.spec.ts`:** liczność kart = oferty (karty ukryte
+  liczą się), nawigacja (a) sprawdzana jako `toBeAttached` (na 1920
+  ukryta), pigułki statusu jako `button[data-status-group]`.
+- **Visual `oferty.spec.ts`** (fixture, `useVisualFixtureGuard`):
+  istniejące `oferty-list`, `oferty-card`, `oferty-list-location` się
+  ROZJADĄ na profilach desktop (panel zamiast nawigacji); nowe:
+  `oferty-panel` (element panelu, tylko profile ≥ 1025 — na mobile
+  `test.skip`), `oferty-panel-more` (panel rozwinięty, j.w.),
+  `oferty-list-filtered` (fullPage `/oferty/?cena-od=500000`, 6 profili),
+  `oferty-zero` (fullPage `/oferty/?numer=SW000000`, 6 profili),
+  `oferty-pagination` (fullPage `/oferty/?strona=2` — `test.skip`, dopóki
+  fixture ma ≤ 12 ofert). Razem +18 PNG na platformę (+6 po przebudowie
+  fixture'u). Kolejność święta: kod → workflow linux z brancha (spec
+  `tests/visual/oferty.spec.ts`, mode `changed`; `all` tylko po pomiarze
+  progiem 0) → `git pull` → diff darwin → `test:visual:update` → commit
+  darwin na końcu.
+
+### 12.5 Budżet wyspy — pomiar
+
+Po `pnpm build:visual`: z `dist/oferty/index.html` zbieram `component-url`
+i `renderer-url` z `<astro-island>`, `<script src>` oraz statyczne
+importy tych plików w `dist/_astro/` (skrypt pomiarowy w scratchpadzie,
+wynik do PR-a); dla każdego pliku bajty brutto i po `gzip -9`, osobno:
+runtime (`client.*.js` = Preact + renderer Astro; `signals.module.*.js`
+NIE ładuje się bez sygnałów), kod wyspy (chunk komponentu + ewentualne
+współdzielone), skrypt inline `astro-island` (bajty w HTML). Prognoza:
+brutto 25–30 KB, gzip 10–13 KB; LHCI `script:size` po (a) ≈ 4 KB → po
+(b) ≈ 15 KB z 30 000 B. LHCI lokalnie 1 przebieg na obu configach
+(asercje), wynik w raporcie. Koszt uboczny: `client:load` serializuje
+propsy do HTML — `/oferty/` z 46 wpisami to ok. +60 KB HTML brutto
+(gzip ≈ 9 KB) — podaję w raporcie.
+
+### 12.6 Fixture — propozycja do `selection.json` (edytuje Mateusz)
+
+| Numer | Co wnosi | Luka z §5.6 |
+| --- | --- | --- |
+| `SW803370` | lokal komercyjny na wynajem, aktywna, Jelonek (węzeł z `info`) | lista `komercyjny-na-wynajem`, chip z `info` |
+| `SW149199` | mieszkanie na wynajem z windą (`elevators` = 1), wynajęta, Poznań bez dzielnicy (slug `poznan` = R18) | winda „tak", dokładny slug miejscowości |
+| `SW622811` | mieszkanie na sprzedaż z windą, sprzedana, Wilda | druga winda, 3. karta `mieszkanie-na-sprzedaz` |
+
+13 ofert → `/oferty/` ma 2 strony (zrzut `oferty-pagination`, e2e na
+fixture nie trzeba — e2e biega na `data/`). Kolejność dla Mateusza:
+edycja `selection.json` → `pnpm fixtures:build` → commit generatów na
+`feat/oferty-wyspa` PRZED workflowem baseline'ów (inaczej baseline'y
+powstają dwa razy).
+
+### 12.7 Zostaje do (c)
+
+Bottom sheety „Filtry" i „Sortuj" na `overlay.ts`, przyciski
+Filtruj/Sortuj i sortowanie na mobile, przełącznik siatka/lista, stany
+brzegowe (komunikat przy nieznanym parametrze, zły slug), panel na
+tablecie 768–1024 (w (b) tablet = układ mobilny: nawigacja (a)).
+
+### 12.8 Punkty kontrolne crona (sesja (b))
+
+Start sesji 2026-10-02 15:45 UTC: bieg planowy 2026-10-03 — „oczekuje"
+(ostatni bieg `schedule` 2026-10-02 08:27 UTC, opisany). Kontrola
+w każdym punkcie z promptu; porządek po cronie ma pierwszeństwo.
+
+### 12.9 Uzupełnienia po implementacji (b)
+
+- **Budżet wyspy (pomiar 12.5, `pnpm build:visual`, `dist/oferty/`):**
+
+  | Plik | Rola | brutto | gzip -9 |
+  | --- | --- | --- | --- |
+  | `SearchIsland.*.js` | kod wyspy (panel, combobox, listbox, paginacja, karta, `filters.ts`, `offers-ui.ts`, `format.ts`, `locations-ui.ts`, ikony) | 32 794 B | 11 898 B |
+  | `preact.module.*.js` + `hooks.module.*.js` | Preact 10 + hooks | 13 170 B | 5 640 B |
+  | `client.*.js` | renderer kliencki Astro (hydratacja) | 2 669 B | 1 395 B |
+  | **wyspa + runtime** | | **48 674 B** | **18 991 B** |
+  | chrome (a): Navbar, Footer, `contact-details` | bez zmian | 8 044 B | 3 269 B |
+  | **razem `script` na `/oferty/`** | bramka LHCI 30 000 B liczona po kompresji | 56 718 B | **22 260 B (74 %)** |
+  | `signals.module.*.js` | emitowany, NIE ładowany (`import()` tylko przy sygnałach) | 7 915 B | — |
+  | skrypty inline w HTML (fade BaseLayout + runtime `astro-island`) | | 5 630 B | — |
+
+  LHCI lokalnie (1 przebieg, oba configi, asercje czyste): `script`
+  na `/oferty/` = **25 889 B (86 % bramki 30 000 B)** — LHCI liczy
+  transfer z własną kompresją i nagłówkami, więc wyżej niż `gzip -9`;
+  `total` 458 KB (46 % / 38 %), TBT 0 ms, CLS 0,003, LCP desktop
+  528 ms (próg 1 800). Zbliżenie do bramki `script` zgłoszone: kolejne
+  skrypty widoków (lightbox 4.3, hero 4.4) muszą zmieścić się w ~4 KB
+  albo bramka wymaga decyzji o progu.
+  „< 15 KB" z part2 §9 spełnione dla kodu wyspy po gzipie (11,9 KB)
+  i NIE dla sumy z runtime (19,0 KB) ani brutto (48,7 KB) — R19 do
+  decyzji Mateusza (bramka twarda LHCI mieści się z zapasem 26 %).
+  Serializacja propsów `client:load`: `/oferty/` na fixture (10 wpisów)
+  = 79,6 KB HTML brutto / 12,1 KB gzip (`props="…"` 22 435 znaków);
+  na `data/` (46 wpisów) proporcjonalnie ok. 100 KB brutto / ~15 KB gzip.
+- **Zod w bundlu (wycięty):** pierwszy build wyspy miał 107 880 B brutto,
+  bo `filters.ts` i panel importowały słowniki wartości z `schema.ts`
+  (zod). Słowniki przeniesione do `src/lib/offers/enums.ts` (moduł bez
+  zależności), `schema.ts` re-eksportuje — jedyna zmiana w `schema.ts`,
+  bez zmiany kształtu schematu (R24, poza planem; reguła w `sections.md`).
+- **Hydratacja a sąsiednie teksty w JSX** (R25): `{a} <b>` to w vdom dwa
+  węzły tekstowe, a parser HTML daje jeden — Preact przy hydratacji
+  rozdzielał węzeł (94 mutacje DOM siatki). Poprawka w `OfferCard.tsx`
+  (`sr-only` „zdjęć") i wyspie (licznik, pigułki statusu); test „zero
+  mutacji" pilnuje.
+- **`?status=` (pusty zbiór)** musi przeżyć serializację — `serializeSearch`
+  pomijało puste wartości, więc „żadna grupa" czytała się jak stan
+  domyślny; poprawka + test unit.
+- **Kontrast „Pokaż":** biały na miedzi (3,1:1) → `--ink` na miedzi
+  (5,5:1), hover `--copper-hover` — jak „Zadzwoń" stopki (R6 chrome'u).
+  Wyłączone strzałki paginacji: `span` bez roli nie może nieść
+  `aria-label` (axe `aria-prohibited-attr`) → tekst `sr-only`.
+- **Pigułki typu przy 1366 px** zawijały się do dwóch linii — `ol-pill--sm`
+  14 px / padding 12 px / gap 6 px (mieszczą się w 5/12 panelu).
+- **Nawigacja (a) na mobile zostaje** (panel wchodzi tylko ≥ 1025, sheety
+  w (c)); na desktopie znika pod panelem, `<noscript>` ją przywraca.
+- **Test unit `liczniki na fixture`** (`offers-filters.test.ts`) ma liczby
+  policzone dla 10 ofert fixture'u — po przebudowie fixture'u (12.6) do
+  aktualizacji razem z baseline'ami.

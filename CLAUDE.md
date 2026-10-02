@@ -536,13 +536,79 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   `src/lib/offers/location-path.ts` — `scripts/sync/locations.ts`
   importuje i re-eksportuje (`locationPath`, `leafId`,
   `communeIsCityPart`); zachowanie bez zmian (unit 356 zielone, w tym
-  `sync-locations` i test spójności z `locations.json`). Pierwszy bieg
+  `sync-locations` i test spójności z `locations.json`). PR #15
+  zmergowany 2026-10-02 15:38 UTC, `prod-smoke` zielony, bramka bota
+  potwierdzona. Pierwszy bieg
   syncu po tej zmianie = cron 2026-10-03 (sprawdzić: „bez zmian",
   brak commita bota). DALEJ: (b) wyspa (`feat/oferty-wyspa`) i (c)
   mobile — kolejne sesje 4.2 (prompt lokalny
   `docs/plan/prompt-etap-4-2b.md`); przed (b) decyzja o wpisach do
   `selection.json` (≥ 13 ofert, oferta z windą, lokal na wynajem).
   Porządek po cronie: bieg 2026-10-03 — do dopisania.
+
+- **Etap 4 / 4.2 (b) (`/oferty/`: wyspa wyszukiwarki) — W TOKU**
+  (2026-10-02, gałąź `feat/oferty-wyspa`, plan §12 w `docs/analiza-oferty.md`
+  zaakceptowany w całości; kod kompletny, czeka na commity, fixture
+  i baseline'y): `src/components/offers/SearchIsland.tsx` (`client:load`
+  w `OffersListPage.astro`) + `search-panel.tsx`, `combobox.tsx`,
+  `sort-listbox.tsx`, `pagination.tsx` — nagłówek z licznikiem
+  (`aria-live`), panel podstawowy + rozszerzony (17 filtrów, chip
+  lokalizacji z autocomplete offline z `info`, ulica w kaskadzie, pola
+  zależne od typu znikają), pigułki statusu jako przełączniki z licznikami
+  na żywo, listbox sortowania z klawiatury, paginacja `?strona=N`
+  (wszystkie numery, prawdziwe linki), stan zero wyników (`ZERO_RESULTS`),
+  skeleton tylko gdy stanu nie da się policzyć z propsów; hydratacja na
+  markupie SSR (stan początkowy `parseSearch(pathname, "")` po obu
+  stronach, `location.search` czytane po montażu; zero mutacji siatki =
+  kontrakt e2e); propsy = wpisy trasy + drzewo lokalizacji, `/oferty/`
+  nie pobiera indeksu, listy SSG dociągają `index.json` w idle,
+  `index-text.json` przy pierwszym „szukaj w opisie"; panel = draft
+  (mapa parametrów → `parseSearch`), „Pokaż N ofert" (`formatShowCount`,
+  biernik) i Enter stosują, „Wyczyść" zeruje i stosuje; `pushState` przez
+  `targetPath()` (typ ∧ transakcja → ścieżka SSG, liść drzewa z listą →
+  segment slugu, inaczej `?lokalizacja=`), `popstate`; SSR: karty od 13.
+  `hidden`, `<noscript><style>` odkrywa je i chowa panel/paginację/sort,
+  nawigacja (a) zostaje < 1025 (panel tylko ≥ 1025, W PARZE
+  z `DESKTOP_MIN_PX`). `filters.ts`: `locationSlug` (segment adresu
+  listy = dopasowanie DOKŁADNE, R18; `resolveSlug` usunięty), pusty
+  `status=` przeżywa serializację, `targetPath()`; nowe
+  `src/lib/offers/locations-ui.ts` (podpowiedzi), `enums.ts` (słowniki
+  wartości bez zoda — `schema.ts` re-eksportuje; zod w bundlu dawał
+  +75 KB), `format.ts` + `formatShowCount`, `offers-ui.ts` + `PANEL`,
+  `MARKET_LABEL`, `FURNISHED_LABEL`; `OfferCard.tsx` tylko poprawka
+  sąsiednich węzłów tekstowych (hydratacja). Testy: unit `offers-filters`
+  (+5), `offers-format` (+1), nowy `offers-locations-ui` (6) — 372 (+2
+  skip); e2e nowy `oferty-wyspa.spec.ts` (15 testów, chromium-1920),
+  `oferty.spec.ts` zaadaptowany (nawigacja (a) w DOM, widoczna < 1025;
+  plakietki `toHaveCount`); visual `oferty.spec.ts` +5 zrzutów
+  (`oferty-panel`, `oferty-panel-more` tylko ≥ 1025; `oferty-list-filtered`,
+  `oferty-zero`; `oferty-pagination` skip dopóki fixture ≤ 12 ofert).
+  Weryfikacja lokalna: format/lint/typecheck, unit 372, build 89 stron,
+  `test:dist` 6/6, e2e 298 (+320 skip profili) na 6 profilach, axe 0
+  naruszeń (po poprawkach: „Pokaż" `--ink` na miedzi, strzałki paginacji
+  bez `aria-label` na spanie); `test:visual` 24 czerwone OCZEKIWANE
+  (18 nowych zrzutów bez baseline'u + `oferty-list` i
+  `oferty-list-location` na 3 profilach desktop), chrome i 404 bez
+  rozjazdu; pomiar progiem 0 na mobile: 7/9 identyczne, 2 po 4 i 10 px
+  → workflow linux w trybie `changed`. BUDŻET WYSPY (R19, `build:visual`):
+  kod wyspy 32,8 KB brutto / 11,9 KB gzip, Preact + hooks + renderer
+  15,8 KB / 7,0 KB, razem 48,7 KB / 19,0 KB; cały `script` na `/oferty/`
+  56,7 KB / 22,3 KB (gzip -9); LHCI lokalnie (1 przebieg, oba configi,
+  asercje czyste) liczy `script` na `/oferty/` jako 25 889 B = 86 %
+  bramki 30 000 B (ZBLIŻENIE — do decyzji przy kolejnych skryptach),
+  `total` 458 KB (46 % mobile / 38 % desktop), TBT 0, CLS 0,003, LCP
+  desktop 528 ms; propsy `client:load` w HTML: `/oferty/` na fixture
+  79,6 KB / 12,1 KB. DECYZJE W TRAKCIE (R18–R25 w analizie §12.3 i §12.9):
+  `client:load` zamiast `idle`; slug dokładny; budżet czytany po gzipie
+  (do potwierdzenia); „Wyczyść" stosuje; podpowiedzi tylko
+  miejscowość/dzielnica/poddzielnica; zero wyników już w (b); słowniki
+  w `enums.ts`. DO ZROBIENIA PRZEZ MATEUSZA: `selection.json` +
+  `SW803370`, `SW149199`, `SW622811` → `pnpm fixtures:build` → aktualizacja
+  liczb w teście `liczniki na fixture` (`offers-filters.test.ts`) →
+  baseline'y linux (workflow, spec `tests/visual/oferty.spec.ts`, mode
+  `changed`) → darwin → PR. (c) = sheety mobile, Filtruj/Sortuj,
+  siatka/lista, stany brzegowe. Porządek po cronie: bieg 2026-10-03 —
+  do dopisania (w chwili końca sesji nie wystąpił).
 
 ## Dokumentacja
 

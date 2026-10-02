@@ -140,6 +140,54 @@ odziedziczone z szablonu projektu i stan chrome'u po Etapie 0.
   (opisy) — endpointy statyczne, poza sitemapą; nazwy kluczy =
   `INDEX_FIELDS` (test unit + skan `test:dist`).
 
+## Wyszukiwarka ofert — stan po Etapie 4.2 (b) (`docs/analiza-oferty.md` §12)
+
+- **Jedyna wyspa projektu:** `src/components/offers/SearchIsland.tsx`
+  (`client:load` w `OffersListPage.astro`) + `search-panel.tsx`,
+  `combobox.tsx`, `sort-listbox.tsx`, `pagination.tsx`. Renderuje w SSR
+  nagłówek z licznikiem, panel, pasek statusów + sortowanie, siatkę
+  (WSZYSTKIE karty trasy, od 13. `hidden`), paginację, zero wyników;
+  hydratacja na TYM SAMYM markupie (stan początkowy =
+  `parseSearch(pathname, "")` po obu stronach; `location.search` czytane
+  po montażu). Wyspa ma `display: contents`, jej bloki są elementami
+  flexa `.ol-in`, a `order` wplata nawigację (a) między nagłówek a resztę.
+- **Nic nie importuj do wyspy z modułów z zodem/htmlparser2/node:** słowniki
+  wartości żyją w `src/lib/offers/enums.ts` (schema.ts re-eksportuje);
+  `index-entry.ts`, `data.ts`, `schema.ts` tylko jako `import type`.
+  Po każdej zmianie wyspy pomiar budżetu (analiza §12.5) — import zoda
+  dał +75 KB brutto, zanim został wycięty.
+- **Logika wyłącznie z `filters.ts`** (`parseSearch`, `applyFilters`,
+  `sortEntries`, `statusCounts`, `targetPath`, `serializeSearch`) i
+  `locations-ui.ts` (podpowiedzi). Brakująca reguła = zmiana tam + unit.
+- **Panel = draft** (mapa nazw parametrów → surowy tekst, parsowana przez
+  `parseSearch` — pole i adres czytają wartości identycznie); „Pokaż N
+  ofert" (`formatShowCount`, biernik) i Enter stosują; „Wyczyść" zeruje
+  i stosuje (R20). Statusy, sortowanie, paginacja stosują się od razu.
+  Pola nieadekwatne do typu z draftu znikają z panelu rozszerzonego
+  (`isFieldRelevant`), a ich wartości są kasowane (`pruneDraft`).
+- **Adres:** `targetPath` — typ ∧ transakcja → ścieżka SSG; lokalizacja
+  w ścieżce tylko dla LIŚCIA drzewa z istniejącą listą, inaczej
+  `?lokalizacja=`; segment adresu listy = `locationSlug` (dokładny, R18).
+  `pushState` przy każdej zmianie, `popstate` → `parseSearch`.
+- **Dane:** propsy = wpisy indeksu TRASY + drzewo lokalizacji; `/oferty/`
+  (`complete`) nie pobiera `index.json`; listy SSG dociągają go
+  w `requestIdleCallback` albo natychmiast, gdy stan wymaga;
+  `index-text.json` przy pierwszym „szukaj w opisie". Skeleton tylko gdy
+  stanu nie da się policzyć z propsów. `client:load` serializuje propsy do
+  HTML (`/oferty/` z 46 wpisami ≈ +60 KB brutto, gzip ≈ 9 KB).
+- **Breakpointy W PARZE z `DESKTOP_MIN_PX`:** panel (`.op`) i sortowanie
+  (`.ol-sort`) tylko ≥ 1025; nawigacja (a) `.ol-nav` tylko < 1025
+  (`<noscript>` przywraca ją na desktopie i chowa panel/paginację).
+- **a11y:** przycisk „Pokaż" = tekst `--ink` na miedzi (jak „Zadzwoń"
+  stopki); span bez roli nie niesie `aria-label` (wyłączone strzałki
+  paginacji mają `sr-only`); combobox lokalizacji/ulicy
+  (`aria-activedescendant`, `role=option`), listbox sortowania z fokusem
+  na opcji; `aria-controls` tylko na istniejący element (`#op-more`
+  renderowany wyłącznie po rozwinięciu).
+- **Hydratacja a JSX:** sąsiednie teksty (`{a} <b>`) pisz jednym
+  wyrażeniem — inaczej Preact rozdziela węzeł scalony przez parser (test
+  „zero mutacji siatki" to wyłapuje).
+
 ## Dane kontaktowe (antyscraping)
 
 - Telefon i e-maile: sloty `a[data-tel]`, `a[data-mail="biuro|joanna"]`
