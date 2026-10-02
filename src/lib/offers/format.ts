@@ -107,6 +107,12 @@ export function formatOffersCount(n: number): string {
   return countLabel(n, "oferta", "oferty", "ofert");
 }
 
+/** „Pokaż 1 ofertę / 2 oferty / 5 ofert" — biernik (przycisk panelu
+ *  wyszukiwarki, R22); `0` → „Pokaż 0 ofert". */
+export function formatShowCount(n: number): string {
+  return `Pokaż ${countLabel(n, "ofertę", "oferty", "ofert")}`;
+}
+
 /** „Poznań, Malta · ul. Milczańska". Typ ulicy z danych (`ul.`/`os.`),
  *  domyślnie `ul.`. */
 export function formatLocation(loc: {

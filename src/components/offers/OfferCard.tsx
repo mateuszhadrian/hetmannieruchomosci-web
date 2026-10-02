@@ -123,7 +123,9 @@ export function OfferCard({
               >
                 <Icon name="camera" />
                 <span>{formatInt(e.photosCount)}</span>
-                <span class="sr-only"> {UI.photos}</span>
+                {/* jeden węzeł tekstowy — dwa sąsiednie teksty w JSX
+                    parser HTML scala, a hydratacja Preact rozdziela */}
+                <span class="sr-only">{` ${UI.photos}`}</span>
               </li>
               {e.hasVideo && (
                 <li class="oc-pill">

@@ -8,7 +8,10 @@
 // do podmiotów trzecich. Oferty przez helper + `pickOffer` + `test.skip`
 // z powodem (skład `data/` zmienia się co noc); media zaślepione.
 // Treść jest niezależna od profilu — biega na chromium-1920 (progi
-// mierzone przez setViewportSize).
+// mierzone przez setViewportSize). Po 4.2 (b) listę renderuje wyspa:
+// karty od 13. mają `hidden` (liczność kart w DOM = oferty), nawigacja (a)
+// jest w DOM, ale ≥ 1025 ukryta (panel ją zastępuje) — kontrakty wyspy
+// w `oferty-wyspa.spec.ts`.
 import { expect, test, type Page } from "@playwright/test";
 import { buildPhoneHref } from "../../src/lib/contact-details";
 import { INDEX_FIELDS } from "../../src/lib/offers/index-entry";
@@ -142,9 +145,11 @@ test.describe("/oferty/ — lista wszystkich ofert", () => {
     test(`plakietka „${label}” dla statusu ${status}`, async ({ page }) => {
       const o = need({ status });
       await gotoReady(page, OFFERS_PATH);
+      // karta może leżeć poza pierwszą stroną (li[hidden]) — kontrakt
+      // dotyczy treści karty, nie jej widoczności
       await expect(
         card(page, o.number).locator(`.oc-badge[data-badge="${label}"]`),
-      ).toBeVisible();
+      ).toHaveCount(1);
     });
   }
 
@@ -195,11 +200,14 @@ test.describe("/oferty/ — lista wszystkich ofert", () => {
     expect(counts.reduce((a, b) => a + b, 0)).toBe(OFFERS.length);
   });
 
-  test("nawigacja po listach SSG: jedna pozycja bieżąca, każdy link odpowiada < 400", async ({
+  test("nawigacja po listach SSG (w DOM; widoczna < 1025): jedna pozycja bieżąca, każdy link odpowiada < 400", async ({
     page,
     request,
   }) => {
     await gotoReady(page, OFFERS_PATH);
+    await expect(page.locator("nav.ol-nav")).toBeHidden();
+    await page.setViewportSize({ width: DESKTOP_MIN_PX - 1, height: 900 });
+    await expect(page.locator("nav.ol-nav")).toBeVisible();
     await expect(
       page.locator('[data-offers-kinds] a[aria-current="page"]'),
     ).toHaveCount(1);
@@ -312,9 +320,10 @@ test.describe("listy SSG typ × transakcja [× lokalizacja]", () => {
         String(expected.length),
       );
       // pastylki lokalizacji: „Wszystkie" + każda lokalizacja rodzaju
+      // (w DOM; ≥ 1025 ukryte pod panelem wyspy)
       await expect(
         page.locator("[data-offers-locations] a").first(),
-      ).toBeVisible();
+      ).toBeAttached();
       await expect(
         page.locator('[data-offers-locations] a[aria-current="page"]'),
       ).toHaveCount(1);

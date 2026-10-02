@@ -21,6 +21,7 @@ import {
   STATUS_GROUPS,
   statusCounts,
   statusGroupOf,
+  targetPath,
   type SearchState,
 } from "../../src/lib/offers/filters";
 import {
@@ -28,7 +29,9 @@ import {
   toIndexText,
   type OfferIndexEntry,
 } from "../../src/lib/offers/index-entry";
-import { readOffersTyped } from "../helpers/offers";
+import { join } from "node:path";
+import { readSelection, SELECTION_FILE } from "../../scripts/sync/fixtures";
+import { FIXTURE_DIR, readOffersTyped } from "../helpers/offers";
 import { syntheticFullOffers } from "../helpers/raw";
 
 const offers = syntheticFullOffers();
@@ -78,18 +81,18 @@ describe("parseSearch / serializeSearch", () => {
     expect(serializeSearch(s).toString()).toBe("");
   });
 
-  it("ścieżka ma pierwszeństwo przed parametrami; slug lokalizacji przez resolveSlug", () => {
+  it("ścieżka ma pierwszeństwo przed parametrami; segment lokalizacji = locationSlug (dokładny), ?lokalizacja= = prefiks", () => {
     const s = parseSearch(
       "/oferty/dom-na-sprzedaz/kornik-bnin/",
-      "?typ=mieszkanie&transakcja=wynajem&lokalizacja=inne",
-      (slug) =>
-        slug === "kornik-bnin"
-          ? "wielkopolskie/poznanski/kornik/bnin"
-          : undefined,
+      "?typ=mieszkanie&transakcja=wynajem&lokalizacja=wielkopolskie/poznan",
     );
     expect(s.mainType).toBe("dom");
     expect(s.transaction).toBe("sprzedaz");
-    expect(s.location).toBe("wielkopolskie/poznanski/kornik/bnin");
+    expect(s.locationSlug).toBe("kornik-bnin");
+    expect(s.location).toBe("wielkopolskie/poznan");
+    expect(
+      parseSearch("/oferty/dom-na-sprzedaz/", "").locationSlug,
+    ).toBeUndefined();
   });
 
   it("liczby: spacje i NBSP usuwane, tekst ignorowany bez błędu; strona 0/-1/abc → 1", () => {
@@ -112,6 +115,13 @@ describe("parseSearch / serializeSearch", () => {
       parseSearch("/oferty/", "?status=aktywna,archiwalne,foo").statuses,
     ).toEqual(["aktywna", "archiwalne"]);
     expect(parseSearch("/oferty/", "?status=").statuses).toEqual([]);
+    // pusty zbiór musi przetrwać serializację (`status=`), inaczej adres
+    // „żadna grupa" czytałby się jako stan domyślny
+    expect(serializeSearch(state({ statuses: [] })).toString()).toBe("status=");
+    expect(
+      parseSearch("/oferty/", serializeSearch(state({ statuses: [] })))
+        .statuses,
+    ).toEqual([]);
   });
 
   it("nieznany sort → najnowsze; nieznana winda/rynek/umeblowanie → ignorowane", () => {
@@ -154,9 +164,14 @@ describe("parseSearch / serializeSearch", () => {
       serializeSearch(s, {
         mainType: "mieszkanie",
         transaction: "sprzedaz",
-        location: "wielkopolskie/poznan/poznan",
       }).toString(),
-    ).toBe("cena-do=800000&status=aktywna%2Carchiwalne&sort=priceAsc&strona=2");
+    ).toBe(
+      "lokalizacja=wielkopolskie%2Fpoznan%2Fpoznan&cena-do=800000&status=aktywna%2Carchiwalne&sort=priceAsc&strona=2",
+    );
+    // slug z adresu listy nigdy nie jest parametrem
+    expect(
+      serializeSearch(state({ locationSlug: "poznan-winogrady" })).toString(),
+    ).toBe("");
   });
 
   it("parseSearch ∘ serializeSearch zachowuje stan", () => {
@@ -197,6 +212,24 @@ describe("filtry (AND) na danych syntetycznych", () => {
     expect(run({ location: "wielkopolskie/poznanski" })).toEqual(["SW900003"]);
     expect(run({ location: "wielkopolskie/poznan" })).not.toContain("SW900003");
     expect(run({ location: "dolnoslaskie" })).toEqual([]);
+  });
+
+  it("slug z adresu listy: dopasowanie DOKŁADNE do location.slug (R18); AND z ?lokalizacja=", () => {
+    // „poznan" to miejscowość z dzielnicami: prefiks dałby 3 wpisy, slug — 1
+    expect(run({ locationSlug: "poznan" })).toEqual(["SW900004"]);
+    expect(run({ location: "wielkopolskie/poznan/poznan" })).toHaveLength(3);
+    expect(run({ locationSlug: "poznan-winogrady" })).toEqual(["SW900001"]);
+    expect(run({ locationSlug: "poznan-nieznane" })).toEqual([]);
+    expect(
+      run({
+        locationSlug: "poznan-winogrady",
+        location: "wielkopolskie/poznanski",
+      }),
+    ).toEqual([]);
+    expect(
+      parseSearch("/oferty/mieszkanie-na-sprzedaz/poznan-winogrady/", "")
+        .locationSlug,
+    ).toBe("poznan-winogrady");
   });
 
   it("ulica: tylko w kaskadzie z lokalizacją, bez wielkości liter i diakrytyków", () => {
@@ -403,23 +436,165 @@ describe("paginacja i liczniki", () => {
   });
 });
 
+describe("targetPath — adres dla stanu (pushState wyspy)", () => {
+  const nodes = [
+    { id: "wielkopolskie", parent: null },
+    { id: "wielkopolskie/poznan", parent: "wielkopolskie" },
+    { id: "wielkopolskie/poznan/poznan", parent: "wielkopolskie/poznan" },
+    {
+      id: "wielkopolskie/poznan/poznan/stare-miasto",
+      parent: "wielkopolskie/poznan/poznan",
+    },
+    {
+      id: "wielkopolskie/poznan/poznan/stare-miasto/winogrady",
+      parent: "wielkopolskie/poznan/poznan/stare-miasto",
+    },
+    {
+      id: "wielkopolskie/poznan/poznan/grunwald",
+      parent: "wielkopolskie/poznan/poznan",
+    },
+    {
+      id: "wielkopolskie/poznan/poznan/grunwald/lazarz",
+      parent: "wielkopolskie/poznan/poznan/grunwald",
+    },
+    { id: "wielkopolskie/poznanski", parent: "wielkopolskie" },
+    {
+      id: "wielkopolskie/poznanski/tarnowo-podgorne",
+      parent: "wielkopolskie/poznanski",
+    },
+    {
+      id: "wielkopolskie/poznanski/tarnowo-podgorne/baranowo",
+      parent: "wielkopolskie/poznanski/tarnowo-podgorne",
+    },
+  ];
+  const WINOGRADY = "wielkopolskie/poznan/poznan/stare-miasto/winogrady";
+  const POZNAN = "wielkopolskie/poznan/poznan";
+
+  it("bez typu albo transakcji → /oferty/ + parametry; slug z adresu wraca do id węzła", () => {
+    const t = targetPath(state({ mainType: "mieszkanie" }), entries, nodes);
+    expect(t.pathname).toBe("/oferty/");
+    expect(t.pathState).toEqual({});
+    expect(serializeSearch(t.state, t.pathState).toString()).toBe(
+      "typ=mieszkanie",
+    );
+    const u = targetPath(state({ locationSlug: "poznan" }), entries, nodes);
+    expect(u.state.location).toBe(POZNAN);
+    expect(u.state.locationSlug).toBeUndefined();
+  });
+
+  it("typ ∧ transakcja → ścieżka listy; liść z listą → segment slugu, miejscowość z dzielnicami → parametr", () => {
+    const leaf = targetPath(
+      state({
+        mainType: "mieszkanie",
+        transaction: "sprzedaz",
+        location: WINOGRADY,
+      }),
+      entries,
+      nodes,
+    );
+    expect(leaf.pathname).toBe(
+      "/oferty/mieszkanie-na-sprzedaz/poznan-winogrady/",
+    );
+    expect(leaf.pathState).toEqual({
+      mainType: "mieszkanie",
+      transaction: "sprzedaz",
+      locationSlug: "poznan-winogrady",
+    });
+    expect(leaf.state.location).toBeUndefined();
+    expect(leaf.state.locationSlug).toBe("poznan-winogrady");
+    expect(serializeSearch(leaf.state, leaf.pathState).toString()).toBe("");
+
+    const city = targetPath(
+      state({
+        mainType: "mieszkanie",
+        transaction: "sprzedaz",
+        location: POZNAN,
+      }),
+      entries,
+      nodes,
+    );
+    expect(city.pathname).toBe("/oferty/mieszkanie-na-sprzedaz/");
+    expect(serializeSearch(city.state, city.pathState).toString()).toBe(
+      "lokalizacja=wielkopolskie%2Fpoznan%2Fpoznan",
+    );
+
+    // liść bez listy tego rodzaju (Winogrady ma tylko sprzedaż) → parametr
+    const none = targetPath(
+      state({
+        mainType: "mieszkanie",
+        transaction: "wynajem",
+        location: WINOGRADY,
+      }),
+      entries,
+      nodes,
+    );
+    expect(none.pathname).toBe("/oferty/mieszkanie-na-wynajem/");
+    expect(none.state.location).toBe(WINOGRADY);
+  });
+
+  it("slug z adresu zostaje, gdy nowy rodzaj ma tę listę; inaczej wraca do id węzła", () => {
+    const keep = targetPath(
+      state({
+        mainType: "mieszkanie",
+        transaction: "sprzedaz",
+        locationSlug: "poznan-winogrady",
+      }),
+      entries,
+      nodes,
+    );
+    expect(keep.pathname).toBe(
+      "/oferty/mieszkanie-na-sprzedaz/poznan-winogrady/",
+    );
+    const moved = targetPath(
+      state({
+        mainType: "dom",
+        transaction: "sprzedaz",
+        locationSlug: "poznan-winogrady",
+      }),
+      entries,
+      nodes,
+    );
+    expect(moved.pathname).toBe("/oferty/dom-na-sprzedaz/");
+    expect(moved.state.location).toBe(WINOGRADY);
+    expect(moved.state.locationSlug).toBeUndefined();
+  });
+});
+
 describe("liczniki na fixture", () => {
   const fixture = readOffersTyped("fixture");
-  it.skipIf(fixture.length === 0)(
-    "statusy 3 / 1 / 6 i filtry z selection.json",
+  // liczby niżej odpowiadają selection.json; dopóki fixture nie został
+  // przebudowany po zmianie listy numerów (`pnpm fixtures:build` —
+  // uruchamia Mateusz), test pomija, zamiast udawać regresję
+  const selection = readSelection(join(FIXTURE_DIR, SELECTION_FILE));
+  const stale = fixture.length !== selection.numbers.length;
+  it.skipIf(fixture.length === 0 || stale)(
+    "statusy 4 / 1 / 8 i filtry z selection.json (13 ofert po 4.2 b)",
     () => {
       const fx = fixture.map(toIndexEntry);
       expect(statusCounts(fx)).toEqual({
-        aktywna: 3,
+        aktywna: 4,
         rezerwacja: 1,
-        archiwalne: 6,
+        archiwalne: 8,
       });
-      expect(run({ floorFrom: 0, floorTo: 0 }, fx)).toHaveLength(2);
-      expect(run({ priceFrom: 500000 }, fx)).toEqual(["SW303888", "SW349452"]);
-      expect(run({ areaFrom: 60 }, fx)).toHaveLength(6);
-      expect(run({ floorsTo: 4 }, fx)).toHaveLength(4);
-      expect(run({ furnished: "tak" }, fx)).toHaveLength(2);
+      expect(run({ floorFrom: 0, floorTo: 0 }, fx)).toHaveLength(3);
+      expect(run({ priceFrom: 500000 }, fx)).toEqual([
+        "SW303888",
+        "SW349452",
+        "SW964944",
+      ]);
+      expect(run({ areaFrom: 60 }, fx)).toHaveLength(7);
+      expect(run({ floorsTo: 4 }, fx)).toHaveLength(5);
+      expect(run({ furnished: "tak" }, fx)).toHaveLength(4);
       expect(run({ market: "pierwotny" }, fx)).toHaveLength(3);
+      // winda: dwa mieszkania z `elevators` (4.2 b); „nie" = 0 wyników (R14)
+      expect(run({ elevator: "tak" }, fx)).toHaveLength(2);
+      expect(run({ elevator: "nie" }, fx)).toHaveLength(0);
+      // slug miejscowości bez dzielnicy: dokładny = 1, prefiks miasta = 10
+      expect(run({ locationSlug: "poznan" }, fx)).toEqual(["SW149199"]);
+      expect(run({ location: "wielkopolskie/poznan/poznan" }, fx)).toHaveLength(
+        10,
+      );
+      expect(fx).toHaveLength(13);
       expect(STATUS_GROUPS).toHaveLength(3);
     },
   );

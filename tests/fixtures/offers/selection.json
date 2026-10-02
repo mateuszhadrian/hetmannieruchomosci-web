@@ -1,5 +1,5 @@
 {
-  "$comment": "WEJŚCIE skryptu `pnpm fixtures:build` (2.9) — jedyny plik tego katalogu pisany ręcznie. Numery ofert z publicznej listy obecnej strony (stan 2026-09-28): mieszkanie sprzedaż/wynajem, dom, działki bez ulicy, lokal komercyjny; statusy aktywna/rezerwacja/sprzedana/wynajęta; z filmem i spacerem; parter; tytuły z „0%” i literówką w prefiksie; zdjęcia pionowe; oferty z największą (22) i najmniejszą (6) liczbą zdjęć. `overrides` pokrywają warianty, których w danych nie ma: zdjęcie typu plan, „Zapytaj o cenę”, obniżka, „Nowość” względem BUILD_NOW (2026-10-01). Zmiana tego pliku = ponowne `pnpm fixtures:build` + oba komplety baseline'ów w tym samym PR.",
+  "$comment": "WEJŚCIE skryptu `pnpm fixtures:build` (2.9) — jedyny plik tego katalogu pisany ręcznie. Numery ofert z publicznej listy obecnej strony (stan 2026-09-28): mieszkanie sprzedaż/wynajem, dom, działki bez ulicy, lokal komercyjny; statusy aktywna/rezerwacja/sprzedana/wynajęta; z filmem i spacerem; parter; tytuły z „0%” i literówką w prefiksie; zdjęcia pionowe; oferty z największą (22) i najmniejszą (6) liczbą zdjęć. `overrides` pokrywają warianty, których w danych nie ma: zdjęcie typu plan, „Zapytaj o cenę”, obniżka, „Nowość” względem BUILD_NOW (2026-10-01). Dopisane w 4.2 (b) (docs/analiza-oferty.md §12.6): SW964944 (mieszkanie na sprzedaż, aktywna, parter, Winogrady — lokal komercyjny na wynajem SW803370 nie występuje w zrzucie z 2026-09-28; lista `lokal-komercyjny-na-wynajem` bez zrzutu do czasu nowego zrzutu), SW149199 (mieszkanie na wynajem z windą, slug `poznan` = miejscowość bez dzielnicy), SW622811 (mieszkanie na sprzedaż z windą) — razem 13 ofert, dwie strony paginacji. Zmiana tego pliku = ponowne `pnpm fixtures:build` + oba komplety baseline'ów w tym samym PR.",
   "numbers": [
     "SW486462",
     "SW564562",
@@ -10,7 +10,10 @@
     "SW688942",
     "SW594869",
     "SW426096",
-    "SW209448"
+    "SW209448",
+    "SW964944",
+    "SW149199",
+    "SW622811"
   ],
   "overrides": {
     "SW372150": { "price": null },

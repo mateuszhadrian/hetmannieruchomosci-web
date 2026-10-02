@@ -5,19 +5,20 @@
       "level": "province",
       "name": "Wielkopolskie",
       "parent": null,
-      "count": 10
+      "count": 13
     },
     {
       "id": "wielkopolskie/poznan",
       "level": "county",
       "name": "Poznań",
       "parent": "wielkopolskie",
-      "count": 7
+      "count": 10
     },
     {
       "id": "wielkopolskie/poznan/poznan",
       "level": "city",
       "name": "Poznań",
+      "label": "Poznań",
       "parent": "wielkopolskie/poznan",
       "communes": [
         "Poznań-Grunwald",
@@ -25,7 +26,7 @@
         "Poznań-Stare Miasto",
         "Poznań-Wilda"
       ],
-      "count": 7
+      "count": 10
     },
     {
       "id": "wielkopolskie/poznan/poznan/grunwald",
@@ -62,7 +63,7 @@
       "level": "district",
       "name": "Stare Miasto",
       "parent": "wielkopolskie/poznan/poznan",
-      "count": 3
+      "count": 4
     },
     {
       "id": "wielkopolskie/poznan/poznan/stare-miasto/centrum",
@@ -86,7 +87,7 @@
       "name": "Winogrady",
       "label": "Poznań Winogrady",
       "parent": "wielkopolskie/poznan/poznan/stare-miasto",
-      "count": 1
+      "count": 2
     },
     {
       "id": "wielkopolskie/poznan/poznan/wilda",
@@ -94,7 +95,7 @@
       "name": "Wilda",
       "label": "Poznań Wilda",
       "parent": "wielkopolskie/poznan/poznan",
-      "count": 2
+      "count": 3
     },
     {
       "id": "wielkopolskie/poznanski",
@@ -152,6 +153,13 @@
     }
   ],
   "streets": {
+    "wielkopolskie/poznan/poznan": [
+      {
+        "name": "Wilczak",
+        "type": "ul.",
+        "count": 1
+      }
+    ],
     "wielkopolskie/poznan/poznan/grunwald/lazarz": [
       {
         "name": "Gąsiorowskich",
@@ -184,7 +192,7 @@
       {
         "name": "Pod Lipami",
         "type": "os.",
-        "count": 1
+        "count": 2
       }
     ],
     "wielkopolskie/poznan/poznan/wilda": [
@@ -192,6 +200,11 @@
         "name": "28 Czerwca 1956 r.",
         "type": "ul.",
         "count": 2
+      },
+      {
+        "name": "Robocza",
+        "type": "ul.",
+        "count": 1
       }
     ],
     "wielkopolskie/poznanski/kornik/bnin": [
