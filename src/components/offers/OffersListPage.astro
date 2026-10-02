@@ -1,13 +1,15 @@
 ---
-// Strona listy ofert (4.2 a + b): `/oferty/` i listy SSG typ × transakcja
-// [× lokalizacja]. Powłoka SSG: sekcja `[data-offers-list][data-build-now]`
-// i CTA; blok nawigacji po listach SSG (zwykłe linki — na telefonie i bez
-// JS; ≥ 1025 zastępuje go panel) liczy się tu, a renderuje go wyspa
-// z propsa `nav` (kolejność DOM = kolejność na ekranie, bez CSS `order`). Treść listy (nagłówek, panel
-// filtrów, pigułki statusu, sortowanie, WSZYSTKIE karty trasy — od 13.
-// z `hidden`, paginacja) renderuje `SearchIsland` w SSR i hydratuje
-// `client:load` na tym samym markupie. `<noscript>` odkrywa karty i chowa
-// panel oraz paginację. Selektor `main h1` = kontrakt smoke;
+// Strona listy ofert (4.2 a + b + c): `/oferty/` i listy SSG typ x
+// transakcja [x lokalizacja]. Powłoka SSG: sekcja
+// `[data-offers-list][data-build-now]` i CTA; blok nawigacji po listach
+// SSG (zwykłe linki - bez JS; pod JS zastępują go sheety poniżej 1025
+// i panel od 1025, R28) liczy się tu, a renderuje go wyspa z propsa
+// `nav` (kolejność DOM = kolejność na ekranie, bez CSS `order`). Treść
+// listy (nagłówek, panel filtrów, pasek narzędzi, pigułki statusu,
+// sortowanie, WSZYSTKIE karty trasy - od 13. z `hidden`, paginacja)
+// renderuje `SearchIsland` w SSR i hydratuje `client:load` na tym samym
+// markupie. `<noscript>` odkrywa karty i nawigację, chowa panel, pasek
+// narzędzi i paginację. Selektor `main h1` = kontrakt smoke;
 // `data-offer-card` = kontrakt strażnika fixture'u.
 import "./offers.css";
 import ctaImage from "@/assets/img/onas-cta.webp";
@@ -113,8 +115,10 @@ if (context.mainType && context.transaction) {
   <main>
     <section class="ol" data-offers-list data-build-now={nowIso}>
       {
-        /* bez JS: wszystkie karty widoczne, panel i paginacja ukryte,
-          nawigacja po listach także na desktopie */
+        /* bez JS: wszystkie karty widoczne; panel, paginacja, pasek
+          narzędzi mobile (sheety) i grupa desktop (widok, sortowanie)
+          ukryte; nawigacja (a) po listach SSG widoczna na każdej
+          szerokości (pod JS zastępują ją sheety i panel — R28) */
       }
       <noscript>
         <style>
@@ -123,7 +127,8 @@ if (context.mainType && context.transaction) {
           }
           .ol-pg,
           .op,
-          .ol-sort {
+          .ol-mtools,
+          .ol-dtools {
             display: none !important;
           }
           .ol-nav {

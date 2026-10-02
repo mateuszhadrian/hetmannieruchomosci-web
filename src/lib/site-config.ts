@@ -36,6 +36,10 @@ export const INTERACTIVE_MAP: boolean = false;
 export const SORT_NEWEST_BY: "addedAt" | "activatedAt" = "addedAt";
 /** Ile dni od dodania oferta nosi plakietkę „Nowość". */
 export const NEW_BADGE_DAYS = 14;
+/** Domyślny widok listy ofert na desktopie (przełącznik siatka/lista,
+ *  4.2 c, R29): design = siatka; obecna strona klientki = lista. Stan
+ *  nietrwały — każde wejście zaczyna od tej wartości. */
+export const OFFERS_LIST_VIEW: "grid" | "list" = "grid";
 
 // ── Agent ───────────────────────────────────────────────────────────────
 /** Jedyny agent — stała, bo źródło danych nie wiąże oferty z opiekunem.

@@ -1,9 +1,16 @@
-// Panel filtrów (desktop, 4.2 b) — wygląd docs/analiza-oferty.md §1.2.
+// Panel filtrów (4.2 b + c) — wygląd docs/analiza-oferty.md §1.2.
 // Panel edytuje STAN ROBOCZY (`Draft` = mapa nazw parametrów adresu →
 // surowy tekst, parsowana przez `parseSearch`, więc pole i adres czytają
 // wartości identycznie); „Pokaż N ofert" stosuje draft, „Wyczyść" zeruje
 // i stosuje (R20). Pola nieadekwatne do typu z draftu znikają z panelu
 // rozszerzonego (`isFieldRelevant`), a ich wartości są kasowane.
+//
+// JEDEN komponent w dwóch wariantach (4.2 c, §13.2): `inline` = panel
+// desktopowy w siatce 12 kolumn z akcjami w wierszu; `sheet` = ten sam
+// panel w bottom sheecie (pola jedno pod drugim, „Więcej filtrów" jako
+// pełny wiersz z podpowiedzią, akcje renderuje stopka sheetu przez
+// `PanelActions`). W danej chwili istnieje tylko jedna instancja, więc
+// id pól (`op-loc`, `op-more`…) są wspólne.
 import {
   isFieldRelevant,
   PARAM,
@@ -63,24 +70,60 @@ export function pruneDraft(
   return next;
 }
 
-export interface SearchPanelProps {
+export type PanelVariant = "inline" | "sheet";
+
+export interface PanelActionsProps {
+  /** liczba wyników dla draftu; `null` = liczenie (dane w drodze) */
+  count: number | null;
+  /** danych do policzenia nie będzie (błąd pobrania) → „Pokaż" bez liczby */
+  countFailed?: boolean;
+  onApply(): void;
+  onClear(): void;
+}
+
+/** Wyczyść + Pokaż N ofert — w wierszu panelu (inline) albo w sticky
+ *  stopce sheetu. */
+export function PanelActions(p: PanelActionsProps) {
+  return (
+    <div class="op-actions">
+      <button type="button" class="op-btn" onClick={p.onClear}>
+        {PANEL.clear}
+      </button>
+      <button
+        type="button"
+        class="op-btn op-btn--primary"
+        data-offers-apply
+        aria-busy={p.count === null && !p.countFailed}
+        onClick={p.onApply}
+      >
+        {p.count !== null
+          ? formatShowCount(p.count)
+          : p.countFailed
+            ? PANEL.show
+            : PANEL.counting}
+      </button>
+    </div>
+  );
+}
+
+export interface SearchPanelProps extends PanelActionsProps {
+  variant?: PanelVariant;
   draft: Draft;
   onDraft(next: Draft): void;
   locations: LocationsFile;
-  /** liczba wyników dla draftu; `null` = liczenie (dane w drodze) */
-  count: number | null;
   moreOpen: boolean;
   onMore(open: boolean): void;
-  onApply(): void;
-  onClear(): void;
   /** tekst w polu lokalizacji (poza draftem — draft trzyma id węzła) */
   locText: string;
   onLocText(text: string): void;
   streetText: string;
   onStreetText(text: string): void;
+  /** teksty opisów w drodze → pole opisu `aria-busy` + status */
+  textsLoading?: boolean;
 }
 
 export function SearchPanel(p: SearchPanelProps) {
+  const sheet = p.variant === "sheet";
   const d = p.draft;
   const set = (key: string, value: string | undefined) => {
     const next = { ...d };
@@ -158,23 +201,37 @@ export function SearchPanel(p: SearchPanelProps) {
       {suffix && <span class="op-suffix">{suffix}</span>}
     </label>
   );
-  const textInput = (key: string, id: string, placeholder: string) => (
-    <input
-      id={id}
-      aria-labelledby={`${id}-l`}
-      class="op-input"
-      type="text"
-      autocomplete="off"
-      placeholder={placeholder}
-      value={d[key] ?? ""}
-      onInput={(e) => set(key, e.currentTarget.value)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          p.onApply();
-        }
-      }}
-    />
+  const textInput = (
+    key: string,
+    id: string,
+    placeholder: string,
+    busy = false,
+  ) => (
+    <>
+      <input
+        id={id}
+        aria-labelledby={`${id}-l`}
+        aria-busy={busy || undefined}
+        aria-describedby={busy ? `${id}-hint` : undefined}
+        class="op-input"
+        type="text"
+        autocomplete="off"
+        placeholder={placeholder}
+        value={d[key] ?? ""}
+        onInput={(e) => set(key, e.currentTarget.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            p.onApply();
+          }
+        }}
+      />
+      {busy && (
+        <span id={`${id}-hint`} class="op-hint" role="status">
+          {PANEL.textsLoading}
+        </span>
+      )}
+    </>
   );
   const seg = (
     key: string,
@@ -194,20 +251,12 @@ export function SearchPanel(p: SearchPanelProps) {
     </div>
   );
   const actions = (
-    <div class="op-actions">
-      <button type="button" class="op-btn" onClick={p.onClear}>
-        {PANEL.clear}
-      </button>
-      <button
-        type="button"
-        class="op-btn op-btn--primary"
-        data-offers-apply
-        aria-busy={p.count === null}
-        onClick={p.onApply}
-      >
-        {p.count === null ? PANEL.counting : formatShowCount(p.count)}
-      </button>
-    </div>
+    <PanelActions
+      count={p.count}
+      countFailed={p.countFailed}
+      onApply={p.onApply}
+      onClear={p.onClear}
+    />
   );
   const field = (
     id: string,
@@ -224,7 +273,12 @@ export function SearchPanel(p: SearchPanelProps) {
   );
 
   return (
-    <div class="op" role="region" aria-label={PANEL.region} data-offers-panel>
+    <div
+      class={sheet ? "op op--sheet" : "op"}
+      role={sheet ? undefined : "region"}
+      aria-label={sheet ? undefined : PANEL.region}
+      data-offers-panel
+    >
       <div class="op-grid">
         {field(
           "op-typ",
@@ -340,12 +394,21 @@ export function SearchPanel(p: SearchPanelProps) {
             data-offers-more
             onClick={() => p.onMore(!p.moreOpen)}
           >
-            <span>{p.moreOpen ? PANEL.less : PANEL.more}</span>
+            {sheet ? (
+              <span class="op-more-txt">
+                <span>{p.moreOpen ? PANEL.less : PANEL.more}</span>
+                {!p.moreOpen && (
+                  <span class="op-more-hint">{PANEL.moreHint}</span>
+                )}
+              </span>
+            ) : (
+              <span>{p.moreOpen ? PANEL.less : PANEL.more}</span>
+            )}
             <span class="op-more-chev" aria-hidden="true">
               <Icon name="chevronDown" />
             </span>
           </button>
-          {!p.moreOpen && actions}
+          {!sheet && !p.moreOpen && actions}
         </div>
       </div>
       {p.moreOpen && (
@@ -465,6 +528,7 @@ export function SearchPanel(p: SearchPanelProps) {
               PARAM.description,
               "op-opis",
               PANEL.descriptionPlaceholder,
+              p.textsLoading,
             ),
           )}
           {field(
@@ -473,7 +537,9 @@ export function SearchPanel(p: SearchPanelProps) {
             "op-f--number",
             textInput(PARAM.number, "op-numer", PANEL.numberPlaceholder),
           )}
-          <div class="op-f op-f--actions op-f--actions-more">{actions}</div>
+          {!sheet && (
+            <div class="op-f op-f--actions op-f--actions-more">{actions}</div>
+          )}
         </div>
       )}
     </div>

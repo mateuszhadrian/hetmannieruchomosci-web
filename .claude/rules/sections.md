@@ -194,6 +194,61 @@ odziedziczone z szablonu projektu i stan chrome'u po Etapie 0.
   wyrażeniem — inaczej Preact rozdziela węzeł scalony przez parser (test
   „zero mutacji siatki" to wyłapuje).
 
+## Mobile listy ofert — stan po Etapie 4.2 (c) (`docs/analiza-oferty.md` §13)
+
+- **Sheety „Filtry" / „Sortuj" są POZA drzewem vdom wyspy.** Powłoki
+  (`#ol-sheet-filters`, `#ol-sheet-sort`: scrim, panel `data-overlay-panel`,
+  uchwyt `data-overlay-drag`, `h2` + X `data-overlay-close`, kontener
+  `[data-sheet-mount]`) buduje `src/components/offers/sheets.tsx`
+  bezpośrednio w `<body>` przy pierwszym otwarciu (chunk z dynamicznego
+  `import()`, prefetch po pierwszym `touchstart`/`pointerdown` poniżej
+  1025 — NIE w idle, bo LHCI doliczyłoby kod, którego desktop nie
+  wykonuje). Treść renderuje wyspa jako OSOBNY root Preact (`render(vnode,
+mount)` w `useLayoutEffect` przy każdym renderze, `render(null)`
+  w `onClose`). Powód: `overlay.ts` portalizuje `[data-overlay]` do
+  `<body>`, a Preact przy kolejnym renderze wstawiałby węzeł z powrotem;
+  powłoka w SSR wewnątrz wyspy psułaby hydratację. Mechanika (Esc, X,
+  scrim, swipe-down, focus-trap, blokada scrolla, reset `scrollTop`)
+  w całości z `overlay.ts` przez `window.overlay.open(id, { onClose })`.
+- **Jeden `SearchPanel`, dwa hosty.** SSR zawsze renderuje panel inline
+  (hydratacja bez mutacji na desktopie; < 1025 `display:none`). Po
+  montażu `matchMedia(DESKTOP_MIN_PX)`: poniżej progu panel inline jest
+  ODMONTOWANY (w DOM nie ma `.op`), ten sam komponent w wariancie
+  `variant="sheet"` (`.op.op--sheet`, pola jedno pod drugim, „Więcej
+  filtrów" z podpowiedzią, akcje w stopce sheetu przez `PanelActions`)
+  renderuje się w sheecie z tym samym draftem i TYMI SAMYMI id pól.
+  Przejście na ≥ 1025 domyka sheet i przywraca panel inline. Kontrakt
+  progu z wartością `ABSENT` (`tests/helpers/breakpoint.ts`).
+- Pasek narzędzi < 1025: `.ol-mtools` („Filtruj" `[data-offers-filters]`,
+  „{sortowanie}" `[data-offers-sort-btn]` z `[data-sort-current]`, NIE
+  `data-sort-label` — ten niesie listbox desktopu, a locatory e2e są
+  strict); ≥ 1025 `.ol-dtools` (przełącznik `[data-offers-view]`
+  z `data-view-set`, listbox). `<noscript>` chowa oba.
+- **Nawigacja (a) `nav.ol-nav` pod JS jest UKRYTA na każdej szerokości**
+  (R28) — zostaje w DOM dla `<noscript>` i crawlera. Nie przywracaj jej
+  na mobile „bo jest miejsce": design mobilny to pasek narzędzi → karty.
+- **Siatka/lista** (R29): `data-view` na `[data-offers-grid]`, czysto CSS
+  (lista = wiersz + kolumna ceny `grid-row: 1 / span 4` w `.oc-body`),
+  domyślnie `OFFERS_LIST_VIEW` z `site-config.ts`, stan NIETRWAŁY
+  (sessionStorage dawałby skok siatka → lista po hydratacji).
+- Sheet sortowania = wybór TYMCZASOWY (`SortSheet` ma własny `useState`),
+  „Zastosuj" stosuje; „Wyczyść" w sheecie zeruje i stosuje, sheet zostaje
+  otwarty (R30). Combobox zatrzymuje propagację Esc przy otwartych
+  podpowiedziach (inaczej `overlay.ts` zamknąłby cały sheet).
+- Stany brzegowe: `applied.invalid` → `[data-offers-invalid]`; błąd
+  pobrania `index.json`/`index-text.json` → `[data-offers-error]`
+  z `[data-offers-retry]` (bez cichego fallbacku na pulę trasy —
+  dawałby mylące wyniki); „Pokaż" bez liczby (`countFailed`) zamiast
+  wiecznego „…"; pole opisu `aria-busy` + `#op-opis-hint` podczas
+  pobierania tekstów. Na liście rodzaju parametry adresu nigdy nie
+  wymagają pełnego indeksu — wymaga go dopiero zmiana rodzaju w panelu.
+- **Komentarz we frontmatterze `.astro` nie może zawierać `<` ze spacją**
+  (np. „sheety < 1025"): kompilator Astro gubi typy frontmatteru
+  i `astro check` zgłasza `any` w zupełnie innych liniach. `<noscript>`
+  w backtickach jest bezpieczne.
+- axe przy otwartym sheecie: skan `.include(#ol-sheet-…)` po wjeździe
+  (`SHEET_IN_MS`), bo treść pod scrimem liczy kontrast przez nakładkę.
+
 ## Dane kontaktowe (antyscraping)
 
 - Telefon i e-maile: sloty `a[data-tel]`, `a[data-mail="biuro|joanna"]`

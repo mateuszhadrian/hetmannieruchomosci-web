@@ -218,7 +218,44 @@ export const PANEL = {
   pageN: "Strona",
   loading: "Wczytywanie ofert",
   counting: "…",
+  /** „Pokaż" bez liczby — gdy danych do policzenia nie ma (błąd pobrania) */
+  show: "Pokaż",
   noResultsOnPage: "Brak wyników na tej stronie",
+  // ── mobile (4.2 c): pasek narzędzi i sheety ──
+  filters: "Filtruj",
+  filtersSheet: "Filtry",
+  sortSheet: "Sortuj",
+  sortApply: "Zastosuj",
+  sortByDate: "Data dodania",
+  sortByPrice: "Cena",
+  priceAsc: "Rosnąco",
+  priceDesc: "Malejąco",
+  close: "Zamknij",
+  // PLACEHOLDER (U9): podpowiedź pod „Więcej filtrów" — brzmienie z designu
+  moreHint: "pokoje, piętro, rok budowy, rynek, winda…",
+  // PLACEHOLDER (U9): status pola opisu podczas pobierania tekstów
+  textsLoading: "Wczytujemy opisy ofert…",
+  // ── przełącznik widoku (desktop) ──
+  view: "Widok",
+  viewGrid: "Siatka",
+  viewList: "Lista",
+} as const;
+
+/** Stany brzegowe listy (4.2 c) — teksty nowe, bez wzorca w bazie
+ *  wiedzy i designie: PLACEHOLDER (U9). */
+export const EDGE = {
+  // PLACEHOLDER (U9)
+  invalidHeading: "Nie znamy takiego rodzaju ofert",
+  // PLACEHOLDER (U9)
+  invalidText:
+    "Adres zawiera nieznany typ nieruchomości albo rodzaj transakcji. Zobacz wszystkie oferty albo wybierz rodzaj z filtrów.",
+  invalidLink: "Wszystkie oferty",
+  // PLACEHOLDER (U9)
+  errorHeading: "Nie udało się wczytać ofert",
+  // PLACEHOLDER (U9)
+  errorText:
+    "Sprawdź połączenie z internetem i spróbuj ponownie. Jeśli problem się powtarza, zadzwoń do nas.",
+  retry: "Ponów",
 } as const;
 
 export const MARKET_LABEL: Record<OfferIndexEntry["market"], string> = {

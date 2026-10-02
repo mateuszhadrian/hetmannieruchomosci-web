@@ -5,7 +5,9 @@
 // plakietka „Sprzedane"), lista z lokalizacją (jedna karta: parter +
 // „Nowość" względem BUILD_NOW; ≥ 1025 chip lokalizacji), panel podstawowy
 // i rozwinięty (tylko profile ≥ 1025), lista z filtrem w adresie, zero
-// wyników, paginacja (gdy fixture ma > 12 ofert). Determinizm: freeze.css
+// wyników, paginacja (gdy fixture ma > 12 ofert). 4.2 c: pasek narzędzi
+// mobile (element), otwarte sheety „Filtry" i „Sortuj" (zrzut strony,
+// profile mobilne), widok LISTA na desktopie. Determinizm: freeze.css
 // + settleImages (prepareSweep); zdjęcia lokalne z dist/media. Zero ruchu
 // w widoku — bez revealSweep; skeleton nie występuje (stan z propsów).
 import { expect, test } from "@playwright/test";
@@ -24,7 +26,13 @@ const FIXTURE_COUNT = readFixtureOffersTyped().length;
 const skipBelowDesktop = (width: number | undefined) =>
   test.skip(
     (width ?? 0) < DESKTOP_MIN_PX,
-    "panel filtrów tylko ≥ 1025 px (mobile: nawigacja (a), sheety w (c))",
+    "panel filtrów i przełącznik widoku tylko ≥ 1025 px (mobile: sheety)",
+  );
+/** Pasek narzędzi i sheety istnieją wyłącznie < 1025 (W PARZE z CSS). */
+const skipFromDesktop = (width: number | undefined) =>
+  test.skip(
+    (width ?? 0) >= DESKTOP_MIN_PX,
+    "pasek narzędzi i sheety tylko < 1025 px (desktop: panel inline)",
   );
 
 /** Tolerancja fullPage (szum resamplingu WebKit dpr=2), jak `not-found`. */
@@ -106,6 +114,49 @@ test("oferty: paginacja (strona 2) vs baseline", async ({ page }) => {
   );
   await prepareSweep(page, `${OFFERS_PATH}?strona=2`);
   await expect(page).toHaveScreenshot("oferty-pagination.png", {
+    fullPage: true,
+    maxDiffPixelRatio: FULLPAGE_MAX_DIFF_RATIO,
+  });
+});
+
+test("oferty: pasek narzędzi mobile (Filtruj / Sortuj + statusy) vs baseline", async ({
+  page,
+}) => {
+  skipFromDesktop(page.viewportSize()?.width);
+  await prepareSweep(page, OFFERS_PATH);
+  await expect(page.locator(".ol-tools")).toHaveScreenshot(
+    "oferty-tools-mobile.png",
+  );
+});
+
+test("oferty: otwarty sheet filtrów vs baseline", async ({ page }) => {
+  skipFromDesktop(page.viewportSize()?.width);
+  await prepareSweep(page, OFFERS_PATH);
+  await page.locator("[data-offers-filters]").click();
+  await expect(page.locator("#ol-sheet-filters")).toHaveClass(/is-open/);
+  await settle(page, 300);
+  await expect(page).toHaveScreenshot("oferty-sheet-filtry.png");
+});
+
+test("oferty: otwarty sheet sortowania vs baseline", async ({ page }) => {
+  skipFromDesktop(page.viewportSize()?.width);
+  await prepareSweep(page, OFFERS_PATH);
+  await page.locator("[data-offers-sort-btn]").click();
+  await expect(page.locator("#ol-sheet-sort")).toHaveClass(/is-open/);
+  await settle(page, 300);
+  await expect(page).toHaveScreenshot("oferty-sheet-sortuj.png");
+});
+
+test("oferty: widok lista (desktop) vs baseline", async ({ page }) => {
+  skipBelowDesktop(page.viewportSize()?.width);
+  await prepareSweep(page, OFFERS_PATH);
+  await page.locator('[data-view-set="list"]').click();
+  await expect(page.locator("[data-offers-grid]")).toHaveAttribute(
+    "data-view",
+    "list",
+  );
+  await settle(page, 300);
+  await expect(page).toHaveScreenshot("oferty-list-view-list.png", {
     fullPage: true,
     maxDiffPixelRatio: FULLPAGE_MAX_DIFF_RATIO,
   });

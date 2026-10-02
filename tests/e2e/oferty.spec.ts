@@ -200,14 +200,18 @@ test.describe("/oferty/ — lista wszystkich ofert", () => {
     expect(counts.reduce((a, b) => a + b, 0)).toBe(OFFERS.length);
   });
 
-  test("nawigacja po listach SSG (w DOM; widoczna < 1025): jedna pozycja bieżąca, każdy link odpowiada < 400", async ({
+  test("nawigacja po listach SSG (w DOM, ukryta pod JS — R28; bez JS odkrywa ją noscript): jedna pozycja bieżąca, każdy link odpowiada < 400", async ({
     page,
     request,
   }) => {
+    const raw = await (await request.get(OFFERS_PATH)).text();
+    expect(raw).toContain('class="ol-nav"');
+    expect(raw).toMatch(/<noscript>\s*<style>[\s\S]*\.ol-nav[\s\S]*<\/style>/);
     await gotoReady(page, OFFERS_PATH);
+    await expect(page.locator("nav.ol-nav")).toBeAttached();
     await expect(page.locator("nav.ol-nav")).toBeHidden();
     await page.setViewportSize({ width: DESKTOP_MIN_PX - 1, height: 900 });
-    await expect(page.locator("nav.ol-nav")).toBeVisible();
+    await expect(page.locator("nav.ol-nav")).toBeHidden();
     await expect(
       page.locator('[data-offers-kinds] a[aria-current="page"]'),
     ).toHaveCount(1);

@@ -8,6 +8,10 @@
 // sortowanie (listbox z klawiatury), zero wyników, lista SSG z lokalizacją
 // = zbiór SSG (R18), bez JS (surowy HTML), próg 1025, zero żądań do
 // podmiotów trzecich, axe z rozwiniętym panelem. Media zaślepione.
+// 4.2 c: przełącznik siatka/lista (desktop), stany brzegowe (nieznany
+// rodzaj w adresie, błąd pobrania indeksu / tekstów z „Ponów", `?strona=`
+// ujemne / tekst); kolejność DOM bez panelu inline na mobile; flip progu
+// z paskiem narzędzi (R33). Sheety: `oferty-mobile.spec.ts`.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import {
@@ -24,10 +28,19 @@ import {
 import { formatShowCount, TYPE_LABEL } from "../../src/lib/offers/format";
 import type { OffersIndex } from "../../src/lib/offers/index-entry";
 import { isLeaf, nodeById, nodeLabel } from "../../src/lib/offers/locations-ui";
-import { SORT_LABEL, ZERO_RESULTS } from "../../src/lib/offers/offers-ui";
+import {
+  EDGE,
+  PANEL,
+  SORT_LABEL,
+  ZERO_RESULTS,
+} from "../../src/lib/offers/offers-ui";
 import { listPath, OFFERS_PATH } from "../../src/lib/offers/urls";
-import { DESKTOP_MIN_PX, MEDIA_BASE } from "../../src/lib/site-config";
-import { expectBreakpointFlip } from "../helpers/breakpoint";
+import {
+  DESKTOP_MIN_PX,
+  MEDIA_BASE,
+  OFFERS_LIST_VIEW,
+} from "../../src/lib/site-config";
+import { ABSENT, expectBreakpointFlip } from "../helpers/breakpoint";
 import {
   useChromium1920Only,
   useMediaStub,
@@ -516,7 +529,7 @@ test.describe("bez JS, próg, sieć, a11y", () => {
     expect(raw).toContain('client="load"');
   });
 
-  test("kolejność DOM = kolejność na ekranie: nagłówek → nawigacja (a) → panel → pasek → siatka (bez CSS order — CLS na mobile)", async ({
+  test("kolejność DOM = kolejność na ekranie: nagłówek → nawigacja (a) → pasek → siatka (bez CSS order — CLS na mobile)", async ({
     page,
   }) => {
     test.skip(OFFERS.length === 0, NO_OFFERS);
@@ -524,14 +537,11 @@ test.describe("bez JS, próg, sieć, a11y", () => {
       ROUTES.lists.find((p) => p.split("/").length === 4) ?? OFFERS_PATH;
     await page.setViewportSize({ width: 390, height: 844 });
     await gotoReady(page, kindList);
+    // panel inline poniżej 1025 nie istnieje (host = sheet, 4.2 c);
+    // nawigacja (a) jest w DOM, ale ukryta pod JS (R28)
+    await expect(page.locator("[data-offers-panel]")).toHaveCount(0);
     const order = await page.evaluate(() => {
-      const sel = [
-        ".ol-head",
-        "nav.ol-nav",
-        "[data-offers-panel]",
-        ".ol-tools",
-        "[data-offers-grid]",
-      ];
+      const sel = [".ol-head", "nav.ol-nav", ".ol-tools", "[data-offers-grid]"];
       const els = sel.map((s) => document.querySelector(s)!);
       const domOk = els.every(
         (el, i) =>
@@ -551,14 +561,21 @@ test.describe("bez JS, próg, sieć, a11y", () => {
     expect(order).toEqual({ domOk: true, noOrder: true, visualOk: true });
   });
 
-  test("próg 1025: nawigacja (a) poniżej, panel od progu", async ({ page }) => {
+  test("próg 1025: pasek narzędzi poniżej, panel inline i sortowanie od progu; nawigacja (a) ukryta po obu stronach", async ({
+    page,
+  }) => {
     await gotoReady(page, OFFERS_PATH);
     await expectBreakpointFlip(
       page,
       DESKTOP_MIN_PX,
-      { nav: ".ol-nav", panel: ".op", sort: ".ol-sort" },
-      { nav: "flex", panel: "none", sort: "none" },
-      { nav: "none", panel: "block", sort: "block" },
+      {
+        nav: ".ol-nav",
+        mtools: "[data-offers-mtools]",
+        panel: ".op",
+        sort: ".ol-sort",
+      },
+      { nav: "none", mtools: "grid", panel: ABSENT, sort: "none" },
+      { nav: "none", mtools: "none", panel: "block", sort: "block" },
     );
   });
 
@@ -612,5 +629,151 @@ test.describe("bez JS, próg, sieć, a11y", () => {
         .filter((v) => ["critical", "serious"].includes(v.impact ?? ""))
         .map((v) => v.id),
     ).toEqual([]);
+  });
+});
+
+test.describe("widok siatka/lista, stany brzegowe (4.2 c)", () => {
+  test("przełącznik siatka/lista: domyślnie OFFERS_LIST_VIEW, lista = wiersze, powrót do siatki", async ({
+    page,
+  }) => {
+    test.skip(OFFERS.length < 3, "za mało ofert na 3 kolumny siatki");
+    await gotoReady(page, OFFERS_PATH);
+    const grid = page.locator("[data-offers-grid]");
+    const columns = () =>
+      grid.evaluate(
+        (el) => getComputedStyle(el).gridTemplateColumns.split(" ").length,
+      );
+    const direction = () =>
+      page
+        .locator(".oc-link")
+        .first()
+        .evaluate((el) => getComputedStyle(el).flexDirection);
+    await expect(grid).toHaveAttribute("data-view", OFFERS_LIST_VIEW);
+    await expect(
+      page.locator(`[data-view-set="${OFFERS_LIST_VIEW}"]`),
+    ).toHaveAttribute("aria-pressed", "true");
+    await page.locator('[data-view-set="list"]').click();
+    await expect(grid).toHaveAttribute("data-view", "list");
+    await expect(page.locator('[data-view-set="list"]')).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(page.locator('[data-view-set="grid"]')).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    expect(await columns()).toBe(1);
+    expect(await direction()).toBe("row");
+    // widok nie dotyka adresu ani listy (czysto CSS)
+    expect(await url(page)).toBe(OFFERS_PATH);
+    await expectListToMatch(page, OFFERS_PATH);
+    await page.locator('[data-view-set="grid"]').click();
+    await expect(grid).toHaveAttribute("data-view", "grid");
+    expect(await columns()).toBe(3);
+    expect(await direction()).toBe("column");
+  });
+
+  test("nieznany typ / transakcja w adresie: komunikat z linkiem do /oferty/ zamiast gołego zera wyników", async ({
+    page,
+  }) => {
+    test.skip(OFFERS.length === 0, NO_OFFERS);
+    for (const q of ["typ=zamek", "transakcja=darowizna"]) {
+      await gotoReady(page, `${OFFERS_PATH}?${q}`);
+      const block = page.locator("[data-offers-invalid]");
+      await expect(block).toBeVisible();
+      await expect(block.locator("h2")).toHaveText(EDGE.invalidHeading);
+      await expect(block.locator("a")).toHaveAttribute("href", OFFERS_PATH);
+      await expect(page.locator("[data-offers-zero]")).toHaveCount(0);
+      await expect(page.locator("[data-offer-card]")).toHaveCount(0);
+      await expect(page.locator("[data-offers-count]")).toHaveAttribute(
+        "data-offers-count",
+        "0",
+      );
+    }
+  });
+
+  test("?strona= ujemne / tekst → strona 1", async ({ page }) => {
+    test.skip(OFFERS.length === 0, NO_OFFERS);
+    const first = sortEntries(ALL(), "newest")
+      .slice(0, PAGE_SIZE)
+      .map((e) => e.number);
+    for (const q of ["strona=-1", "strona=abc", "strona=0"]) {
+      await gotoReady(page, `${OFFERS_PATH}?${q}`);
+      expect(await visible(page), q).toEqual(first);
+      await expect(page.locator("[data-offers-page-empty]")).toHaveCount(0);
+      if (ALL().length > PAGE_SIZE)
+        await expect(
+          page.locator('[data-offers-pagination] [aria-current="page"]'),
+        ).toHaveText("1");
+    }
+  });
+
+  test("błąd pobrania index.json: komunikat z „Ponów” zamiast skeletonu; ponowienie odtwarza listę", async ({
+    page,
+  }) => {
+    const kindList = ROUTES.lists.find((p) => p.split("/").length === 4);
+    test.skip(!kindList, NO_OFFERS);
+    // lista rodzaju liczy stan z adresu z własnej puli; pełnego indeksu
+    // wymaga dopiero zmiana rodzaju w panelu („Wszystkie" typy) — wtedy
+    // licznik „Pokaż" nie ma danych, a po zastosowaniu lista nie ma czego
+    // pokazać → komunikat z „Ponów" zamiast skeletonu
+    await page.route("**/oferty/index.json", (route) => route.abort());
+    await gotoReady(page, kindList!);
+    await expectListToMatch(page, kindList!);
+    const panel = page.locator("[data-offers-panel]");
+    await panel
+      .getByRole("button", { name: "Wszystkie", exact: true })
+      .first()
+      .click();
+    const apply = page.locator("[data-offers-apply]");
+    await expect(apply).toHaveText(PANEL.show);
+    await expect(apply).not.toHaveAttribute("aria-busy", "true");
+    await apply.click();
+    const err = page.locator("[data-offers-error]");
+    await expect(err).toBeVisible();
+    await expect(err.locator("h2")).toHaveText(EDGE.errorHeading);
+    await expect(page.locator("[data-offers-skeleton]")).toHaveCount(0);
+    await expect(page.locator("[data-offer-card]")).toHaveCount(0);
+    const path = await url(page);
+    expect(path).not.toBe(kindList);
+    await page.unroute("**/oferty/index.json");
+    await page.locator("[data-offers-retry]").click();
+    await expect(err).toHaveCount(0);
+    await expectListToMatch(page, path);
+    await expect(apply).not.toHaveText(PANEL.show);
+  });
+
+  test("błąd pobrania index-text.json (szukaj w opisie): komunikat, „Ponów”, pole opisu aria-busy podczas pobierania", async ({
+    page,
+  }) => {
+    test.skip(OFFERS.length === 0, NO_OFFERS);
+    const path = `${OFFERS_PATH}?opis=a`;
+    await page.route("**/oferty/index-text.json", (route) => route.abort());
+    await gotoReady(page, path);
+    const err = page.locator("[data-offers-error]");
+    await expect(err).toBeVisible();
+    await page.locator("[data-offers-more]").click();
+    await expect(page.locator("#op-opis")).not.toHaveAttribute(
+      "aria-busy",
+      "true",
+    );
+    // ponowienie z opóźnioną odpowiedzią: pole opisu zajęte, potem lista
+    let release: () => void = () => {};
+    const gate = new Promise<void>((r) => (release = r));
+    await page.unroute("**/oferty/index-text.json");
+    await page.route("**/oferty/index-text.json", async (route) => {
+      await gate;
+      await route.continue();
+    });
+    await page.locator("[data-offers-retry]").click();
+    await expect(page.locator("#op-opis")).toHaveAttribute("aria-busy", "true");
+    await expect(page.locator("#op-opis-hint")).toHaveText(PANEL.textsLoading);
+    release();
+    await expect(err).toHaveCount(0);
+    await expect(page.locator("#op-opis")).not.toHaveAttribute(
+      "aria-busy",
+      "true",
+    );
+    await expectListToMatch(page, path);
   });
 });
