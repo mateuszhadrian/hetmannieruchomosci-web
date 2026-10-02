@@ -646,33 +646,19 @@ a.ol-pill:focus-visible {
    Wyspa wyszukiwarki (4.2 b): panel filtrów (`op-*`), pasek narzędzi,
    sortowanie, paginacja, skeleton, zero wyników. Wartości z
    docs/analiza-oferty.md §1.1–1.4. Wyspa ma `display: contents`, więc jej
-   bloki są elementami flexa `.ol-in`; `order` wplata nawigację SSG (a)
-   między nagłówek a resztę na telefonie. Panel i sortowanie tylko
-   ≥ 1025 (W PARZE z DESKTOP_MIN_PX); poniżej zostaje nawigacja (a).
+   bloki są elementami flexa `.ol-in` w NATURALNEJ kolejności DOM
+   (nagłówek → nawigacja (a) → panel → pasek → siatka → paginacja) — bez
+   CSS `order`: przestawianie nagłówka nad nawigację dawało na mobile
+   przesunięcie układu w trakcie wczytywania (CLS 0,07: nawigacja
+   malowała się na górze, zanim dojechał nagłówek z wyspy). Panel
+   i sortowanie tylko ≥ 1025 (W PARZE z DESKTOP_MIN_PX); poniżej zostaje
+   nawigacja (a).
    ══════════════════════════════════════════════════════════════════════ */
 .ol-island {
   display: contents;
 }
-.ol-head {
-  order: 0;
-}
-.ol-nav {
-  order: 1;
-}
 .op {
-  order: 2;
   display: none;
-}
-.ol-tools {
-  order: 3;
-}
-.ol-grid,
-.ol-empty,
-.ol-zero {
-  order: 4;
-}
-.ol-pg {
-  order: 5;
 }
 .ol-grid > li[hidden] {
   display: none;

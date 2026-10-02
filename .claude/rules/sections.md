@@ -145,12 +145,18 @@ odziedziczone z szablonu projektu i stan chrome'u po Etapie 0.
 - **Jedyna wyspa projektu:** `src/components/offers/SearchIsland.tsx`
   (`client:load` w `OffersListPage.astro`) + `search-panel.tsx`,
   `combobox.tsx`, `sort-listbox.tsx`, `pagination.tsx`. Renderuje w SSR
-  nagłówek z licznikiem, panel, pasek statusów + sortowanie, siatkę
+  nagłówek z licznikiem, nawigację (a) z propsa `nav` (linki do list SSG
+  liczone w Astro), panel, pasek statusów + sortowanie, siatkę
   (WSZYSTKIE karty trasy, od 13. `hidden`), paginację, zero wyników;
   hydratacja na TYM SAMYM markupie (stan początkowy =
   `parseSearch(pathname, "")` po obu stronach; `location.search` czytane
   po montażu). Wyspa ma `display: contents`, jej bloki są elementami
-  flexa `.ol-in`, a `order` wplata nawigację (a) między nagłówek a resztę.
+  flexa `.ol-in` w NATURALNEJ kolejności DOM — **bez CSS `order`**:
+  Astro wstawia styl `display:contents` dla `astro-island` dopiero
+  w `<body>`, a nagłówek przestawiany regułą `order` nad blok
+  renderowany wcześniej dawał na mobile CLS 0,07 (job `lighthouse` na
+  main po merge'u #16). Kontrakt e2e: kolejność DOM = kolejność na
+  ekranie, `order` = 0.
 - **Nic nie importuj do wyspy z modułów z zodem/htmlparser2/node:** słowniki
   wartości żyją w `src/lib/offers/enums.ts` (schema.ts re-eksportuje);
   `index-entry.ts`, `data.ts`, `schema.ts` tylko jako `import type`.
