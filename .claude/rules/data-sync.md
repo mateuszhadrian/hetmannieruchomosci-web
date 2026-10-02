@@ -16,8 +16,8 @@ Szczegóły (katalog pól, schemat, reguły statusu, kolejność kroków):
 `docs/kb/` part3 i `docs/plan/` Etap 2 — dokumenty lokalne, poza repo.
 
 STAN po 4.2 (a): strona czyta indeks przez `index-entry.ts`, filtry przez
-`filters.ts`; `scripts/sync/**` nietknięte od S2c (kopia `location-path`
-— do scalenia osobnym PR-em). STAN po S2c (Etap 2, kroki 2.1–2.11 w kodzie): komplet syncu
+`filters.ts`; reguła ścieżki slugów scalona w `src/lib/offers/location-path.ts`
+(sync importuje stamtąd). STAN po S2c (Etap 2, kroki 2.1–2.11 w kodzie): komplet syncu
 (`pnpm sync`, `sync:dry`), `fixtures:build`, `data.ts` (jedyny odczyt
 danych przez stronę), szkieletowe trasy ofert, workflow `sync.yml`,
 `pnpm test:dist`. Katalog `data/` ma dotąd tylko `legacy-redirects.json`

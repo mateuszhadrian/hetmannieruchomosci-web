@@ -479,7 +479,7 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   Porządek po cronie: bieg 2026-10-03 — do dopisania (patrz wpis S2c).
 
 - **Etap 4 / 4.2 (a) (`/oferty/`: trasy SSG + karta + lista bez wyspy) —
-  W TOKU** (2026-10-02, gałąź `feat/oferty`, mini-analiza
+  WYKONANY** (2026-10-02, PR #14, gałąź `feat/oferty`, mini-analiza
   `docs/analiza-oferty.md` zaakceptowana w całości — podział (a)/(b)/(c),
   Preact w (a), M3a „Archiwalne”, M3b wszystkie statusy włączone, winda
   „Nie” = wyłącznie `elevators === 0`, wszystkie karty w HTML, kopia
@@ -528,10 +528,21 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   z domyślną sprzedażą — bez ślepych linków. Zużycie budżetów LHCI po
   `build:visual`: patrz raport sesji. PLACEHOLDER (U9): teksty CTA,
   „Zdjęcia wkrótce”, stan bez ofert, szablon meta description list.
-  DO DOMKNIĘCIA: baseline’y linux (workflow, spec
-  `tests/visual/oferty.spec.ts`, mode `changed`) i darwin, PR, numer PR
-  i data merge’u; (b) wyspa i (c) mobile — kolejne sesje 4.2. Porządek
-  po cronie: bieg 2026-10-03 — do dopisania.
+  Baseline’y linux (workflow z brancha, spec `oferty.spec.ts`, mode
+  `changed`) i darwin (18 + 18 PNG) wgrane w PR #14; merge 2026-10-02
+  15:02 UTC, `prod-smoke` zielony, bramka bota na nowym `main` (unit 356,
+  build 89 stron, `test:dist` 6/6) zielona. PO MERGE'U (gałąź
+  `chore/sync-location-path`): reguła ścieżki slugów ma JEDNO źródło
+  `src/lib/offers/location-path.ts` — `scripts/sync/locations.ts`
+  importuje i re-eksportuje (`locationPath`, `leafId`,
+  `communeIsCityPart`); zachowanie bez zmian (unit 356 zielone, w tym
+  `sync-locations` i test spójności z `locations.json`). Pierwszy bieg
+  syncu po tej zmianie = cron 2026-10-03 (sprawdzić: „bez zmian",
+  brak commita bota). DALEJ: (b) wyspa (`feat/oferty-wyspa`) i (c)
+  mobile — kolejne sesje 4.2 (prompt lokalny
+  `docs/plan/prompt-etap-4-2b.md`); przed (b) decyzja o wpisach do
+  `selection.json` (≥ 13 ofert, oferta z windą, lokal na wynajem).
+  Porządek po cronie: bieg 2026-10-03 — do dopisania.
 
 ## Dokumentacja
 

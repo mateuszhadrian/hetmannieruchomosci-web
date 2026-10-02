@@ -39,7 +39,8 @@
 | `plan/prompt-s2c.md` | Prompt sesji S2c (Etap 2, kroki 2.8–2.11) — wykonany 2026-10-01 (PR #7–#10; fixture i pierwszy sync 2026-10-02) |
 | `plan/prompt-etap-3.md` | Prompt sesji Etapu 3 (testy/CI na szkielecie) — wykonany 2026-10-02 (PR #11 + commit budżetów LHCI) |
 | `plan/prompt-etap-4-1.md` | Prompt sesji 4.1 (chrome globalny: navbar, wariant „/", bottom sheet, stopka) + porządek po pierwszym cronie syncu — wykonany 2026-10-02 (PR #13) |
-| `plan/prompt-etap-4-2.md` | Prompt sesji 4.2 (`/oferty/`: lista, wyszukiwarka, indeks JSON, SSG kombinacji; bramka startowa + porządek po cronie; obsługuje kolejne sesje części (a)/(b)/(c)) — w toku (2026-10-02) |
+| `plan/prompt-etap-4-2.md` | Prompt sesji 4.2 (a) (`/oferty/`: trasy SSG, karta, lista bez wyspy, indeks JSON; bramka startowa + porządek po cronie) — wykonany 2026-10-02 (PR #14) |
+| `plan/prompt-etap-4-2b.md` | Prompt sesji 4.2 (b) (wyspa Preact i filtry) z bezpiecznikiem crona 2026-10-03 — do uruchomienia |
 | `plan/rozmowa-z-joanna-etap-1.md` | Scenariusz rozmowy z klientką w Etapie 1 (Resend + wizyta w home.pl), krok po kroku |
 
 ## 🔒 Tylko lokalnie — `docs/kb/` (poza git)
