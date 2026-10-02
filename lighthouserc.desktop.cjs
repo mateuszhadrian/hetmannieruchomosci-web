@@ -24,8 +24,11 @@ module.exports = {
         "categories:performance": ["error", { minScore: 0.95 }],
         // mediana 411 ms + 1 300 ms = 1 711 → 1 800
         "largest-contentful-paint": ["error", { maxNumericValue: 1800 }],
-        // mediana 0 ms — minimum ręczne
-        "total-blocking-time": ["error", { maxNumericValue: 100 }],
+        // TBT po wyspie wyszukiwarki (R27): pomiar lhci-measure.yml
+        // 2026-10-02 (5 przebiegów): wszystkie trasy 0 ms (zadanie hydratacji
+        // < 50 ms bez dławienia CPU). Reguła TBT jak w lighthouserc.cjs:
+        // max(mediana × 2; mediana + 300 ms) → 300 ms.
+        "total-blocking-time": ["error", { maxNumericValue: 300 }],
         // mediana 0,0032
         "cumulative-layout-shift": ["error", { maxNumericValue: 0.05 }],
         // mediana 4 KB; zapas na moduły widoków (Etap 4)

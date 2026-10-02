@@ -755,3 +755,35 @@ w każdym punkcie z promptu; porządek po cronie ma pierwszeństwo.
   stronach; test e2e kolejności DOM = ekranu. Lekcja do `sections.md`:
   w wyspie nie używaj `order` do przestawiania bloków względem markupu
   spoza wyspy.
+- **R27 — TBT mobile na `/oferty/` po merge'u #17:** `lighthouse` na
+  main padł na TBT 485 ms > 150 ms; ten sam kod na PR #17 dał 146 ms,
+  na PR #16 14 ms (raporty z publicznego magazynu LHCI: jedno zadanie
+  hydratacji wyspy 64 → 196 → ~535 ms w kolejnych biegach, pozostałe
+  metryki wątku głównego też 1,5–3× wolniejsze — runner, nie kod).
+  Lokalnie przy 4× dławieniu CPU (Playwright + CDP, 5 przebiegów):
+  mediana TBT 23 ms przed poprawką R26 i 19 ms po niej, zadanie
+  hydratacji ~70 ms. Próg 150 ms był ręcznym minimum z mediany 0
+  (szkielet bez JS, Etap 3) — wyspa to pierwszy realny JS w serwisie.
+  Ścieżka wg reguły ratchetu (testing.md): `lhci-measure.yml` na main
+  (5 przebiegów × 2 configi), próg TBT z mediany z marginesem na
+  wariancję runnera (analogicznie do LCP: max(×1,15; +margines)) —
+  decyzja Mateusza, osobny commit; do rozważenia w (c): `client:idle`
+  nie skraca zadania, realne skrócenie dałoby tylko lżejsze
+  hydratowanie (mniej kart w pierwszym renderze), czyli zmiana
+  architektury §12.2 — nie bez decyzji.
+  **Pomiar (sesja (c), `lhci-measure.yml` na main po #17, 2026-10-02
+  19:43 UTC, 5 przebiegów × 2 configi):** mobile `/oferty/` TBT
+  31 / 40 / 47 / 54 / 456 ms (mediana 47; jedno zadanie hydratacji
+  75 → 579 ms w przebiegu odstającym), `/oferty/mieszkanie-na-sprzedaz/`
+  5 / 22 / 24 / 24 / 62 ms (mediana 24); desktop wszystkie trasy 0 ms
+  (zadanie < 50 ms). `script` na obu trasach ofert 26 054 B (87 %
+  bramki 30 000 B), `total` 288–295 KB mobile / 295–479 KB desktop,
+  CLS 0,000 (R26 potwierdzona), LCP mobile 2 360 ms (próg 3 200 —
+  margines 840 ms, mniejszy niż regułowe 1 300 ms; LCP nietknięte,
+  obserwacja). Progi TBT: reguła max(mediana × 2; mediana + 300 ms)
+  dawała 350 ms mobile, ale przebieg odstający (456) i czerwony bieg na
+  main (485 jako mediana z 5) leżą powyżej — decyzja Mateusza: zapas
+  ponad fałszywe czerwienie runnera, mobile 150 → **600 ms** (≈ 1,15 ×
+  najgorszy przebieg, granica „poor" Google), desktop 100 → **300 ms**
+  (mediana 0, reguła) — PR `chore/lhci-tbt` (numer do dopisania po
+  merge'u).

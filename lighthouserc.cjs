@@ -48,8 +48,19 @@ module.exports = {
         "categories:performance": ["error", { minScore: 0.9 }],
         // mediana 1 808 ms + 1 300 ms = 3 108 → 3 200
         "largest-contentful-paint": ["error", { maxNumericValue: 3200 }],
-        // mediana 0 ms — minimum ręczne (szkielet bez JS widoku)
-        "total-blocking-time": ["error", { maxNumericValue: 150 }],
+        // TBT po wyspie wyszukiwarki (4.2 b, R27): pomiar lhci-measure.yml
+        // 2026-10-02 (5 przebiegów, main po #17): /oferty/ 31/40/47/54/456 ms
+        // → mediana 47 ms; /oferty/mieszkanie-na-sprzedaz/ 5/22/24/24/62 ms
+        // → mediana 24 ms. Jedno zadanie hydratacji wyspy skacze na
+        // obciążonym runnerze 10× (75 → 579 ms) przy ZEROWEJ zmianie bajtów,
+        // więc ×1,15 z lhci-median.mjs jest dla TBT za ciasne. Reguła
+        // max(mediana × 2; mediana + 300 ms) dałaby 350 ms, ale przebieg
+        // odstający (456 ms) i czerwony bieg na main po #17 (485 ms jako
+        // MEDIANA z 5) leżą powyżej — próg = ok. 1,15 × najgorszy
+        // obserwowany przebieg, zaokrąglony do granicy „poor" Google:
+        // 600 ms (decyzja Mateusza 2026-10-02: zapas ponad fałszywe
+        // czerwienie runnera). Realny kod: mediana 47 ms.
+        "total-blocking-time": ["error", { maxNumericValue: 600 }],
         // mediana 0,0017 — połowa progu „good" Google
         "cumulative-layout-shift": ["error", { maxNumericValue: 0.05 }],
         // mediana 4 KB; zapas na nakładki, wyszukiwarkę i galerię (Etap 4)
