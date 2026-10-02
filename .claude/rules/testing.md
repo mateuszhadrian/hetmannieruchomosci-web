@@ -155,10 +155,12 @@ spec otwierający trasy ofert), `useChromium1920Only`, `collectPageIssues`.
 - LHCI: job `lighthouse` w `ci.yml` mierzy **build z fixture**
   (`pnpm build:visual`, nie artefakt `dist` z `quality`). Budżety
   (`lighthouserc*.cjs`) = RATCHET od Etapu 3: pomiar WYŁĄCZNIE na
-  runnerze CI workflowem `lhci-measure.yml` (`workflow_dispatch`
-  z brancha; 5 przebiegów na obu configach → `scripts/lhci-median.mjs`
-  → mediany w podsumowaniu biegu i artefakcie `lhci-measure`); wpis
-  progów = osobny commit, zacieśnianie tylko świadomą decyzją Mateusza.
+  runnerze CI workflowem `lhci-measure.yml` (`workflow_dispatch`;
+  5 przebiegów na obu configach → `scripts/lhci-median.mjs` → mediany
+  w podsumowaniu biegu i artefakcie `lhci-measure`; GitHub pozwala
+  uruchomić workflow dispatch dopiero, gdy jego plik jest na main — z
+  brancha dopiero po pierwszym merge'u); wpis progów = osobny commit
+  (albo mały PR), zacieśnianie tylko świadomą decyzją Mateusza.
   Do czasu wpisu median obowiązują progi luźne, tymczasowe. LHCI mierzy
   WYŁĄCZNIE adresy wpisane w config — trasy ofert (stały adres listy
   i detalu z fixture'u) trzeba dopisać, gdy powstaną ich widoki (4.2/4.3).

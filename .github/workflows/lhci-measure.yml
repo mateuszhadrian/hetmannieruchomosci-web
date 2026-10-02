@@ -5,6 +5,10 @@
 # mediany + surowe raporty jako artefakt. Mediany z artefaktu wpisuje się
 # do lighthouserc* ręcznie, osobnym commitem (decyzja Mateusza). Lokalny
 # `lhci` wypada gorzej niż CI (mnożnik CPU) — NIE jest podstawą ratchetu.
+# UWAGA GitHub: workflow z samym `workflow_dispatch` da się uruchomić
+# dopiero, gdy jego plik jest na gałęzi domyślnej (main) — do tego czasu
+# `gh workflow run` zwraca 404. Pomiar pierwszy raz biegnie z main po
+# merge'u Etapu 3; później `--ref <branch>` działa normalnie.
 # Procedura: .claude/rules/testing.md, sekcja LHCI.
 name: LHCI measure (baseline)
 on:

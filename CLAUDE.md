@@ -414,8 +414,9 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   6/6, e2e 235 (+155 skip profili), `test:visual` 18/18 ×2; bramka bota
   `test:unit && build && test:dist` zielona. ZOSTAŁO: baseline'y linux
   (workflow z brancha PR-a — Mateusz), pomiar LHCI na runnerze
-  (`lhci-measure.yml` — Mateusz) i wpis median do `lighthouserc*.cjs`
-  osobnym commitem, pkt 6 (ruleset: required `quality` + `e2e` +
+  (`lhci-measure.yml` — Mateusz, dopiero Z MAIN po merge'u: workflow
+  dispatch nie istnieje dla GitHuba, dopóki plik nie jest na gałęzi
+  domyślnej) i wpis median do `lighthouserc*.cjs` osobnym PR-em, pkt 6 (ruleset: required `quality` + `e2e` +
   `lighthouse`) po merge'u. DECYZJE W TRAKCIE: (1) `visual-fixture.test.ts`
   biegnie w jobie `e2e`, nie w `quality` (tam dist nie istnieje);
   (2) pomiar LHCI jako osobny workflow, nie input `ci.yml`; (3) progi
