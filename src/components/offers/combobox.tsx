@@ -99,6 +99,9 @@ export function Combobox(p: ComboboxProps) {
           } else if (e.key === "Escape") {
             if (show) {
               e.preventDefault();
+              // w bottom sheecie (4.2 c) Esc na dokumencie zamyka cały
+              // sheet (overlay.ts) — pierwszy Esc ma zamknąć tylko listę
+              e.stopPropagation();
               setOpen(false);
               setActive(-1);
             }
