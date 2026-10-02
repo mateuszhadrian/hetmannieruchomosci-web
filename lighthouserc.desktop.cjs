@@ -1,7 +1,8 @@
 // Lighthouse CI — profil DESKTOP (preset lighthouse:desktop).
 // Reszta zasad jak w lighthouserc.cjs (tam opis ratchetu i wariancji).
 //
-// STAN Etapu 0: progi LUŹNE, TYMCZASOWE — realne budżety w Etapie 3.
+// STAN: progi LUŹNE, TYMCZASOWE do czasu wpisu median z lhci-measure.yml
+// (mierzony build z fixture); potem RATCHET.
 module.exports = {
   ci: {
     collect: {

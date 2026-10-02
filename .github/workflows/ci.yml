@@ -76,6 +76,10 @@ jobs:
       # build; strażnik assertVisualFixture pilnuje, że dist pod zrzutami
       # jest tym właściwym.
       - run: pnpm build:visual
+      # Strażnik na poziomie plików: dist z build:visual = fixture ofert
+      # (liczba i zbiór ofert, lokalne media). W jobie quality ten test
+      # biegnie PRZED buildem i pomija się — bramkuje dopiero tutaj.
+      - run: pnpm exec vitest run tests/unit/visual-fixture.test.ts
       # Baseline'y *-linux.png w repo (aktualizacja TYLKO przez workflow
       # update-visual-baselines.yml — patrz .claude/rules/testing.md)
       - run: pnpm test:visual
@@ -95,13 +99,13 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist/
-      # Progi w lighthouserc* — do Etapu 3 luźne, tymczasowe; potem
-      # ratchet. Pomiar median: lhci collect --numberOfRuns=5 +
-      # scripts/lhci-median.mjs; zacieśnianie tylko decyzją Mateusza.
+      # LHCI mierzy build z FIXTURE (nie artefakt dist z quality): adresy
+      # i treść ofert w danych produkcyjnych zmieniają się co noc, więc
+      # budżet na nich byłby niestabilny. Ten sam build co test:visual.
+      - run: pnpm build:visual
+      # Progi w lighthouserc* = RATCHET od Etapu 3: budżety z pomiaru na
+      # runnerze CI (workflow lhci-measure.yml → scripts/lhci-median.mjs);
+      # zacieśnianie tylko decyzją Mateusza, osobnym commitem.
       - name: LHCI — mobile
         run: pnpm exec lhci autorun --config=lighthouserc.cjs
       - name: LHCI — desktop

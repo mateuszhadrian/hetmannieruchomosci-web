@@ -1,0 +1,55 @@
+# Pomiar bazowy Lighthouse na RUNNERZE CI — podstawa budżetów (ratchet)
+# w lighthouserc.cjs / lighthouserc.desktop.cjs. WYŁĄCZNIE workflow_dispatch:
+# nie bramkuje, nie commituje — zbiera 5 przebiegów na obu configach dla
+# builda z FIXTURE (ten sam, który mierzy job lighthouse w ci.yml) i wrzuca
+# mediany + surowe raporty jako artefakt. Mediany z artefaktu wpisuje się
+# do lighthouserc* ręcznie, osobnym commitem (decyzja Mateusza). Lokalny
+# `lhci` wypada gorzej niż CI (mnożnik CPU) — NIE jest podstawą ratchetu.
+# Procedura: .claude/rules/testing.md, sekcja LHCI.
+name: LHCI measure (baseline)
+on:
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: Liczba przebiegów na adres (mediana z nieparzystej)
+        required: false
+        default: "5"
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Zamrożona treść ofert — jak job lighthouse w ci.yml.
+      - run: pnpm build:visual
+      - name: Collect — mobile
+        run: |
+          rm -rf .lighthouseci
+          pnpm exec lhci collect --config=lighthouserc.cjs --numberOfRuns=${{ inputs.runs }}
+          mkdir -p lhci-measure/mobile
+          cp .lighthouseci/lhr-*.json lhci-measure/mobile/
+          node scripts/lhci-median.mjs .lighthouseci | tee lhci-measure/median-mobile.txt
+      - name: Collect — desktop
+        run: |
+          rm -rf .lighthouseci
+          pnpm exec lhci collect --config=lighthouserc.desktop.cjs --numberOfRuns=${{ inputs.runs }}
+          mkdir -p lhci-measure/desktop
+          cp .lighthouseci/lhr-*.json lhci-measure/desktop/
+          node scripts/lhci-median.mjs .lighthouseci | tee lhci-measure/median-desktop.txt
+      - name: Mediany w podsumowaniu biegu
+        run: |
+          {
+            echo '## LHCI — mediany (mobile)'; echo '```'; cat lhci-measure/median-mobile.txt; echo '```'
+            echo '## LHCI — mediany (desktop)'; echo '```'; cat lhci-measure/median-desktop.txt; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lhci-measure
+          path: lhci-measure/
+          retention-days: 30
