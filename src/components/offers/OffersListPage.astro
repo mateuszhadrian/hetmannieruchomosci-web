@@ -1,8 +1,9 @@
 ---
 // Strona listy ofert (4.2 a + b): `/oferty/` i listy SSG typ × transakcja
-// [× lokalizacja]. Powłoka SSG: sekcja `[data-offers-list][data-build-now]`,
-// blok nawigacji po listach SSG (zwykłe linki — na telefonie i bez JS;
-// ≥ 1025 zastępuje go panel wyspy) i CTA. Treść listy (nagłówek, panel
+// [× lokalizacja]. Powłoka SSG: sekcja `[data-offers-list][data-build-now]`
+// i CTA; blok nawigacji po listach SSG (zwykłe linki — na telefonie i bez
+// JS; ≥ 1025 zastępuje go panel) liczy się tu, a renderuje go wyspa
+// z propsa `nav` (kolejność DOM = kolejność na ekranie, bez CSS `order`). Treść listy (nagłówek, panel
 // filtrów, pigułki statusu, sortowanie, WSZYSTKIE karty trasy — od 13.
 // z `hidden`, paginacja) renderuje `SearchIsland` w SSR i hydratuje
 // `client:load` na tym samym markupie. `<noscript>` odkrywa karty i chowa
@@ -14,7 +15,7 @@ import Footer from "@/components/Footer.astro";
 import Navbar from "@/components/navbar/Navbar.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { BUILD_NOW, loadOffersData } from "@/lib/offers/data";
-import { formatInt, formatKindPlural } from "@/lib/offers/format";
+import { formatKindPlural } from "@/lib/offers/format";
 import { toIndexEntry } from "@/lib/offers/index-entry";
 import {
   listDescription,
@@ -105,7 +106,6 @@ if (context.mainType && context.transaction) {
     ),
   ];
 }
-const isCurrent = (href: string) => href === currentPath;
 ---
 
 <BaseLayout title={title} description={description}>
@@ -132,57 +132,13 @@ const isCurrent = (href: string) => href === currentPath;
         </style>
       </noscript>
       <div class="ol-in">
-        <nav class="ol-nav" aria-label="Rodzaje ofert i lokalizacje">
-          <div>
-            <span class="ol-nav-label" id="ol-kinds-label">{UI.type}</span>
-            <ul
-              class="ol-pills"
-              aria-labelledby="ol-kinds-label"
-              data-offers-kinds
-            >
-              {
-                kindPills.map((p) => (
-                  <li>
-                    <a
-                      class="ol-pill"
-                      href={p.href}
-                      aria-current={isCurrent(p.href) ? "page" : undefined}
-                    >
-                      {p.label} <small>{formatInt(p.count)}</small>
-                    </a>
-                  </li>
-                ))
-              }
-            </ul>
-          </div>
-          {
-            locationPills.length > 1 && (
-              <div>
-                <span class="ol-nav-label" id="ol-loc-label">
-                  {UI.location}
-                </span>
-                <ul
-                  class="ol-pills"
-                  aria-labelledby="ol-loc-label"
-                  data-offers-locations
-                >
-                  {locationPills.map((p) => (
-                    <li>
-                      <a
-                        class="ol-pill"
-                        href={p.href}
-                        aria-current={isCurrent(p.href) ? "page" : undefined}
-                      >
-                        {p.label} <small>{formatInt(p.count)}</small>
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )
-          }
-        </nav>
-
+        {
+          /* nawigacja (a) renderuje się WEWNĄTRZ wyspy (po nagłówku) —
+            w naturalnej kolejności DOM; reguła CSS `order` przestawiająca
+            nagłówek nad nawigację dawała na mobile przesunięcie układu
+            (CLS 0,07 — nawigacja malowała się na górze, zanim dojechał
+            nagłówek z wyspy). */
+        }
         <SearchIsland
           client:load
           entries={entries}
@@ -190,6 +146,7 @@ const isCurrent = (href: string) => href === currentPath;
           locations={locations}
           pathname={currentPath}
           nowIso={nowIso}
+          nav={{ kinds: kindPills, locations: locationPills }}
         />
       </div>
     </section>

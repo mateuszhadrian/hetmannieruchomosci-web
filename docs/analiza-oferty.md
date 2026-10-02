@@ -740,5 +740,18 @@ w każdym punkcie z promptu; porządek po cronie ma pierwszeństwo.
 - **Nawigacja (a) na mobile zostaje** (panel wchodzi tylko ≥ 1025, sheety
   w (c)); na desktopie znika pod panelem, `<noscript>` ją przywraca.
 - **Test unit `liczniki na fixture`** (`offers-filters.test.ts`) ma liczby
-  policzone dla 10 ofert fixture'u — po przebudowie fixture'u (12.6) do
-  aktualizacji razem z baseline'ami.
+  policzone dla 13 ofert fixture'u (po 12.6) i pomija się, gdy fixture
+  nie został przebudowany po zmianie `selection.json`.
+- **R26 — CLS na mobile po merge'u (PR #16):** job `lighthouse` na
+  `main` padł na `/oferty/mieszkanie-na-sprzedaz/` (CLS 0,056 > 0,05;
+  lokalnie 0,073, na `/oferty/` 0,025). Element: `nav.ol-nav`. Mechanizm:
+  Astro wstawia `<style>astro-island{display:contents}</style>` w `<body>`
+  tuż przed wyspą, a nagłówek (w wyspie) był przestawiany regułą CSS
+  `order` NAD nawigację (a) renderowaną wcześniej przez Astro — na
+  mobile nawigacja malowała się na górze, a dojeżdżający nagłówek spychał
+  ją w dół. Poprawka (gałąź `fix/oferty-cls-nav`): nawigacja renderowana
+  przez wyspę z propsa `nav` (rodzaje + lokalizacje liczone w Astro)
+  w naturalnej kolejności DOM, `order` usunięte; CLS 0,000 na obu
+  stronach; test e2e kolejności DOM = ekranu. Lekcja do `sections.md`:
+  w wyspie nie używaj `order` do przestawiania bloków względem markupu
+  spoza wyspy.

@@ -546,10 +546,11 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   `selection.json` (≥ 13 ofert, oferta z windą, lokal na wynajem).
   Porządek po cronie: bieg 2026-10-03 — do dopisania.
 
-- **Etap 4 / 4.2 (b) (`/oferty/`: wyspa wyszukiwarki) — W TOKU**
-  (2026-10-02, gałąź `feat/oferty-wyspa`, plan §12 w `docs/analiza-oferty.md`
-  zaakceptowany w całości; kod kompletny, czeka na commity, fixture
-  i baseline'y): `src/components/offers/SearchIsland.tsx` (`client:load`
+- **Etap 4 / 4.2 (b) (`/oferty/`: wyspa wyszukiwarki) — WYKONANY**
+  (2026-10-02, PR #16 zmergowany 18:32 UTC z gałęzi `feat/oferty-wyspa`,
+  plan §12 w `docs/analiza-oferty.md` zaakceptowany w całości;
+  `prod-smoke` zielony; job `lighthouse` na `main` PO merge'u CZERWONY
+  — CLS mobile, poprawka R26 niżej): `src/components/offers/SearchIsland.tsx` (`client:load`
   w `OffersListPage.astro`) + `search-panel.tsx`, `combobox.tsx`,
   `sort-listbox.tsx`, `pagination.tsx` — nagłówek z licznikiem
   (`aria-live`), panel podstawowy + rozszerzony (17 filtrów, chip
@@ -602,16 +603,29 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   `client:load` zamiast `idle`; slug dokładny; budżet czytany po gzipie
   (do potwierdzenia); „Wyczyść" stosuje; podpowiedzi tylko
   miejscowość/dzielnica/poddzielnica; zero wyników już w (b); słowniki
-  w `enums.ts`. DO ZROBIENIA PRZEZ MATEUSZA: `selection.json` +
-  `SW964944`, `SW149199`, `SW622811` (lokal na wynajem `SW803370` nie
-  występuje w zrzucie z 2026-09-28 — luka zostaje do nowego zrzutu) →
-  `pnpm fixtures:build` (env: `esticrm.env` + `ESTI_RAW_SNAPSHOT`
-  i `ESTI_DICTIONARY_FILE` z `draftdata/`) → test `liczniki na fixture`
-  (`offers-filters.test.ts`, pomijany dopóki fixture ≠ `selection.json`) →
-  baseline'y linux (workflow, spec `tests/visual/oferty.spec.ts`, mode
-  `changed`) → darwin → PR. (c) = sheety mobile, Filtruj/Sortuj,
-  siatka/lista, stany brzegowe. Porządek po cronie: bieg 2026-10-03 —
-  do dopisania (w chwili końca sesji nie wystąpił).
+  w `enums.ts`. FIXTURE (w tym samym PR): `selection.json` + `SW964944`,
+  `SW149199`, `SW622811` = 13 ofert (lokal na wynajem `SW803370` nie
+  występuje w zrzucie `list` z 2026-09-28 — lista
+  `lokal-komercyjny-na-wynajem` bez zrzutu do nowego zrzutu, decyzja
+  Mateusza); `pnpm fixtures:build` wymaga env z `esticrm.env` +
+  `ESTI_RAW_SNAPSHOT`/`ESTI_DICTIONARY_FILE` z `draftdata/` (skrypt czyta
+  tylko env); test `liczniki na fixture` pomija się, gdy fixture ≠
+  `selection.json`; limit numerów w `sync-fixtures.test.ts` 8–16;
+  baseline'y linux (workflow, mode `changed`, 35 PNG) + darwin.
+  PO MERGE'U — R26 (gałąź `fix/oferty-cls-nav`): job `lighthouse` na
+  `main` padł na CLS 0,056 > 0,05 dla `/oferty/mieszkanie-na-sprzedaz/`
+  (mobile; lokalnie 0,073, `/oferty/` 0,025; element `nav.ol-nav`).
+  Mechanizm: Astro wstawia styl `display:contents` dla `astro-island`
+  w `<body>` tuż przed wyspą, a nagłówek z wyspy był przestawiany CSS
+  `order` nad nawigację (a) renderowaną wcześniej przez Astro — na
+  mobile nawigacja malowała się na górze i była spychana. Poprawka:
+  nawigacja (a) renderowana przez wyspę z propsa `nav` (rodzaje
+  i lokalizacje liczone w Astro) w naturalnej kolejności DOM, `order`
+  usunięte; CLS lokalnie 0,000 na obu stronach ofert; nowy test e2e
+  (kolejność DOM = ekran, `order` = 0, mobile 390 px). (c) = sheety
+  mobile, Filtruj/Sortuj, siatka/lista, stany brzegowe (prompt lokalny
+  `docs/plan/prompt-etap-4-2c.md`). Porządek po cronie: bieg 2026-10-03
+  — do dopisania (w chwili końca sesji (b) nie wystąpił).
 
 ## Dokumentacja
 

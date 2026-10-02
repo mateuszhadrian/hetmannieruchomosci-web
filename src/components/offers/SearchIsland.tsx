@@ -65,6 +65,15 @@ export interface SearchIslandProps {
   pathname: string;
   /** „teraz" builda (plakietka „Nowość") */
   nowIso: string;
+  /** nawigacja (a): linki do list SSG (rodzaje z licznikami, pastylki
+   *  lokalizacji rodzaju) — widoczna < 1025 i bez JS; liczona w Astro */
+  nav: { kinds: NavPill[]; locations: NavPill[] };
+}
+
+export interface NavPill {
+  href: string;
+  label: string;
+  count: number;
 }
 
 const INDEX_URL = `${OFFERS_PATH}index.json`;
@@ -305,6 +314,57 @@ export function SearchIsland(p: SearchIslandProps) {
           )}
         </p>
       </div>
+
+      <nav class="ol-nav" aria-label="Rodzaje ofert i lokalizacje">
+        <div>
+          <span class="ol-nav-label" id="ol-kinds-label">
+            {UI.type}
+          </span>
+          <ul
+            class="ol-pills"
+            aria-labelledby="ol-kinds-label"
+            data-offers-kinds
+          >
+            {p.nav.kinds.map((n) => (
+              <li key={n.href}>
+                <a
+                  class="ol-pill"
+                  href={n.href}
+                  aria-current={n.href === p.pathname ? "page" : undefined}
+                >
+                  {`${n.label} `}
+                  <small>{formatInt(n.count)}</small>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+        {p.nav.locations.length > 1 && (
+          <div>
+            <span class="ol-nav-label" id="ol-loc-label">
+              {UI.location}
+            </span>
+            <ul
+              class="ol-pills"
+              aria-labelledby="ol-loc-label"
+              data-offers-locations
+            >
+              {p.nav.locations.map((n) => (
+                <li key={n.href}>
+                  <a
+                    class="ol-pill"
+                    href={n.href}
+                    aria-current={n.href === p.pathname ? "page" : undefined}
+                  >
+                    {`${n.label} `}
+                    <small>{formatInt(n.count)}</small>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </nav>
 
       <SearchPanel
         draft={draft}

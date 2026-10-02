@@ -516,6 +516,41 @@ test.describe("bez JS, próg, sieć, a11y", () => {
     expect(raw).toContain('client="load"');
   });
 
+  test("kolejność DOM = kolejność na ekranie: nagłówek → nawigacja (a) → panel → pasek → siatka (bez CSS order — CLS na mobile)", async ({
+    page,
+  }) => {
+    test.skip(OFFERS.length === 0, NO_OFFERS);
+    const kindList =
+      ROUTES.lists.find((p) => p.split("/").length === 4) ?? OFFERS_PATH;
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoReady(page, kindList);
+    const order = await page.evaluate(() => {
+      const sel = [
+        ".ol-head",
+        "nav.ol-nav",
+        "[data-offers-panel]",
+        ".ol-tools",
+        "[data-offers-grid]",
+      ];
+      const els = sel.map((s) => document.querySelector(s)!);
+      const domOk = els.every(
+        (el, i) =>
+          i === 0 ||
+          Boolean(
+            els[i - 1].compareDocumentPosition(el) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+          ),
+      );
+      const noOrder = els.every((el) => getComputedStyle(el).order === "0");
+      const tops = els
+        .filter((el) => getComputedStyle(el).display !== "none")
+        .map((el) => el.getBoundingClientRect().top);
+      const visualOk = tops.every((t, i) => i === 0 || t >= tops[i - 1]);
+      return { domOk, noOrder, visualOk };
+    });
+    expect(order).toEqual({ domOk: true, noOrder: true, visualOk: true });
+  });
+
   test("próg 1025: nawigacja (a) poniżej, panel od progu", async ({ page }) => {
     await gotoReady(page, OFFERS_PATH);
     await expectBreakpointFlip(
