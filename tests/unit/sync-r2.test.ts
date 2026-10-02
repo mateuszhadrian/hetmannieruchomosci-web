@@ -7,6 +7,7 @@ import {
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
 import { describe, expect, it } from "vitest";
+import { r2Endpoint } from "../../scripts/sync/r2";
 import {
   RETENTION_DAYS,
   cleanupGone,
@@ -165,5 +166,15 @@ describe("czyszczenie po goneSince", () => {
 
   it("findOrphans: obiekty bez wpisu w manifeście", () => {
     expect(findOrphans(["a", "b", "c"], ["b"])).toEqual(["a", "c"]);
+  });
+});
+
+describe("r2Endpoint()", () => {
+  it("domyślny endpoint bez segmentu, jurysdykcja EU z segmentem `eu.`", () => {
+    const acc = "0123456789abcdef0123456789abcdef";
+    expect(r2Endpoint(acc)).toBe(`https://${acc}.r2.cloudflarestorage.com`);
+    expect(r2Endpoint(acc, "eu")).toBe(
+      `https://${acc}.eu.r2.cloudflarestorage.com`,
+    );
   });
 });

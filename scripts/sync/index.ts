@@ -28,6 +28,9 @@ import {
 } from "./report";
 
 export const R2_BUCKET = "hetman-media";
+/** Bucket utworzony z jurysdykcją EU (2.0) — własność bucketu, nie sekret;
+ *  bez tego endpointu R2 odpowiada 403 (pierwszy sync, 2026-10-02). */
+export const R2_JURISDICTION = "eu" as const;
 
 export interface CliArgs {
   source: "api" | "file";
@@ -206,6 +209,7 @@ export async function main(
           accessKeyId: env.R2_ACCESS_KEY_ID!,
           secretAccessKey: env.R2_SECRET_ACCESS_KEY!,
           bucket: R2_BUCKET,
+          jurisdiction: R2_JURISDICTION,
         }),
       );
   const signal = env.SYNC_AGREEMENT_SIGNAL
