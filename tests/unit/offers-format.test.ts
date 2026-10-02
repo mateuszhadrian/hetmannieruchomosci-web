@@ -12,6 +12,9 @@ import {
   formatPricePerM2,
   formatRooms,
   plural,
+  formatKindPlural,
+  formatYear,
+  TYPE_LABEL_PLURAL,
 } from "../../src/lib/offers/format";
 
 const S = " ";
@@ -110,5 +113,23 @@ describe("format", () => {
     expect(formatKind("komercyjny", "sprzedaz", "Biuro")).toBe(
       "Lokal komercyjny (biuro) na sprzedaż",
     );
+  });
+});
+
+describe("nagłówki list (4.2): liczba mnoga typów, rok", () => {
+  it("formatKindPlural: „Lokale komercyjne na wynajem” (D16), „Działki na sprzedaż”", () => {
+    expect(formatKindPlural("komercyjny", "wynajem")).toBe(
+      "Lokale komercyjne na wynajem",
+    );
+    expect(formatKindPlural("dzialka", "sprzedaz")).toBe("Działki na sprzedaż");
+    expect(formatKindPlural("mieszkanie", "sprzedaz")).toBe(
+      "Mieszkania na sprzedaż",
+    );
+    expect(formatKindPlural("dom", "wynajem")).toBe("Domy na wynajem");
+    expect(Object.keys(TYPE_LABEL_PLURAL)).toHaveLength(4);
+  });
+
+  it("formatYear: „2003 r.” ze spacją niełamliwą", () => {
+    expect(formatYear(2003)).toBe(`2003${S}r.`);
   });
 });
