@@ -1,9 +1,9 @@
-// `src/lib/offers/location-path.ts` to KOPIA reguły ścieżki slugów z syncu
-// (`scripts/sync/locations.ts`) — strona potrzebuje id węzła do filtra
-// prefiksowego, a `scripts/sync/**` zostaje nietknięte (4.2 a). Ten test
-// pilnuje równoważności obu implementacji na danych syntetycznych, na
-// fixture i na `data/` (przez helper — plików może nie być), oraz że każdy
-// id istnieje w drzewie `locations.json` obok ofert.
+// `src/lib/offers/location-path.ts` to JEDYNE źródło reguły ścieżki
+// slugów; `scripts/sync/locations.ts` re-eksportuje ją (scalone po 4.2 a).
+// Test pilnuje, że re-eksport syncu wskazuje tę samą implementację (synt.,
+// fixture, `data/` — przez helper, plików może nie być), że każdy id
+// oferty istnieje w drzewie `locations.json` obok niej, a liczniki węzłów
+// = liczba ofert w poddrzewie (kontrakt filtra prefiksowego).
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";

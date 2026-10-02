@@ -1,66 +1,30 @@
 // Drzewo lokalizacji z NAZW (`data/locations.json`, docs/kb part3 §4.2):
 // wyłącznie lokalizacje występujące w widocznych ofertach + przodkowie.
-// Id węzła = ścieżka slugów
+// Id węzła = ścieżka slugów (`src/lib/offers/location-path.ts`):
 //   województwo/powiat[/gmina]/miejscowość[/dzielnica-nadrzędna][/dzielnica]
-// Gmina wchodzi w ścieżkę tylko poza miastem, w którym gminy są dawnymi
-// dzielnicami (nazwa gminy = `{miasto}-…`). Niejednoznaczne nazwy
-// miejscowości rozstrzyga ścieżka, nie nazwa.
+// Niejednoznaczne nazwy miejscowości rozstrzyga ścieżka, nie nazwa.
 //
 // Slug ADRESOWY oferty (`location.slug`, segment URL) to `slugify(placeName)`
 // z normalizacji; tu dostaje sufiks `-2`, `-3`…, gdy ten sam slug wskazuje
 // różne węzły (kolizja → ostrzeżenie SLUG_COLLISION).
 import {
-  type LocationLevel,
+  communeIsCityPart,
+  leafId,
+  locationPath,
+} from "../../src/lib/offers/location-path";
+import {
   type LocationNode,
   type LocationStreet,
   type LocationsFile,
   type NormalizedOffer,
-  type OfferLocation,
 } from "../../src/lib/offers/schema";
-import { slugify } from "../../src/lib/offers/slug";
 import { warning, type SyncWarning } from "./warnings";
 
-/** Czy gmina to dawna dzielnica miasta (`Poznań-Wilda` dla `Poznań`). */
-function communeIsCityPart(commune: string, city: string): boolean {
-  return commune === city || commune.startsWith(`${city}-`);
-}
-
-interface PathStep {
-  id: string;
-  level: LocationLevel;
-  name: string;
-}
-
-/** Ścieżka węzłów od województwa do najniższego poziomu lokalizacji. */
-export function locationPath(loc: OfferLocation): PathStep[] {
-  const steps: PathStep[] = [];
-  const push = (level: LocationLevel, name: string) => {
-    const parent = steps.at(-1)?.id;
-    const seg = slugify(name);
-    steps.push({ id: parent ? `${parent}/${seg}` : seg, level, name });
-  };
-  push("province", loc.province);
-  push("county", loc.county);
-  if (!communeIsCityPart(loc.commune, loc.city)) push("commune", loc.commune);
-  push("city", loc.city);
-  if (loc.parentDistrict && loc.parentDistrict !== loc.district) {
-    push("district", loc.parentDistrict);
-  }
-  if (loc.district) {
-    push(
-      loc.parentDistrict && loc.parentDistrict !== loc.district
-        ? "subdistrict"
-        : "district",
-      loc.district,
-    );
-  }
-  return steps;
-}
-
-/** Id najniższego węzła lokalizacji oferty. */
-export function leafId(loc: OfferLocation): string {
-  return locationPath(loc).at(-1)!.id;
-}
+// Reguła ścieżki slugów (`locationPath`, `leafId`, `communeIsCityPart`)
+// żyje w `src/lib/offers/location-path.ts` — jedno źródło dla syncu
+// (drzewo) i strony (filtr prefiksowy lokalizacji, 4.2). Re-eksport dla
+// dotychczasowych konsumentów.
+export { communeIsCityPart, leafId, locationPath };
 
 export interface BuildLocationsResult {
   locations: LocationsFile;

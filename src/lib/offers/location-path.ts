@@ -1,15 +1,15 @@
-// Ścieżka węzłów drzewa lokalizacji dla lokalizacji oferty — ta sama
-// reguła, którą sync buduje `data/locations.json` (`scripts/sync/
-// locations.ts`, docs/kb part3 §4.2): id węzła = ścieżka slugów
+// Ścieżka węzłów drzewa lokalizacji dla lokalizacji oferty — JEDNO
+// źródło reguły dla syncu (buduje `data/locations.json` —
+// `scripts/sync/locations.ts` importuje stąd) i strony (docs/kb part3
+// §4.2): id węzła = ścieżka slugów
 //   województwo/powiat[/gmina]/miejscowość[/dzielnica-nadrzędna][/dzielnica]
 // Gmina wchodzi tylko poza miastem, w którym gminy są dawnymi dzielnicami
 // (nazwa gminy = `{miasto}-…`).
 //
 // Strona potrzebuje id najniższego węzła do filtra lokalizacji
 // (dopasowanie PREFIKSOWE po segmentach — jak dziś `location=a|b|c…`),
-// a `offers.json` go nie niesie. Kopia logiki syncu z testem
-// równoważności (`tests/unit/offers-location-path.test.ts`); docelowo
-// sync ma importować stąd (osobny PR — docs/analiza-oferty.md §8).
+// a `offers.json` go nie niesie — liczy go `index-entry.ts`. Spójność
+// z drzewem pilnuje `tests/unit/offers-location-path.test.ts`.
 import type { LocationLevel, OfferLocation } from "./schema";
 import { slugify } from "./slug";
 
