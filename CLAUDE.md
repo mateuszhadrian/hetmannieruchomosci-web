@@ -603,8 +603,11 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   (do potwierdzenia); „Wyczyść" stosuje; podpowiedzi tylko
   miejscowość/dzielnica/poddzielnica; zero wyników już w (b); słowniki
   w `enums.ts`. DO ZROBIENIA PRZEZ MATEUSZA: `selection.json` +
-  `SW803370`, `SW149199`, `SW622811` → `pnpm fixtures:build` → aktualizacja
-  liczb w teście `liczniki na fixture` (`offers-filters.test.ts`) →
+  `SW964944`, `SW149199`, `SW622811` (lokal na wynajem `SW803370` nie
+  występuje w zrzucie z 2026-09-28 — luka zostaje do nowego zrzutu) →
+  `pnpm fixtures:build` (env: `esticrm.env` + `ESTI_RAW_SNAPSHOT`
+  i `ESTI_DICTIONARY_FILE` z `draftdata/`) → test `liczniki na fixture`
+  (`offers-filters.test.ts`, pomijany dopóki fixture ≠ `selection.json`) →
   baseline'y linux (workflow, spec `tests/visual/oferty.spec.ts`, mode
   `changed`) → darwin → PR. (c) = sheety mobile, Filtruj/Sortuj,
   siatka/lista, stany brzegowe. Porządek po cronie: bieg 2026-10-03 —

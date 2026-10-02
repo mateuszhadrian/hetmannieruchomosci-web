@@ -667,7 +667,7 @@ propsy do HTML — `/oferty/` z 46 wpisami to ok. +60 KB HTML brutto
 
 | Numer | Co wnosi | Luka z §5.6 |
 | --- | --- | --- |
-| `SW803370` | lokal komercyjny na wynajem, aktywna, Jelonek (węzeł z `info`) | lista `komercyjny-na-wynajem`, chip z `info` |
+| ~~`SW803370`~~ → `SW964944` | lokal na wynajem NIE występuje w zrzucie `list` z 2026-09-28 (wszedł do CRM później); zamiast niego mieszkanie na sprzedaż, aktywna, parter, Winogrady (3. karta `mieszkanie-na-sprzedaz`, 3. parter) | lista `komercyjny-na-wynajem` i chip z `info` dla oferty aktywnej ZOSTAJĄ bez zrzutu — do nowego zrzutu (decyzja Mateusza, GET do API) |
 | `SW149199` | mieszkanie na wynajem z windą (`elevators` = 1), wynajęta, Poznań bez dzielnicy (slug `poznan` = R18) | winda „tak", dokładny slug miejscowości |
 | `SW622811` | mieszkanie na sprzedaż z windą, sprzedana, Wilda | druga winda, 3. karta `mieszkanie-na-sprzedaz` |
 

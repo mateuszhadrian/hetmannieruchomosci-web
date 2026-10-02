@@ -192,10 +192,12 @@ describe("applyOverride()", () => {
 });
 
 describe("tests/fixtures/offers/selection.json", () => {
-  it("przechodzi schemat: 8–10 numerów, nadpisania tylko dla wybranych", () => {
+  it("przechodzi schemat: 8–16 numerów, nadpisania tylko dla wybranych", () => {
     const sel = readSelection(join(FIXTURE_DIR, SELECTION_FILE));
     expect(sel.numbers.length).toBeGreaterThanOrEqual(8);
-    expect(sel.numbers.length).toBeLessThanOrEqual(10);
+    // 4.2 (b): 13 ofert (paginacja wymaga > 12); górny limit pilnuje,
+    // żeby fixture (media w repo) nie rozrastał się bez decyzji
+    expect(sel.numbers.length).toBeLessThanOrEqual(16);
     expect(new Set(sel.numbers).size).toBe(sel.numbers.length);
     for (const n of Object.keys(sel.overrides))
       expect(sel.numbers).toContain(n);

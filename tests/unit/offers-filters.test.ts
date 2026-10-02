@@ -29,7 +29,9 @@ import {
   toIndexText,
   type OfferIndexEntry,
 } from "../../src/lib/offers/index-entry";
-import { readOffersTyped } from "../helpers/offers";
+import { join } from "node:path";
+import { readSelection, SELECTION_FILE } from "../../scripts/sync/fixtures";
+import { FIXTURE_DIR, readOffersTyped } from "../helpers/offers";
 import { syntheticFullOffers } from "../helpers/raw";
 
 const offers = syntheticFullOffers();
@@ -560,21 +562,39 @@ describe("targetPath — adres dla stanu (pushState wyspy)", () => {
 
 describe("liczniki na fixture", () => {
   const fixture = readOffersTyped("fixture");
-  it.skipIf(fixture.length === 0)(
-    "statusy 3 / 1 / 6 i filtry z selection.json",
+  // liczby niżej odpowiadają selection.json; dopóki fixture nie został
+  // przebudowany po zmianie listy numerów (`pnpm fixtures:build` —
+  // uruchamia Mateusz), test pomija, zamiast udawać regresję
+  const selection = readSelection(join(FIXTURE_DIR, SELECTION_FILE));
+  const stale = fixture.length !== selection.numbers.length;
+  it.skipIf(fixture.length === 0 || stale)(
+    "statusy 4 / 1 / 8 i filtry z selection.json (13 ofert po 4.2 b)",
     () => {
       const fx = fixture.map(toIndexEntry);
       expect(statusCounts(fx)).toEqual({
-        aktywna: 3,
+        aktywna: 4,
         rezerwacja: 1,
-        archiwalne: 6,
+        archiwalne: 8,
       });
-      expect(run({ floorFrom: 0, floorTo: 0 }, fx)).toHaveLength(2);
-      expect(run({ priceFrom: 500000 }, fx)).toEqual(["SW303888", "SW349452"]);
-      expect(run({ areaFrom: 60 }, fx)).toHaveLength(6);
-      expect(run({ floorsTo: 4 }, fx)).toHaveLength(4);
-      expect(run({ furnished: "tak" }, fx)).toHaveLength(2);
+      expect(run({ floorFrom: 0, floorTo: 0 }, fx)).toHaveLength(3);
+      expect(run({ priceFrom: 500000 }, fx)).toEqual([
+        "SW303888",
+        "SW349452",
+        "SW964944",
+      ]);
+      expect(run({ areaFrom: 60 }, fx)).toHaveLength(7);
+      expect(run({ floorsTo: 4 }, fx)).toHaveLength(5);
+      expect(run({ furnished: "tak" }, fx)).toHaveLength(4);
       expect(run({ market: "pierwotny" }, fx)).toHaveLength(3);
+      // winda: dwa mieszkania z `elevators` (4.2 b); „nie" = 0 wyników (R14)
+      expect(run({ elevator: "tak" }, fx)).toHaveLength(2);
+      expect(run({ elevator: "nie" }, fx)).toHaveLength(0);
+      // slug miejscowości bez dzielnicy: dokładny = 1, prefiks miasta = 10
+      expect(run({ locationSlug: "poznan" }, fx)).toEqual(["SW149199"]);
+      expect(run({ location: "wielkopolskie/poznan/poznan" }, fx)).toHaveLength(
+        10,
+      );
+      expect(fx).toHaveLength(13);
       expect(STATUS_GROUPS).toHaveLength(3);
     },
   );

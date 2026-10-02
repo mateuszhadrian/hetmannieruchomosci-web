@@ -1,4 +1,7 @@
 {
+  "SW149199": [
+    "/oferty/mieszkanie-na-wynajem/poznan/sw149199/"
+  ],
   "SW184702": [
     "/oferty/dzialka-na-sprzedaz/kornik-bnin/sw184702/"
   ],
@@ -26,7 +29,13 @@
   "SW594869": [
     "/oferty/mieszkanie-na-wynajem/poznan-centrum/sw594869/"
   ],
+  "SW622811": [
+    "/oferty/mieszkanie-na-sprzedaz/poznan-wilda/sw622811/"
+  ],
   "SW688942": [
     "/oferty/dzialka-na-sprzedaz/szczodrochowo/sw688942/"
+  ],
+  "SW964944": [
+    "/oferty/mieszkanie-na-sprzedaz/poznan-winogrady/sw964944/"
   ]
 }
