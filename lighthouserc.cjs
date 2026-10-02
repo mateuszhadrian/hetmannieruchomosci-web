@@ -32,7 +32,13 @@ module.exports = {
       // LHCI mierzy WYŁĄCZNIE adresy wpisane tutaj. „/" + trasa tekstowa
       // + lista ofert; adresy list i detali ofert z fixture'u dochodzą,
       // gdy powstaną ich widoki (Etap 4).
-      url: ["/", "/polityka-prywatnosci/", "/oferty/"],
+      url: [
+        "/",
+        "/polityka-prywatnosci/",
+        "/oferty/",
+        // lista SSG z fixture'u (4.2 a): 2 karty, obniżka, plakietka Sprzedane
+        "/oferty/mieszkanie-na-sprzedaz/",
+      ],
       // Mediana z 5 znacznie rzadziej ląduje na wartości odstającej.
       numberOfRuns: 5,
     },

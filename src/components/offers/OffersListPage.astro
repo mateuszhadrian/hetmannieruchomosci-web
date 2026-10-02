@@ -1,0 +1,282 @@
+---
+// Strona listy ofert (4.2 a): `/oferty/` i listy SSG typ × transakcja
+// [× lokalizacja]. Bez wyspy — WSZYSTKIE karty trasy w HTML (wzorzec E5,
+// docs/analiza-oferty.md §5.3), posortowane „najnowsze"; nawigacja po
+// listach SSG zwykłymi linkami (pigułki rodzajów z licznikami, pastylki
+// lokalizacji); pigułki statusu z licznikami jako informacja (filtr
+// interaktywny wchodzi z wyspą 4.2 b). Karta = `OfferCard.tsx` (Preact,
+// SSR, zero JS). Selektor `main h1` = kontrakt smoke; `data-offer-card`
+// = kontrakt strażnika fixture'u.
+import "./offers.css";
+import ctaImage from "@/assets/img/onas-cta.webp";
+import Footer from "@/components/Footer.astro";
+import Navbar from "@/components/navbar/Navbar.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { BUILD_NOW, loadOffersData } from "@/lib/offers/data";
+import {
+  sortEntries,
+  statusCounts,
+  STATUS_GROUPS,
+  DEFAULT_SORT,
+} from "@/lib/offers/filters";
+import {
+  formatInt,
+  formatKindPlural,
+  formatOffersCount,
+} from "@/lib/offers/format";
+import { toIndexEntry } from "@/lib/offers/index-entry";
+import {
+  listDescription,
+  listHeading,
+  listTitle,
+  STATUS_GROUP_LABEL,
+  STATUS_GROUP_TITLE,
+  UI,
+  type ListContext,
+} from "@/lib/offers/offers-ui";
+import { MAIN_TYPES, TRANSACTIONS, type Offer } from "@/lib/offers/schema";
+import {
+  listPath,
+  offerListPath,
+  OFFERS_PATH,
+  TRANSACTION_SLUG,
+  TYPE_SLUG,
+} from "@/lib/offers/urls";
+import { CONTACT_PATH } from "@/lib/routes";
+import { OfferCard } from "./OfferCard";
+
+interface Props {
+  /** oferty tej trasy (już zawężone przez getStaticPaths) */
+  offers: Offer[];
+  /** kontekst trasy: typ × transakcja z adresu, lokalizacja z segmentu */
+  context: ListContext & { locationSlug?: string };
+}
+const { offers, context } = Astro.props;
+const { offers: all } = loadOffersData();
+const nowIso = BUILD_NOW.toISOString();
+
+const entries = sortEntries(offers.map(toIndexEntry), DEFAULT_SORT);
+const counts = statusCounts(entries);
+const heading = listHeading(context);
+const title = listTitle(context);
+const description = listDescription(context, entries.length);
+const currentPath = Astro.url.pathname.endsWith("/")
+  ? Astro.url.pathname
+  : `${Astro.url.pathname}/`;
+
+// ── Nawigacja po listach SSG (tylko kombinacje z ≥ 1 ofertą) ─────────────
+interface NavPill {
+  href: string;
+  label: string;
+  count: number;
+}
+const kinds: NavPill[] = [];
+for (const type of MAIN_TYPES) {
+  for (const transaction of TRANSACTIONS) {
+    const count = all.filter(
+      (o) => o.mainType === type && o.transaction === transaction,
+    ).length;
+    if (count === 0) continue;
+    kinds.push({
+      href: offerListPath(TYPE_SLUG[type], TRANSACTION_SLUG[transaction]),
+      label: formatKindPlural(type, transaction),
+      count,
+    });
+  }
+}
+const kindPills: NavPill[] = [
+  { href: OFFERS_PATH, label: UI.allOffers, count: all.length },
+  ...kinds,
+];
+
+let locationPills: NavPill[] = [];
+if (context.mainType && context.transaction) {
+  const kindOffers = all.filter(
+    (o) =>
+      o.mainType === context.mainType && o.transaction === context.transaction,
+  );
+  const bySlug = new Map<string, NavPill>();
+  for (const o of kindOffers) {
+    const href = listPath(o);
+    const pill = bySlug.get(href) ?? {
+      href,
+      label: o.location.placeName,
+      count: 0,
+    };
+    pill.count += 1;
+    bySlug.set(href, pill);
+  }
+  const kindHref = offerListPath(
+    TYPE_SLUG[context.mainType],
+    TRANSACTION_SLUG[context.transaction],
+  );
+  locationPills = [
+    { href: kindHref, label: UI.all, count: kindOffers.length },
+    ...[...bySlug.values()].sort(
+      (a, b) => b.count - a.count || a.label.localeCompare(b.label, "pl"),
+    ),
+  ];
+}
+const isCurrent = (href: string) => href === currentPath;
+
+/** Priorytet wczytywania zdjęć: pierwsze trzy karty w pierwszym ekranie. */
+const priority = (i: number) => (i === 0 ? "high" : i < 3 ? "eager" : "lazy");
+---
+
+<BaseLayout title={title} description={description}>
+  <Navbar />
+  <main>
+    <section class="ol" data-offers-list data-build-now={nowIso}>
+      <div class="ol-in">
+        <div class="ol-head">
+          <h1 class="ol-h1">{heading}</h1>
+          <p class="ol-count" data-offers-count={entries.length}>
+            {
+              entries.length > 0 ? (
+                <>
+                  {UI.found}{" "}
+                  <strong>{formatOffersCount(entries.length)}</strong>
+                </>
+              ) : (
+                <strong>{formatOffersCount(0)}</strong>
+              )
+            }
+          </p>
+        </div>
+
+        <nav class="ol-nav" aria-label="Rodzaje ofert i lokalizacje">
+          <div>
+            <span class="ol-nav-label" id="ol-kinds-label">{UI.type}</span>
+            <ul
+              class="ol-pills"
+              aria-labelledby="ol-kinds-label"
+              data-offers-kinds
+            >
+              {
+                kindPills.map((p) => (
+                  <li>
+                    <a
+                      class="ol-pill"
+                      href={p.href}
+                      aria-current={isCurrent(p.href) ? "page" : undefined}
+                    >
+                      {p.label} <small>{formatInt(p.count)}</small>
+                    </a>
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
+          {
+            locationPills.length > 1 && (
+              <div>
+                <span class="ol-nav-label" id="ol-loc-label">
+                  {UI.location}
+                </span>
+                <ul
+                  class="ol-pills"
+                  aria-labelledby="ol-loc-label"
+                  data-offers-locations
+                >
+                  {locationPills.map((p) => (
+                    <li>
+                      <a
+                        class="ol-pill"
+                        href={p.href}
+                        aria-current={isCurrent(p.href) ? "page" : undefined}
+                      >
+                        {p.label} <small>{formatInt(p.count)}</small>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )
+          }
+        </nav>
+
+        {
+          entries.length > 0 && (
+            /* region przewijany poziomo na telefonie — tabindex dla
+               klawiatury (axe scrollable-region-focusable; wzorzec
+               role=region + aria-label z eslint.config) */
+            <div
+              class="ol-status"
+              role="region"
+              aria-label={UI.status}
+              tabindex="0"
+              data-offers-status
+            >
+              <ul class="ol-pills ol-pills--nowrap">
+                {STATUS_GROUPS.map((g) => (
+                  <li
+                    class="ol-pill ol-pill--on"
+                    title={STATUS_GROUP_TITLE[g]}
+                    data-status-group={g}
+                  >
+                    {STATUS_GROUP_LABEL[g]}{" "}
+                    <small>{formatInt(counts[g])}</small>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )
+        }
+
+        {
+          entries.length > 0 ? (
+            <ul class="ol-grid" data-offers-grid>
+              {entries.map((entry, i) => (
+                <li>
+                  <OfferCard
+                    entry={entry}
+                    nowIso={nowIso}
+                    priority={priority(i)}
+                  />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p class="ol-empty" data-offers-empty>
+              {/* PLACEHOLDER (U9): stan listy bez ofert w danych */}
+              Aktualnie nie mamy ofert w tej kategorii. Zajrzyj do pozostałych
+              list albo zostaw nam swoje kryteria.
+            </p>
+          )
+        }
+      </div>
+    </section>
+
+    <section class="ol-cta" aria-labelledby="ol-cta-h">
+      <img
+        class="ol-cta-bg"
+        src={ctaImage.src}
+        width={ctaImage.width}
+        height={ctaImage.height}
+        alt=""
+        loading="lazy"
+        decoding="async"
+      />
+      <div class="ol-cta-in">
+        <div class="ol-cta-head">
+          <p class="ol-cta-eyebrow">{UI.ctaEyebrow}</p>
+          <h2 id="ol-cta-h">
+            {UI.ctaHeading}
+            <span>{UI.ctaHeadingAccent}</span>
+          </h2>
+          <p class="ol-cta-text">{UI.ctaText}</p>
+        </div>
+        <div class="ol-cta-btns">
+          <a class="ol-btn ol-btn--primary" href={CONTACT_PATH}
+            >{UI.ctaPrimary}</a
+          >
+          {/* slot antyscrapingowy: numer wstawia JS; bez JS → /kontakt/ */}
+          <a class="ol-btn" data-tel data-fill="href" href={CONTACT_PATH}>
+            {UI.ctaCall}
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</BaseLayout>

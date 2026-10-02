@@ -49,12 +49,16 @@ html {
   --copper-light: #e0a86a; /* miedź na ciemnym tle, hover */
   --copper-hover: #d9964c;
   --copper-dark: #b5732d;
+  /* miedź w DROBNYM druku na jasnym tle (kicker karty, tag): design
+     #c98236 daje 3,1:1 — poniżej AA 4,5:1; ten odcień 5,4:1 na białym */
+  --copper-text: #965d1c;
 
   /* foreground */
   --ink: #1c1b19; /* tekst podstawowy */
   --slate: #2f3a4c; /* tekst akapitów na jasnym tle */
   --muted: #6b6864; /* tekst drugorzędny */
   --faint: #8a867f; /* podpisy, tekst pomocniczy (tylko duży druk — AA) */
+  --disabled: #9a968f; /* stan wyłączony (paginacja, przyciski) */
   --silver: #dddddd; /* tekst i kreski na ciemnym tle */
   --line: #e2dfd8;
   --line-soft: #ece9e3;
