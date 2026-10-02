@@ -3,26 +3,45 @@
 // szkielecie scripts/overlay.ts (focus-trap, Esc, scrim, swipe-down,
 // blokada scrolla — mechanika wspólna, NIE ruszać).
 //
-// STAN Etapu 0: wersja robocza — działająca nawigacja po wszystkich
-// trasach, kolory i kroje z tokenów, logo z designu. Wygląd docelowy
-// (efekt liter przy hover, wariant strony głównej przemalowywany pozycją
-// scrolla, logo jasne/ciemne, dopracowany sheet) powstaje w Etapie 4.1.
+// Wygląd docelowy (Etap 4.1, docs/analiza-chrome.md): logo w dwóch
+// wariantach, sześć pozycji z efektem liter przy hover (czysty CSS, za
+// bramką prefers-reduced-motion), telefon przez slot antyscrapingowy,
+// wariant strony głównej przemalowywany POZYCJĄ SCROLLA.
 //
-// Stany paska: [data-hero] (strona ma hero pod paskiem — pasek startuje
-// przezroczysty), [data-solid] (szklane tło + linia), [data-open] (sheet).
+// Stany paska:
+//  [data-scroll-nav] — wariant „/" (SSR, tylko HOME_PATH): pasek startuje
+//    przezroczysty nad hero; skrypt pisze zmienne --nav-* na nagłówku,
+//    CSS je konsumuje. Kontrakt = PRÓG SCROLLA z wysokości okna (hero
+//    z 4.4 jest pełnoekranowe), nie selektor sekcji hero.
+//  [data-hero] — SSR razem z data-scroll-nav (stan przezroczysty bez
+//    migotania przed startem skryptu); bez JS <noscript> przywraca tło.
+//  [data-solid] — pasek „pełny": na „/" po dojechaniu przemalowania do
+//    końca, na pozostałych trasach zaraz po ruszeniu scrolla.
+//  [data-open] — otwarty sheet.
 import { mainNavItems } from "@/i18n/nav";
 import { CONTACT_PATH, HOME_PATH } from "@/lib/routes";
-import logo from "@/assets/logo/logo-color.webp";
+import logoColor from "@/assets/logo/logo-color.webp";
+import logoSilver from "@/assets/logo/logo-silver.webp";
 
 // Normalizacja ukośnika — w dev Astro.url.pathname bywa bez końcowego "/".
 const currentPath = Astro.url.pathname.endsWith("/")
   ? Astro.url.pathname
   : `${Astro.url.pathname}/`;
 
+/** Wariant przezroczysty nad hero — WYŁĄCZNIE strona główna. */
+const isHome = currentPath === HOME_PATH;
+
 /** Pozycja jest bieżąca także dla adresów POD nią (listy i detale ofert
  *  pod /oferty/). */
 const isCurrent = (href: string) =>
   href === HOME_PATH ? currentPath === href : currentPath.startsWith(href);
+
+/** Efekt liter (design: .hn-ch z dwiema kopiami znaku, spacja = .hn-sp).
+ *  Generowane tu, nie wpisywane ręcznie — jedna tablica pozycji
+ *  (SHOW_PRACA, zmiana etykiety) bez przepisywania spanów. `i` daje
+ *  kaskadę opóźnień w CSS (--i). */
+const letters = (label: string) =>
+  [...label].map((ch, i) => ({ ch, i, space: ch === " " }));
 
 const t = {
   nav: "Menu główne",
@@ -36,18 +55,43 @@ const t = {
 };
 ---
 
-<header class="hdr" data-nav>
+<header
+  class="hdr"
+  data-nav
+  data-scroll-nav={isHome ? "" : undefined}
+  data-hero={isHome ? "" : undefined}
+>
+  {
+    /* scrim nad hero (design: gradient 190 px) — tylko wariant „/";
+       gaśnie razem z przemalowaniem */
+    isHome && <span class="hdr-scrim" aria-hidden="true" />
+  }
   {/* szklane tło paska (design: półprzezroczysta szarość + blur) */}
   <span class="hdr-bg" aria-hidden="true"></span>
 
   <a class="hdr-logo" href={HOME_PATH} aria-label={t.home}>
     <img
-      src={logo.src}
-      width={logo.width}
-      height={logo.height}
+      class="hdr-logo-dark"
+      src={logoColor.src}
+      width={logoColor.width}
+      height={logoColor.height}
       alt={t.brand}
       decoding="async"
     />
+    {
+      /* logo jasne nad hero — crossfade z ciemnym pozycją scrolla */
+      isHome && (
+        <img
+          class="hdr-logo-light"
+          src={logoSilver.src}
+          width={logoSilver.width}
+          height={logoSilver.height}
+          alt=""
+          aria-hidden="true"
+          decoding="async"
+        />
+      )
+    }
   </a>
 
   <nav class="hdr-nav" aria-label={t.nav}>
@@ -56,9 +100,19 @@ const t = {
         <a
           class="nav-link"
           href={item.href}
+          aria-label={item.label}
           aria-current={isCurrent(item.href) ? "page" : undefined}
         >
-          {item.label}
+          {letters(item.label).map((l) =>
+            l.space ? (
+              <span class="hn-sp" aria-hidden="true" />
+            ) : (
+              <span class="hn-ch" aria-hidden="true" style={`--i:${l.i}`}>
+                <span>{l.ch}</span>
+                <span>{l.ch}</span>
+              </span>
+            ),
+          )}
         </a>
       ))
     }
@@ -82,6 +136,23 @@ const t = {
     <i aria-hidden="true"><b></b><b></b></i>
   </button>
 </header>
+{
+  /* Bez JS wariant „/" nie ma kto przemalować — przywracamy pełny pasek
+     (selektor trafia wyłącznie na „/"). !important, bo reguły komponentu
+     są scope'owane atrybutem (wyższa specyficzność) i inaczej wygrałyby
+     domyślne wartości stanu przezroczystego. */
+}
+<noscript>
+  <style is:inline>
+    .hdr[data-hero] {
+      --nav-e: 1 !important;
+      --nav-c: #1c1b19 !important;
+      --nav-ch: #183a6b !important;
+      --nav-sh: 0 !important;
+      --nav-bar: #183a6b !important;
+    }
+  </style>
+</noscript>
 
 {/* Bottom sheet menu — kontrakt overlay.ts (portalowany do <body>). */}
 <div
@@ -119,9 +190,9 @@ const t = {
         </a>
         <img
           class="sheet-logo"
-          src={logo.src}
-          width={logo.width}
-          height={logo.height}
+          src={logoColor.src}
+          width={logoColor.width}
+          height={logoColor.height}
           alt=""
           aria-hidden="true"
           loading="lazy"
@@ -147,9 +218,18 @@ const t = {
     box-sizing: border-box;
   }
 
-  /* Szklane tło: widoczne ZAWSZE, poza stronami z hero pod paskiem
-     ([data-hero] nadaje skrypt, gdy strona ma [data-navref]) — tam wjeżdża
-     po zjechaniu z hero ([data-solid]). Bez JS tło po prostu jest. */
+  /* Wariant „/" — zmienne pisane przez skrypt co klatkę (e = 0 nad hero,
+     1 po przemalowaniu). Wartości startowe = stan przezroczysty. */
+  .hdr[data-hero] {
+    --nav-e: 0;
+    --nav-c: rgba(255, 255, 255, 0.88);
+    --nav-ch: rgba(255, 255, 255, 0.88);
+    --nav-sh: 0.35;
+    --nav-bar: var(--silver);
+  }
+
+  /* Szklane tło: widoczne ZAWSZE poza wariantem „/", gdzie wjeżdża
+     pozycją scrolla. Bez przejścia czasowego — stan liczy pętla rAF. */
   .hdr-bg {
     position: absolute;
     inset: 0;
@@ -157,10 +237,25 @@ const t = {
     -webkit-backdrop-filter: blur(22px);
     backdrop-filter: blur(22px);
     border-bottom: 1px solid var(--glass-line);
-    transition: opacity 0.3s ease;
   }
-  .hdr[data-hero]:not([data-solid]) .hdr-bg {
-    opacity: 0;
+  .hdr[data-hero] .hdr-bg {
+    opacity: var(--nav-e);
+  }
+  /* scrim nad hero: gradient wyższy niż pasek (design: 190 px) */
+  .hdr-scrim {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 190px;
+    background: linear-gradient(
+      to bottom,
+      rgba(12, 11, 10, 0.55),
+      rgba(12, 11, 10, 0.22) 46%,
+      rgba(12, 11, 10, 0)
+    );
+    opacity: calc(1 - var(--nav-e, 0));
+    pointer-events: none;
   }
 
   .hdr-logo {
@@ -173,6 +268,16 @@ const t = {
     display: block;
     width: auto;
     height: 100%;
+  }
+  .hdr-logo-light {
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: calc(1 - var(--nav-e, 0));
+    filter: drop-shadow(0 1px 6px rgba(0, 0, 0, 0.35));
+  }
+  .hdr[data-hero] .hdr-logo-dark {
+    opacity: var(--nav-e);
   }
   .hdr-logo:hover {
     opacity: 0.8;
@@ -201,6 +306,10 @@ const t = {
     color: var(--navy);
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+  }
+  /* nad hero kreski jasne, przemalowywane razem z tłem */
+  .hdr[data-hero] .mbtn {
+    color: var(--nav-bar);
   }
   .mbtn:focus-visible {
     outline: 2px solid var(--navy);
@@ -256,8 +365,9 @@ const t = {
     width: 100%;
     border-radius: 18px 18px 0 0;
     overflow: hidden;
-    /* Design: szkło .39 + blur. Tu podkład gęstszy, żeby tekst trzymał
-       kontrast AA nad dowolną treścią strony — strojenie w Etapie 4.1. */
+    /* Design: szkło .39 + blur. Podkład gęstszy (decyzja 4.1, R7):
+       sheet otwiera się też nad ciemnym hero „/", a granatowy tekst
+       na szkle nie trzyma kontrastu AA. */
     background: rgba(243, 242, 239, 0.96);
     -webkit-backdrop-filter: blur(22px);
     backdrop-filter: blur(22px);
@@ -309,6 +419,7 @@ const t = {
   .sheet-in nav {
     display: flex;
     flex-direction: column;
+    padding-top: clamp(8px, 2.3vw, 16px);
   }
   .m-link {
     display: flex;
@@ -401,6 +512,7 @@ const t = {
 
     .nav-link {
       position: relative;
+      isolation: isolate;
       display: inline-flex;
       align-items: baseline;
       padding: 10px 0;
@@ -446,6 +558,73 @@ const t = {
       outline-offset: 4px;
     }
 
+    /* litery: każda w kieszeni (clip-path), druga kopia pod spodem */
+    .hn-ch {
+      position: relative;
+      display: inline-block;
+      clip-path: inset(0);
+      line-height: 1;
+      vertical-align: baseline;
+    }
+    .hn-ch > span {
+      display: block;
+    }
+    .hn-ch > span:nth-child(2) {
+      position: absolute;
+      top: 100%;
+      left: 0;
+    }
+    .hn-sp {
+      display: inline-block;
+      width: 0.3em;
+    }
+    /* podjazd liter — ruch wyłącznie bez prefers-reduced-motion
+       (bramka ruchu; przy reduce zostaje kolor i podkreślenie) */
+    @media (prefers-reduced-motion: no-preference) {
+      .hn-ch > span {
+        transition: transform 0.42s cubic-bezier(0.76, 0, 0.24, 1);
+        transition-delay: calc(var(--i, 0) * 0.028s);
+      }
+      .nav-link:hover .hn-ch > span,
+      .nav-link:focus-visible .hn-ch > span {
+        transform: translateY(-100%);
+      }
+    }
+
+    /* wariant „/": kolory linków z pętli rAF, cień tekstu i halo gasną */
+    .hdr[data-hero] .nav-link {
+      color: var(--nav-c);
+      text-shadow: 0 1px 6px rgba(0, 0, 0, var(--nav-sh));
+    }
+    .hdr[data-hero] .nav-link:hover,
+    .hdr[data-hero] .nav-link:focus-visible {
+      color: var(--nav-ch);
+    }
+    .hdr[data-hero] .nav-link::after {
+      background: var(--nav-c);
+    }
+    .hdr[data-hero] .nav-link[aria-current="page"]::after {
+      background: var(--copper);
+    }
+    .hdr[data-hero] .nav-link::before {
+      content: "";
+      position: absolute;
+      inset: -16px -20px;
+      z-index: -1;
+      border-radius: 40px;
+      background: radial-gradient(
+        closest-side,
+        rgba(255, 255, 255, calc(0.32 * (1 - var(--nav-e, 0)))) 0%,
+        rgba(0, 0, 0, 0) 75%
+      );
+      opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+    .hdr[data-hero] .nav-link:hover::before,
+    .hdr[data-hero] .nav-link:focus-visible::before {
+      opacity: 1;
+    }
+
     .hdr-tel {
       display: flex;
       align-items: center;
@@ -470,6 +649,9 @@ const t = {
       outline: 2px solid var(--navy);
       outline-offset: 3px;
     }
+    .hdr[data-hero] .hdr-tel {
+      box-shadow: 0 2px 14px rgba(0, 0, 0, calc(0.22 * (1 - var(--nav-e, 0))));
+    }
 
     .mbtn,
     .sheet-ov {
@@ -479,12 +661,12 @@ const t = {
 
   /* ── reduced motion ── */
   @media (prefers-reduced-motion: reduce) {
-    .hdr-bg,
     .mbtn i b,
     .sheet-ov,
     .sheet,
     .nav-link,
-    .nav-link::after {
+    .nav-link::after,
+    .nav-link::before {
       transition: none;
     }
   }
@@ -495,8 +677,10 @@ const t = {
   import { fillContactSlots } from "@/lib/contact-details";
   import {
     NAV_DESKTOP_MIN_PX,
+    NAV_HOME_EPSILON,
+    NAV_HOME_FADE_START,
+    NAV_HOME_LERP,
     NAV_SOLID_FALLBACK_PX,
-    NAV_SOLID_HERO_PAD_PX,
   } from "@/components/navbar/nav-config";
 
   const hdr = document.querySelector<HTMLElement>("[data-nav]");
@@ -504,6 +688,9 @@ const t = {
     const burger = hdr.querySelector<HTMLButtonElement>("[data-burger]")!;
     const SHEET_ID = "nav-sheet";
     const desktopMQ = matchMedia(`(min-width:${NAV_DESKTOP_MIN_PX}px)`);
+    const reduceMQ = matchMedia("(prefers-reduced-motion: reduce)");
+    /** Wariant „/" (SSR): przemalowanie pozycją scrolla. */
+    const home = hdr.hasAttribute("data-scroll-nav");
 
     // telefon w pasku, sheecie i stopce (antyscraping — lib/contact-details)
     fillContactSlots();
@@ -518,34 +705,90 @@ const t = {
     new ResizeObserver(setHdrH).observe(hdr);
     setHdrH();
 
-    // ── stan „solid" ──
+    // ── stan paska ──
     // Sheet menu blokuje scroll przez `body{position:fixed;top:-scrollY}`
     // (overlay.ts) — to ZERUJE window.scrollY i odpala zdarzenie `scroll`,
-    // więc bez tej flagi setSolid() gasiłby tło paska dokładnie w chwili
-    // otwarcia menu. Deklaracja MUSI stać przed onScroll — pierwsze
-    // wywołanie leci jeszcze przed sekcją menu (TDZ).
+    // więc bez tej flagi stan paska przeliczałby się na pozycji 0 dokładnie
+    // w chwili otwarcia menu. Deklaracja MUSI stać przed onScroll (TDZ).
     let sheetOpen = false;
+    // KAŻDA nakładka blokuje scroll przez `body{position:fixed}` —
+    // zamrażamy stan paska na czas otwartej nakładki.
+    const frozen = () => sheetOpen || document.body.style.position === "fixed";
     function setSolid(s: boolean) {
       hdr!.toggleAttribute("data-solid", s);
     }
-    // Próg stanu solid: wysokość hero ([data-navref]) minus zapas; bez hero
-    // — zaraz po ruszeniu scrolla.
-    const navref = document.querySelector<HTMLElement>("[data-navref]");
-    hdr.toggleAttribute("data-hero", !!navref);
-    const solidAt = () =>
-      navref
-        ? navref.offsetHeight - NAV_SOLID_HERO_PAD_PX
-        : NAV_SOLID_FALLBACK_PX;
+
+    // ── wariant „/": przemalowanie pozycją scrolla (design site.js §4) ──
+    // Postęp e ∈ [0, 1] ze smoothstep; start = 0,32 × h, koniec = h − pasek,
+    // h = wysokość OKNA (próg scrolla, nie selektor hero). Pętla rAF
+    // dociąga wartość (Safari dostarcza `scroll` rzadziej, niż przewija —
+    // scroll.md); przy reduce — skok. Zapis = kilka zmiennych CSS na
+    // nagłówku, nie style inline per link.
+    const WHITE = [255, 255, 255];
+    const INK = [28, 27, 25]; // --ink
+    const NAVY = [24, 58, 107]; // --navy
+    const SILVER = [221, 221, 221]; // --silver
+    const mix = (a: number[], b: number[], e: number) =>
+      a.map((v, i) => Math.round(v + (b[i] - v) * e));
+    const rgba = (c: number[], a: number) =>
+      `rgba(${c.join(",")},${a.toFixed(3)})`;
+    let target = 0;
+    let current = 0;
+    let raf = 0;
+
+    function progress(): number {
+      const h = window.innerHeight;
+      const navH = hdr!.offsetHeight || 96;
+      const start = h * NAV_HOME_FADE_START;
+      const end = Math.max(start + 1, h - navH);
+      const p = Math.min(
+        1,
+        Math.max(0, (window.scrollY - start) / (end - start)),
+      );
+      return p * p * (3 - 2 * p);
+    }
+    function paint(e: number) {
+      const st = hdr!.style;
+      const base = mix(WHITE, INK, e);
+      const alpha = 0.88 + 0.12 * e;
+      st.setProperty("--nav-e", e.toFixed(3));
+      st.setProperty("--nav-c", rgba(base, alpha));
+      st.setProperty("--nav-ch", rgba(mix(base, NAVY, e), alpha));
+      st.setProperty("--nav-sh", (0.35 * (1 - e)).toFixed(3));
+      st.setProperty("--nav-bar", `rgb(${mix(SILVER, NAVY, e).join(",")})`);
+      setSolid(e >= 1 - NAV_HOME_EPSILON);
+    }
+    function tick() {
+      raf = 0;
+      const d = target - current;
+      if (reduceMQ.matches || Math.abs(d) < NAV_HOME_EPSILON) {
+        current = target;
+      } else {
+        current += d * NAV_HOME_LERP;
+        raf = requestAnimationFrame(tick);
+      }
+      paint(current);
+    }
 
     function onScroll() {
-      // KAŻDA nakładka blokuje scroll przez `body{position:fixed}` —
-      // zamrażamy stan paska na czas otwartej nakładki.
-      if (sheetOpen || document.body.style.position === "fixed") return;
-      setSolid(window.scrollY > solidAt());
+      if (frozen()) return;
+      if (home) {
+        target = progress();
+        if (!raf) raf = requestAnimationFrame(tick);
+      } else {
+        setSolid(window.scrollY > NAV_SOLID_FALLBACK_PX);
+      }
     }
     addEventListener("scroll", onScroll, { passive: true });
     addEventListener("resize", onScroll, { passive: true });
-    onScroll();
+    if (home) {
+      // start bez dociągania — przeładowanie w środku strony od razu
+      // w stanie docelowym
+      current = target = progress();
+      paint(current);
+    } else {
+      onScroll();
+    }
 
     // ── menu mobilne: bottom sheet przez overlay.ts ──
     let isOpen = false;
@@ -574,7 +817,8 @@ const t = {
       }
     });
 
-    // zmiana progu: domknij sheet (spójny stan nakładek)
+    // przejście na desktop: menu mobilne znika, więc sheet się domyka
+    // (spójny stan nakładek i blokady scrolla)
     desktopMQ.addEventListener("change", (e) => {
       if (e.matches && isOpen) window.overlay?.close(SHEET_ID);
       onScroll();

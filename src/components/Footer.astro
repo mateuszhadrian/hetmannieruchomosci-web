@@ -1,87 +1,138 @@
 ---
-// Stopka — granat z designu, wspólna dla wszystkich tras. Telefon i e-mail
-// przez sloty antyscrapingowe (lib/contact-details). Firma nie prowadzi
-// profili w mediach społecznościowych — stopka nie ma sekcji social.
+// Stopka — granat z designu, wspólna dla wszystkich tras (eksport ma tę
+// samą stopkę na każdej podstronie). Telefon i e-mail przez sloty
+// antyscrapingowe (lib/contact-details). Firma nie prowadzi profili
+// w mediach społecznościowych — stopka nie ma sekcji social.
 //
-// STAN Etapu 0: wersja robocza — komplet linków i danych z designu na
-// jednym markupie responsywnym. Wygląd docelowy i komplet danych firmy
-// wymaganych w stopce rozstrzyga mini-analiza chrome'u (Etap 4.1).
+// Etap 4.1 (docs/analiza-chrome.md): układ per breakpoint wg designu
+// (mobile: logo + telefon, hasło, przyciski Zadzwoń/Napisz, pastylki mapy
+// strony, dane; desktop: jeden rząd z hasłem, telefonem i CTA, linki
+// wersalikami, dane w wierszu). ROZJAZD R1: design nie ma adresu siedziby
+// ani e-maila — obowiązuje baza wiedzy: wiersz „Firma:" niesie nazwę
+// rejestrową, siedzibę, NIP i REGON; wiersz „E-mail:" ze slotem `biuro`.
+// „Biuro:" (adres poznański z linkiem do map) zostaje — to miejsce
+// spotkań; etykiety rozróżniają oba adresy.
 import { footerNavItems } from "@/i18n/nav";
 import { CONTACT_PATH, HOME_PATH, POLICY_PATH } from "@/lib/routes";
 import { BUSINESS } from "@/lib/jsonld";
+import { BUILD_NOW } from "@/lib/offers/data";
 import logo from "@/assets/logo/logo-silver.webp";
 
+// Link do map otwierany po KLIKNIĘCIU — zero żądań do podmiotów trzecich
+// przy wejściu na stronę.
 const MAPS_URL =
   "https://maps.google.com/?q=" +
   encodeURIComponent(
     `${BUSINESS.street}, ${BUSINESS.postalCode} ${BUSINESS.locality}`,
   );
 const NIP = BUSINESS.vatID.replace(/\D/g, "");
+// Rok © z jednego „teraz" projektu (BUILD_NOW) — zrzuty wizualne nie
+// zmieniają się z kalendarzem.
+const year = BUILD_NOW.getFullYear();
+
+const t = {
+  home: "Hetman Nieruchomości — strona główna",
+  brand: "Hetman Nieruchomości",
+  // PLACEHOLDER (U9): hasło z designu, baza wiedzy go nie potwierdza.
+  motto: "Nieruchomości, dokumenty i sprawy prawne — w jednym miejscu.",
+  // PLACEHOLDER (U9): brzmienie CTA z designu.
+  cta: "Skontaktuj się z nami",
+  call: "Zadzwoń",
+  write: "Napisz",
+  sitemap: "Mapa strony",
+  office: "Biuro:",
+  hours: "Godziny:",
+  // Godziny potwierdzone w bazie wiedzy (part1 §1) — nie placeholder.
+  hoursValue: "pon.–pt. 11:00–17:00, inne terminy po ustaleniu",
+  mail: "E-mail:",
+  company: "Firma:",
+  policy: "Polityka prywatności",
+  // PLACEHOLDER (U9): pisownia nazwy w © (design „Hetman", rejestr „HETMAN").
+  copyright: `© ${year} Hetman Nieruchomości`,
+  // PLACEHOLDER (U9): linia wykonawcy — brzmienie i adres do potwierdzenia.
+  madeBy: "Realizacja:",
+  madeByName: "hadrianm",
+  madeBySuffix: " — pracownia stron i aplikacji",
+};
 ---
 
 <footer class="ft">
   <div class="ft-main">
     <div class="ft-top">
-      <a
-        class="ft-logo"
-        href={HOME_PATH}
-        aria-label="Hetman Nieruchomości — strona główna"
-      >
+      <a class="ft-logo" href={HOME_PATH} aria-label={t.home}>
         <img
           src={logo.src}
           width={logo.width}
           height={logo.height}
-          alt="Hetman Nieruchomości"
+          alt={t.brand}
           loading="lazy"
           decoding="async"
         />
       </a>
-      <p class="ft-motto">
-        Nieruchomości, dokumenty i sprawy prawne — w jednym miejscu.
-      </p>
+      <p class="ft-motto">{t.motto}</p>
       {
         /* numer i href składane w JS (antyscraping); bez JS kotwica
-           zostaje ukryta, a do kontaktu prowadzi przycisk obok */
+           zostaje ukryta, a do kontaktu prowadzą przyciski niżej */
       }
       <a class="ft-tel" data-tel href={CONTACT_PATH} hidden>Telefon</a>
-      <a class="ft-cta" href={CONTACT_PATH}>Skontaktuj się z nami</a>
+      <a class="ft-cta" href={CONTACT_PATH}>{t.cta}</a>
     </div>
 
-    <nav class="ft-nav" aria-label="Mapa strony">
+    {
+      /* mobile: dwa przyciski; etykiety stałe, JS podmienia WYŁĄCZNIE cel
+         (data-fill="href") — bez JS prowadzą na /kontakt/ */
+    }
+    <div class="ft-btns">
+      <a
+        class="ft-btn ft-btn--call"
+        data-tel
+        data-fill="href"
+        href={CONTACT_PATH}>{t.call}</a
+      >
+      <a class="ft-btn" data-mail="biuro" data-fill="href" href={CONTACT_PATH}
+        >{t.write}</a
+      >
+    </div>
+
+    <nav class="ft-nav" aria-label={t.sitemap}>
       {footerNavItems.map((item) => <a href={item.href}>{item.label}</a>)}
     </nav>
 
     <div class="ft-data">
       <address class="ft-row">
-        <span class="ft-k">Biuro:</span>
+        <span class="ft-k">{t.office}</span>
         <a href={MAPS_URL} target="_blank" rel="noopener noreferrer">
           {BUSINESS.street}, {BUSINESS.postalCode}
           {BUSINESS.locality}
         </a>
       </address>
-      <span class="ft-row">
-        <span class="ft-k">Godziny:</span>
-        <span>pon.–pt. 11:00–17:00, inne terminy po ustaleniu</span>
-      </span>
-      <span class="ft-row">
-        <span class="ft-k">E-mail:</span>
+      <p class="ft-row">
+        <span class="ft-k">{t.hours}</span>
+        <span>{t.hoursValue}</span>
+      </p>
+      <p class="ft-row">
+        <span class="ft-k">{t.mail}</span>
         <a data-mail="biuro" href={CONTACT_PATH} hidden>E-mail</a>
-      </span>
-      <span class="ft-row">
-        <span class="ft-k">Firma:</span>
-        <span>{BUSINESS.legalName}, NIP {NIP}, REGON {BUSINESS.regon}</span>
-      </span>
+      </p>
+      <p class="ft-row ft-row--company">
+        <span class="ft-k">{t.company}</span>
+        <span>
+          {BUSINESS.legalName}, {BUSINESS.seatStreet}, {BUSINESS.seatPostalCode}
+          {BUSINESS.seatLocality}, NIP {NIP}, REGON {BUSINESS.regon}
+        </span>
+      </p>
     </div>
   </div>
 
   <div class="ft-bot">
     <div class="ft-bot-in">
-      <span>© 2026 Hetman Nieruchomości</span>
-      <a class="ft-policy" href={POLICY_PATH}>Polityka prywatności</a>
+      <span>{t.copyright}</span>
+      <a class="ft-policy" href={POLICY_PATH}>{t.policy}</a>
       <span class="ft-made">
-        Realizacja:
-        <a href="https://hadrianm.pl" target="_blank" rel="noopener">hadrianm</a
-        > — pracownia stron i aplikacji
+        {t.madeBy}
+        <a href="https://hadrianm.pl" target="_blank" rel="noopener"
+          >{t.madeByName}</a
+        >{t.madeBySuffix}
       </span>
     </div>
   </div>
@@ -101,6 +152,9 @@ const NIP = BUSINESS.vatID.replace(/\D/g, "");
     outline: 2px solid var(--copper-light);
     outline-offset: 3px;
   }
+  .ft p {
+    margin: 0;
+  }
 
   .ft-main {
     display: flex;
@@ -112,11 +166,13 @@ const NIP = BUSINESS.vatID.replace(/\D/g, "");
     padding: clamp(30px, 8.4vw, 38px) var(--pad) clamp(24px, 6.6vw, 30px);
   }
 
+  /* rząd 1 (mobile): logo + telefon; hasło pod spodem; CTA tylko desktop */
   .ft-top {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 16px clamp(24px, 3vw, 56px);
+    justify-content: space-between;
+    gap: clamp(20px, 5.6vw, 26px) 16px;
   }
   .ft-logo {
     display: block;
@@ -131,8 +187,7 @@ const NIP = BUSINESS.vatID.replace(/\D/g, "");
   .ft-motto {
     flex: 1 1 100%;
     order: 3;
-    margin: 0;
-    max-width: 32ch;
+    max-width: 260px;
     font-size: 15px;
     line-height: 1.5;
     color: rgba(255, 255, 255, 0.78);
@@ -142,7 +197,6 @@ const NIP = BUSINESS.vatID.replace(/\D/g, "");
     display: inline-flex;
     align-items: center;
     min-height: 44px;
-    margin-left: auto;
     font-family: var(--font-label);
     font-weight: 500;
     font-size: clamp(18px, 5.2vw, 21px);
@@ -155,8 +209,16 @@ const NIP = BUSINESS.vatID.replace(/\D/g, "");
     display: none;
   }
   .ft-cta {
-    order: 4;
-    flex: 1 1 100%;
+    display: none;
+  }
+
+  /* przyciski (mobile) */
+  .ft-btns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+  }
+  .ft-btn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -165,17 +227,32 @@ const NIP = BUSINESS.vatID.replace(/\D/g, "");
     font-size: 15px;
     font-weight: 600;
   }
+  /* `.ft a` ustawia biel — przycisk miedziany potrzebuje ciemnego tekstu
+     (biel na miedzi = 3,0:1, poniżej AA); stąd wyższa specyficzność */
+  .ft .ft-btn--call {
+    border-color: var(--copper);
+    background: var(--copper);
+    color: var(--ink);
+  }
+
   .ft-tel:hover,
   .ft-nav a:hover,
   .ft-row a:hover,
   .ft-made a:hover {
-    color: var(--copper-light);
+    color: var(--copper);
   }
+  .ft-btn:hover,
   .ft-cta:hover {
-    border-color: var(--copper-light);
-    color: var(--copper-light);
+    border-color: var(--copper);
+    color: var(--copper);
+  }
+  .ft .ft-btn--call:hover {
+    background: var(--copper-hover);
+    border-color: var(--copper-hover);
+    color: var(--ink);
   }
 
+  /* mapa strony: pastylki (mobile) */
   .ft-nav {
     display: flex;
     flex-wrap: wrap;
@@ -192,6 +269,7 @@ const NIP = BUSINESS.vatID.replace(/\D/g, "");
     font-size: 15px;
   }
 
+  /* dane firmy */
   .ft-data {
     display: flex;
     flex-direction: column;
@@ -210,10 +288,12 @@ const NIP = BUSINESS.vatID.replace(/\D/g, "");
     min-height: 32px;
     font-style: normal;
   }
+  /* Etykiety: design α .45 nie trzyma AA na granacie — .7 (R6). */
   .ft-k {
     color: rgba(255, 255, 255, 0.7);
   }
 
+  /* pas dolny */
   .ft-bot {
     border-top: 1px solid rgba(255, 255, 255, 0.14);
     background: rgba(0, 0, 0, 0.14);
@@ -239,6 +319,9 @@ const NIP = BUSINESS.vatID.replace(/\D/g, "");
     font-size: 13px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.24);
   }
+  .ft-policy:hover {
+    color: var(--copper);
+  }
   .ft-made a {
     border-bottom: 1px solid rgba(201, 130, 54, 0.7);
   }
@@ -249,32 +332,40 @@ const NIP = BUSINESS.vatID.replace(/\D/g, "");
       gap: clamp(26px, 2.6vw, 38px);
       padding: clamp(36px, 3.6vw, 54px) var(--pad) clamp(28px, 2.8vw, 40px);
     }
+    .ft-top {
+      justify-content: flex-start;
+      gap: 16px clamp(24px, 3vw, 56px);
+    }
     .ft-logo {
       height: clamp(22px, 2.2vw, 30px);
     }
     .ft-motto {
       flex: 0 1 auto;
       order: 0;
+      max-width: 32ch;
       font-size: clamp(14px, 1.4vw, 17px);
     }
     .ft-tel {
+      margin-left: auto;
       min-height: 48px;
       font-size: clamp(24px, 2.5vw, 34px);
       letter-spacing: -0.02em;
       border-bottom: none;
     }
     .ft-cta {
-      order: 0;
-      flex: none;
       display: inline-flex;
+      align-items: center;
       min-height: 44px;
       padding: 0 clamp(16px, 1.6vw, 22px);
-      border-color: rgba(255, 255, 255, 0.4);
-      font-weight: 400;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      font-size: 15px;
     }
-    /* bez JS telefon jest ukryty — przycisk sam dosuwa się do prawej */
+    /* bez JS telefon jest ukryty — CTA samo dosuwa się do prawej */
     .ft-tel[hidden] + .ft-cta {
       margin-left: auto;
+    }
+    .ft-btns {
+      display: none;
     }
 
     .ft-nav {
@@ -299,6 +390,10 @@ const NIP = BUSINESS.vatID.replace(/\D/g, "");
       padding-top: 0;
       border-top: none;
       font-size: 14px;
+      color: rgba(255, 255, 255, 0.72);
+    }
+    .ft-row {
+      min-height: 0;
     }
 
     .ft-bot-in {

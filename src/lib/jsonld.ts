@@ -17,8 +17,10 @@
 // Firma nie prowadzi profili w mediach społecznościowych — węzły nie mają
 // `sameAs`.
 
-/** Dane firmy — wspólne dla wszystkich węzłów. Adres = biuro, w którym
- *  firma przyjmuje klientów. */
+/** Dane firmy — wspólne dla wszystkich węzłów. Adres (`street`…) = biuro,
+ *  w którym firma przyjmuje klientów; `seat*` = siedziba wg rejestru
+ *  (adres do doręczeń) — drukowana w stopce i polityce, NIE w węzłach
+ *  JSON-LD (adres `RealEstateAgent` to biuro). */
 export const BUSINESS = {
   name: "HETMAN Nieruchomości",
   legalName: "HETMAN Nieruchomości Joanna Hetman",
@@ -29,6 +31,9 @@ export const BUSINESS = {
   postalCode: "61-638",
   locality: "Poznań",
   country: "PL",
+  seatStreet: "ul. Andrzeja Struga 5/10",
+  seatPostalCode: "50-228",
+  seatLocality: "Wrocław",
   vatID: "PL8951815332",
   /** REGON — drukowany w stopce; schema.org nie ma dla niego pola. */
   regon: "020518566",

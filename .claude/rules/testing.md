@@ -4,6 +4,26 @@ Harness odziedziczony z szablonu projektu (konfiguracja
 Playwright/Vitest/axe/LHCI, 6 profili, helpery); liczby szablonu NIE
 obowiązują — baseline'y i budżety powstają od nowa w Etapie 3.
 
+STAN po Etapie 4.1 (chrome): e2e `navigation` niesie kontrakty chrome'u
+— selektory `header.hdr[data-nav]`, `.hdr-logo`, `.hdr-nav`, `.nav-link`
+(z `.hn-ch`/`.hn-sp` liter), `.hdr-tel`, `.mbtn[data-burger]`,
+`#nav-sheet`, `.m-link`, `.sheet-call`, `[data-overlay-drag]`; atrybuty
+`data-scroll-nav`/`data-hero` (tylko „/"), `data-solid`, `data-open`;
+wariant „/" (szkło 0 → stan pośredni → 1 po przewinięciu o `innerHeight`,
+crossfade logo), zamknięcie sheetu przy `setViewportSize` na
+`NAV_DESKTOP_MIN_PX`, efekt liter (nazwa dostępna z `aria-label`, podjazd
+po hover, **punktowa emulacja `reducedMotion: "reduce"` z komentarzem** —
+jedyny dozwolony wyjątek od zakazu niżej), stopka (wszystkie sloty
+`data-tel`/`data-mail="biuro"`, komplet danych firmy z `BUSINESS`,
+`footerNavItems`, przyciski bez JS → `/kontakt/` na surowym HTML);
+visual `chrome`: `chrome-bar` (desktop, `/kontakt/`), `chrome-sheet`
+(mobile), `chrome-home-top` i `chrome-home-solid` (pasek na „/" nad hero
+i po przewinięciu o wysokość okna z dosztukowanym `main`), `chrome-footer`
+(element `footer`, pasek fixed schowany na czas zrzutu — zszywany zrzut
+elementu łapałby go na mobile). Zrzut elementu `[data-nav]` na „/" niesie
+TREŚĆ pod przezroczystym paskiem — zmiana hero w 4.4 rozjedzie
+`chrome-home-top` (zamierzone, regeneracja w tamtym PR).
+
 STAN po Etapie 3: unit — `contact-details`, `contact-form`,
 `fonts-subset`, `img` (warianty `card`/`hero`/`og`, tryby dev i fixture),
 `jsonld`, `media-r2` (kształt adresów; klucze R2 z `data/` i fixture
@@ -38,8 +58,8 @@ allowlista PUSTA), `smoke` (@prod-smoke; nagłówek `x-robots-tag:
 noindex` fazy podglądu — tylko z `BASE_URL`, odwracany w Etapie 8),
 `not-found`, `offers-skeleton` (detal i lista pierwszej oferty z `data/`,
 skip przy zerze ofert; `/{NUMER}` → 301 tylko z `BASE_URL`); visual —
-`chrome` i `not-found` z baseline'ami darwin (Etap 3, 18 PNG: 6 profili ×
-3 zrzuty; linux z workflow). Fixture ofert: 10 ofert + `media/`
+`chrome` i `not-found` z baseline'ami darwin i linux (Etap 3: 18 PNG;
+Etap 4.1: 36 PNG na platformę — 6 profili × 6 zrzutów). Fixture ofert: 10 ofert + `media/`
 (`pnpm fixtures:build`, 2026-10-01), `data/` z pierwszego syncu
 (2026-10-02, 46 ofert). Specy widoków powstają razem z widokami
 (Etapy 4–5): widok dostaje WŁASNY spec e2e i visual.

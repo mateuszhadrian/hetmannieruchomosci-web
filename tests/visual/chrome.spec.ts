@@ -1,14 +1,16 @@
 // Chrome globalny — regres wizualny elementów wspólnych niezależnie od
-// widoków: pasek `[data-nav]` (desktop) i OTWARTY bottom sheet menu
-// (mobile) — stan, którego zrzut strony nie łapie. Zrzuty na /kontakt/
-// (chrome jest wspólny, jeden widok wystarczy).
-// Determinizm: freeze.css (prepareSweep) zeruje przejścia, więc sheet
-// otwiera się od razu w stanie końcowym.
-// Baseline'y powstają w Etapie 3 (szkielet) i ponownie w Etapie 4.1.
+// widoków: pasek `[data-nav]` (desktop, wariant stały na /kontakt/),
+// OTWARTY bottom sheet menu (mobile) — stan, którego zrzut strony nie
+// łapie — oraz od Etapu 4.1: pasek na „/” w obu stanach wariantu
+// przemalowywanego scrollem (nad hero / po przewinięciu o wysokość okna)
+// i stopka. Determinizm: freeze.css (prepareSweep) zeruje przejścia,
+// więc sheet otwiera się od razu w stanie końcowym; przemalowanie paska
+// liczy pętla rAF ze scrolla (deterministyczne przy ustalonej pozycji).
+// Baseline'y: Etap 3 (szkielet), Etap 4.1 (wygląd docelowy chrome'u).
 import { expect, test } from "@playwright/test";
-import { CONTACT_PATH } from "../../src/lib/routes";
+import { CONTACT_PATH, HOME_PATH } from "../../src/lib/routes";
 import { usePreviewGuard } from "../helpers/guards";
-import { settle } from "../helpers/scroll";
+import { scrollPageTo, settle } from "../helpers/scroll";
 import { prepareSweep } from "../helpers/visual";
 
 usePreviewGuard();
@@ -31,4 +33,41 @@ test("chrome: otwarty bottom sheet menu vs baseline", async ({
   // networkidle, więc numer jest już złożony, nie pusty.
   await settle(page);
   await expect(page).toHaveScreenshot("chrome-sheet.png");
+});
+
+test("chrome: pasek na „/” nad hero (przezroczysty) vs baseline", async ({
+  page,
+}) => {
+  await prepareSweep(page, HOME_PATH);
+  await expect(page.locator("[data-nav]")).toHaveScreenshot(
+    "chrome-home-top.png",
+  );
+});
+
+test("chrome: pasek na „/” po przewinięciu (pełny) vs baseline", async ({
+  page,
+}) => {
+  await prepareSweep(page, HOME_PATH);
+  // Szkielet „/” jest krótszy niż wysokość okna + stopka — dosztukowanie
+  // dokumentu, żeby próg przemalowania (h − pasek) był osiągalny.
+  await page.addStyleTag({ content: "main { min-height: 300vh !important }" });
+  const vh = await page.evaluate(() => window.innerHeight);
+  await scrollPageTo(page, vh);
+  await settle(page, 400);
+  await expect(page.locator("[data-nav]")).toHaveAttribute("data-solid", "");
+  await expect(page.locator("[data-nav]")).toHaveScreenshot(
+    "chrome-home-solid.png",
+  );
+});
+
+test("chrome: stopka vs baseline", async ({ page }) => {
+  await prepareSweep(page, CONTACT_PATH);
+  // Zrzut ELEMENTU wyższego niż okno Playwright zszywa z kilku przewinięć,
+  // a pasek fixed wjeżdżałby na górę stopki (na mobile stopka jest
+  // wyższa niż viewport). Pasek ma własne zrzuty — tu go chowamy.
+  await page.addStyleTag({ content: ".hdr { visibility: hidden !important }" });
+  const footer = page.locator("footer");
+  await footer.scrollIntoViewIfNeeded();
+  await settle(page, 300);
+  await expect(footer).toHaveScreenshot("chrome-footer.png");
 });
