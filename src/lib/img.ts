@@ -19,7 +19,9 @@ export type ImgVariant = "card" | "hero" | "og";
 /** Opcje transformacji per wariant. `onerror=redirect`: gdy transformacja
  *  się nie uda, przeglądarka dostaje oryginał zamiast błędu. */
 export const IMG_VARIANTS: Record<ImgVariant, string> = {
-  card: "width=640,format=webp,quality=80,onerror=redirect",
+  // karta listy: kadr 3:2 jak pole karty (serwer tnie zamiast przeglądarki),
+  // 720 px = ostro na telefonie @2× (karta ≈ 360 css px)
+  card: "width=720,height=480,fit=cover,format=webp,quality=80,onerror=redirect",
   hero: "width=1600,format=webp,quality=82,onerror=redirect",
   og: "width=1200,height=630,fit=cover,format=webp,quality=80,onerror=redirect",
 };

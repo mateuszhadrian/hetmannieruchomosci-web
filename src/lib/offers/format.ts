@@ -127,10 +127,34 @@ export const TYPE_LABEL: Record<MainType, string> = {
   dzialka: "Działka",
   komercyjny: "Lokal komercyjny",
 };
+/** Liczba mnoga typów — nagłówki list SSG („Mieszkania na sprzedaż"). */
+export const TYPE_LABEL_PLURAL: Record<MainType, string> = {
+  mieszkanie: "Mieszkania",
+  dom: "Domy",
+  dzialka: "Działki",
+  komercyjny: "Lokale komercyjne",
+};
+export const TRANSACTION_LABEL: Record<Transaction, string> = {
+  sprzedaz: "Sprzedaż",
+  wynajem: "Wynajem",
+};
 const TR_LABEL: Record<Transaction, string> = {
   sprzedaz: "na sprzedaż",
   wynajem: "na wynajem",
 };
+
+/** „Domy na sprzedaż" — nagłówek listy typ × transakcja. */
+export function formatKindPlural(
+  mainType: MainType,
+  transaction: Transaction,
+): string {
+  return `${TYPE_LABEL_PLURAL[mainType]} ${TR_LABEL[transaction]}`;
+}
+
+/** „2003 r." */
+export function formatYear(year: number): string {
+  return `${year}${NBSP}r.`;
+}
 
 /** „Dom (bliźniak) na sprzedaż". */
 export function formatKind(
