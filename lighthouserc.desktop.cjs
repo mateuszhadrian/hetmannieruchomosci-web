@@ -31,8 +31,17 @@ module.exports = {
         "total-blocking-time": ["error", { maxNumericValue: 300 }],
         // mediana 0,0032
         "cumulative-layout-shift": ["error", { maxNumericValue: 0.05 }],
-        // mediana 4 KB; zapas na moduły widoków (Etap 4)
-        "resource-summary:script:size": ["error", { maxNumericValue: 30000 }],
+        // `script` po 4.2 (c) (wyspa wyszukiwarki + sheety): pomiar
+        // lhci-measure.yml 2026-10-02 22:06 UTC (main po #19, 5 przebiegów):
+        // 28 223 B w KAŻDYM przebiegu obu tras ofert (bajty są
+        // deterministyczne — rozrzut 0; szkielet Etapu 3 miał 4 KB).
+        // Reguła max(mediana × 1,3 = 36 690; mediana + 10 000 = 38 223)
+        // dałaby 39 000 B; decyzja Mateusza 2026-10-03: 40 000 B
+        // (zapas ok. 11,8 KB, żeby lightbox 4.3 — chunk na overlay.ts,
+        // ok. 4–6 KB gzip — i hero/ruch 4.4 — ok. 2–3 KB — weszły bez
+        // kolejnej zmiany progu). Zapas to WYŁĄCZNIE miejsce na widoki;
+        // przekroczenie = STOP i decyzja, nie ciche podniesienie.
+        "resource-summary:script:size": ["error", { maxNumericValue: 40000 }],
         // mediana 130 KB; desktop dostaje większe kadry niż mobile
         "resource-summary:total:size": ["error", { maxNumericValue: 1200000 }],
         "resource-summary:font:count": ["error", { maxNumericValue: 4 }],

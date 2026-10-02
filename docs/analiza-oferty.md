@@ -912,6 +912,15 @@ z 30 KB. Przekroczenie bramki = stop i zgłoszenie.
   0 desktop; CLS 0,000; LCP mobile 2 350 ms, desktop 524 ms. **Kolejny
   skrypt widoku (lightbox 4.3, hero 4.4) nie zmieści się w bramce
   `script`** — decyzja o progu PRZED 4.3 (zbliżenie zgłoszone już po (b)).
+  **Próg podniesiony** (PR `chore/lhci-script`, po merge'u #19): pomiar
+  `lhci-measure.yml` 2026-10-02 22:06 UTC na main — `script` 28 223 B
+  w każdym z 20 przebiegów (mobile + desktop, obie trasy ofert; rozrzut
+  zerowy, bo bajty są deterministyczne), TBT mobile mediana 11 ms
+  (`/oferty/`, jeden przebieg odstający 1 238 ms) i 0 ms (lista rodzaju),
+  LCP mobile 2 494 / 2 345 ms, CLS 0. Nowy próg w OBU configach:
+  **40 000 B** (reguła `max(28 223 × 1,3; 28 223 + 10 000) = 38 223 →
+  39 000`; decyzja Mateusza 2026-10-03: 40 000 z zapasem ok. 11,8 KB) —
+  zapas wyłącznie na lightbox 4.3 i hero 4.4; pozostałe progi bez zmian.
   HTML `/oferty/` na fixture: 96,5 KB brutto / 13,6 KB gzip (`props`
   28 434 znaków — przyrost wobec (b) to prop `nav` z R26).
 - **`oferty-card` na profilach mobilnych rozjechał się bez zmiany karty:**
