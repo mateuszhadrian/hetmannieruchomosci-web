@@ -9,6 +9,7 @@ import {
   formatLocation,
   formatOffersCount,
   formatPrice,
+  formatShowCount,
   formatPricePerM2,
   formatRooms,
   plural,
@@ -20,6 +21,18 @@ import {
 const S = " ";
 
 describe("format", () => {
+  it("„Pokaż N ofert” biernikiem", () => {
+    expect([0, 1, 2, 5, 12, 22, 25].map(formatShowCount)).toEqual([
+      `Pokaż 0${S}ofert`,
+      `Pokaż 1${S}ofertę`,
+      `Pokaż 2${S}oferty`,
+      `Pokaż 5${S}ofert`,
+      `Pokaż 12${S}ofert`,
+      `Pokaż 22${S}oferty`,
+      `Pokaż 25${S}ofert`,
+    ]);
+  });
+
   it("liczebniki polskie", () => {
     const f = (n: number) => plural(n, "oferta", "oferty", "ofert");
     expect([
