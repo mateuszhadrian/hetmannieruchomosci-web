@@ -3,10 +3,12 @@
 // tylko na chromium-1920.
 // STAN Etapu 0: JSON-LD nie jest jeszcze renderowany (wchodzi w Etapie 6,
 // węzeł per oferta w Etapie 4) — kontrakt pilnuje, że nie ma go nigdzie.
-// Oferty w sitemapie: trasy szkieletowe z danych (S2c, przez helper).
+// Oferty w sitemapie: trasy szkieletowe z danych (S2c, przez helper);
+// canonical i brak noindex pierwszej listy i detalu + crawl linków listy
+// (Etap 3; skip przy zerze ofert).
 import { type APIRequestContext, expect, test } from "@playwright/test";
 import { STATIC_PATHS } from "../../src/lib/routes";
-import { useChromium1920Only } from "../helpers/guards";
+import { useChromium1920Only, useMediaStub } from "../helpers/guards";
 import { offerRoutesFromData } from "../helpers/offers";
 import { gotoReady } from "../helpers/scroll";
 
@@ -24,9 +26,18 @@ const SITEMAP_ROUTES: readonly string[] = [
   ...OFFER_ROUTES.details,
 ];
 
+// Pierwsza lista i pierwszy detal z danych — kontrakt szablonu trasy,
+// nie konkretnej oferty (skład `data/` zmienia się co noc bez PR-a).
+const FIRST_OFFER_ROUTES = [
+  OFFER_ROUTES.lists[0],
+  OFFER_ROUTES.details[0],
+].filter((p): p is string => Boolean(p));
+const NO_OFFERS = "brak ofert w data/ (zero ofert = stan dopuszczalny)";
+
 useChromium1920Only(
   "meta/sitemap/crawl są niezależne od profilu — jeden projekt wystarczy",
 );
+useMediaStub();
 
 test("head /: canonical + OG/Twitter", async ({ page }) => {
   await gotoReady(page, "/");
@@ -138,6 +149,20 @@ test("każda trasa ma canonical wskazujący samą siebie w domenie głównej", a
   }
 });
 
+test("trasy ofert: canonical na siebie w domenie głównej, bez noindex", async ({
+  request,
+}) => {
+  test.skip(FIRST_OFFER_ROUTES.length === 0, NO_OFFERS);
+  for (const path of FIRST_OFFER_ROUTES) {
+    const html = await (await request.get(path)).text();
+    expect(html, path).toContain(`<link rel="canonical" href="${SITE}${path}"`);
+    expect(html, path).toContain(
+      `<meta property="og:url" content="${SITE}${path}"`,
+    );
+    expect(html, path).not.toContain('name="robots" content="noindex"');
+  }
+});
+
 test("robots.txt niczego nie blokuje i wskazuje sitemapę", async ({
   request,
 }) => {
@@ -199,7 +224,8 @@ test("wszystkie wewnętrzne linki odpowiadają < 400", async ({
   request,
 }) => {
   const hrefs = new Set<string>();
-  for (const path of CANONICAL_ROUTES) {
+  // + pierwsza lista ofert: linki kart muszą prowadzić na istniejące detale
+  for (const path of [...CANONICAL_ROUTES, ...OFFER_ROUTES.lists.slice(0, 1)]) {
     await gotoReady(page, path);
     for (const href of await page
       .locator("a[href]")

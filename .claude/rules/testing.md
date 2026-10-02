@@ -4,7 +4,7 @@ Harness odziedziczony z szablonu projektu (konfiguracja
 Playwright/Vitest/axe/LHCI, 6 profili, helpery); liczby szablonu NIE
 obowiązują — baseline'y i budżety powstają od nowa w Etapie 3.
 
-STAN po S2c (Etap 2): unit — `contact-details`, `contact-form`,
+STAN po Etapie 3: unit — `contact-details`, `contact-form`,
 `fonts-subset`, `img` (warianty `card`/`hero`/`og`, tryby dev i fixture),
 `jsonld`, `media-r2` (kształt adresów; klucze R2 z `data/` i fixture
 przez `helpers/offers.ts` — skip, gdy danych nie ma; `CHECK_REMOTE_MEDIA=1`
@@ -22,32 +22,59 @@ tymczasowe, bezpieczniki, dry-run, CLI i `GITHUB_OUTPUT`),
 `sync-fixtures` (`buildFixture()` do katalogu tymczasowego, nadpisania,
 kopie WebP), `offers-data` (`data.ts`: brak katalogu, pusta tablica,
 błędny rekord), `offers-time-rules`, `offers-contract` (data/ ORAZ
-fixture, skip bez danych) — wszystkie na danych SYNTETYCZNYCH z
-`tests/fixtures/raw/` (helpery `tests/helpers/raw.ts`, w tym
-`syntheticFullOffers()`); dist — `tests/dist/dist.test.ts`
-(`pnpm test:dist`, osobny `vitest.dist.config.ts`, wymaga `pnpm build`);
-e2e — `navigation`, `seo` (sitemapa = trasy statyczne + trasy ofert
-z danych), `a11y`, `smoke`, `not-found`, `offers-skeleton` (detal
-i lista pierwszej oferty z `data/`, skip przy zerze ofert; `/{NUMER}` →
-301 tylko z `BASE_URL`); visual — `chrome` i `not-found` (BEZ
-baseline'ów — powstają w Etapie 3). Fixture ofert ma dotąd tylko
-`selection.json` (`pnpm fixtures:build` uruchamia Mateusz), `data/` tylko
-`legacy-redirects.json` (pierwszy sync — 2.11). Specy widoków powstają
-razem z widokami (Etapy 4–5): widok dostaje WŁASNY spec e2e i visual.
+fixture, skip bez danych), `offers-helpers` (Etap 3: `matchesCriteria`
+na danych syntetycznych, `0` = dana; pokrycie wariantów `selection.json`
+przez `pickOffer` na fixture), `visual-fixture` (Etap 3: dist
+z `build:visual` = fixture co do zbioru ofert, kart i lokalnych mediów;
+skip bez `dist/media/`; w CI bramkuje w jobie `e2e` po `build:visual`) —
+wszystkie na danych SYNTETYCZNYCH z `tests/fixtures/raw/` (helpery
+`tests/helpers/raw.ts`, w tym `syntheticFullOffers()`); dist —
+`tests/dist/dist.test.ts` (`pnpm test:dist`, osobny
+`vitest.dist.config.ts`, wymaga `pnpm build`); e2e — `navigation`, `seo`
+(sitemapa = trasy statyczne + trasy ofert z danych; canonical/og:url
+i brak noindex pierwszej listy i detalu; crawl linków obejmuje pierwszą
+listę), `a11y` (trasy statyczne + 404 + pierwsza lista i detal z `data/`,
+allowlista PUSTA), `smoke` (@prod-smoke; nagłówek `x-robots-tag:
+noindex` fazy podglądu — tylko z `BASE_URL`, odwracany w Etapie 8),
+`not-found`, `offers-skeleton` (detal i lista pierwszej oferty z `data/`,
+skip przy zerze ofert; `/{NUMER}` → 301 tylko z `BASE_URL`); visual —
+`chrome` i `not-found` z baseline'ami darwin (Etap 3, 18 PNG: 6 profili ×
+3 zrzuty; linux z workflow). Fixture ofert: 10 ofert + `media/`
+(`pnpm fixtures:build`, 2026-10-01), `data/` z pierwszego syncu
+(2026-10-02, 46 ofert). Specy widoków powstają razem z widokami
+(Etapy 4–5): widok dostaje WŁASNY spec e2e i visual.
+
+**Helper ofert (`tests/helpers/offers.ts`)**: odczyt odporny
+(`readOffers()`, `readFixtureOffers()` — surowe rekordy, pusta lista bez
+pliku), odczyt typowany (`readOffersTyped(source)`,
+`readFixtureOffersTyped()` — `Offer[]` po schemacie strict, buforowany),
+selektory `pickOffer(criteria, source)`, `pickOffers()`,
+`filterOffers()`, `matchesCriteria()` z kryteriami `status`, `mainType`,
+`transaction`, `market`, `withVideo`, `withTour`, `withPlan`, `floor`
+(`0` = parter), `withPreviousPrice`, `priceOnRequest`, `minPhotos`,
+`where`; `describeCriteria()` do powodu skipa; adresy
+`offerRoutesFromData()`, `offerRoutesFromFixture()`, `firstOfferPath()`.
+Wzorzec speca: `const o = pickOffer({ withVideo: true });
+test.skip(!o, "brak oferty z filmem w data/")`. Strażniki
+(`tests/helpers/guards.ts`): `usePreviewGuard`, `useVisualFixtureGuard`
+(zbiór numerów kart pierwszej listy = fixture + sonda lokalnej kopii
+zdjęcia), `useMediaStub` (zaślepka `page.route` na `MEDIA_BASE` — każdy
+spec otwierający trasy ofert), `useChromium1920Only`, `collectPageIssues`.
 
 ## Co zmieniasz → co uruchamiasz
 
-| Zmiana                                                                  | Warstwa (komenda)                                                                 |
-| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `scripts/sync/**`, `src/lib/offers/**` (allow-lista, schemat, parser)   | `pnpm test:unit` (kontrakt danych)                                                |
-| `src/lib/img.ts`, `MEDIA_BASE`, `IMG_VARIANTS`                          | `pnpm test:unit` (`img`, `media-r2`)                                              |
-| `src/lib/offers/data.ts`, `redirects.ts`, integracje, `[...path].astro` | `pnpm test:unit && pnpm build && pnpm test:dist`                                  |
-| `scripts/sync/pipeline.ts`, `index.ts`, `fixtures.ts`, `sync.yml`       | `pnpm test:unit` (`sync-index`, `sync-fixtures`); workflow NIE uruchamiać w sesji |
-| `src/i18n/**`, `src/lib/*.ts` (img, routes, contact-form, jsonld, …)    | `pnpm test:unit`                                                                  |
-| `scripts/subset-fonts.mjs`, `src/styles/fonts.css`                      | `pnpm test:unit` (kontrakt subsetów)                                              |
-| `src/scripts/**`, navbar, stopka, wyszukiwarka, galeria, formularze     | `pnpm build && pnpm test:e2e`                                                     |
-| Każda zmiana wyglądu                                                    | `pnpm build:visual && pnpm test:visual`                                           |
-| Przed release                                                           | pełne `pnpm test` + `/release-check`                                              |
+| Zmiana                                                                  | Warstwa (komenda)                                                                                |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `scripts/sync/**`, `src/lib/offers/**` (allow-lista, schemat, parser)   | `pnpm test:unit` (kontrakt danych)                                                               |
+| `src/lib/img.ts`, `MEDIA_BASE`, `IMG_VARIANTS`                          | `pnpm test:unit` (`img`, `media-r2`)                                                             |
+| `src/lib/offers/data.ts`, `redirects.ts`, integracje, `[...path].astro` | `pnpm test:unit && pnpm build && pnpm test:dist`                                                 |
+| `scripts/sync/pipeline.ts`, `index.ts`, `fixtures.ts`, `sync.yml`       | `pnpm test:unit` (`sync-index`, `sync-fixtures`); workflow NIE uruchamiać w sesji                |
+| `src/i18n/**`, `src/lib/*.ts` (img, routes, contact-form, jsonld, …)    | `pnpm test:unit`                                                                                 |
+| `scripts/subset-fonts.mjs`, `src/styles/fonts.css`                      | `pnpm test:unit` (kontrakt subsetów)                                                             |
+| `src/scripts/**`, navbar, stopka, wyszukiwarka, galeria, formularze     | `pnpm build && pnpm test:e2e`                                                                    |
+| `tests/helpers/**`, `lighthouserc*.cjs`, `.github/workflows/*.yml`      | `pnpm test:unit` (helpery) + warstwa, której spec używa helpera; workflow NIE uruchamiać w sesji |
+| Każda zmiana wyglądu                                                    | `pnpm build:visual && pnpm test:visual`                                                          |
+| Przed release                                                           | pełne `pnpm test` + `/release-check`                                                             |
 
 ## Zasady twarde
 
@@ -125,17 +152,25 @@ razem z widokami (Etapy 4–5): widok dostaje WŁASNY spec e2e i visual.
 - a11y (axe): allowlista znanych naruszeń w `tests/e2e/a11y.spec.ts` to
   RATCHET — startujemy od PUSTEJ; wpis wolno usunąć po realnej poprawie;
   nowych nie dopisuj bez decyzji Mateusza.
-- LHCI: do Etapu 3 progi LUŹNE, tymczasowe (`lighthouserc*.cjs`). Od
-  Etapu 3 RATCHET: budżety z pomiaru na runnerze CI (`lhci collect`
-  z `numberOfRuns=5`, potem `node scripts/lhci-median.mjs`), mierzony
-  jest **build z fixture**; zacieśnianie tylko świadomą decyzją Mateusza,
-  osobnym commitem. LHCI mierzy WYŁĄCZNIE adresy wpisane w config — trasy
-  ofert trzeba dopisać, gdy powstaną ich widoki. Lokalny `lhci` wypada
-  gorzej niż CI (mnożnik CPU) — nie jest podstawą ratchetu.
+- LHCI: job `lighthouse` w `ci.yml` mierzy **build z fixture**
+  (`pnpm build:visual`, nie artefakt `dist` z `quality`). Budżety
+  (`lighthouserc*.cjs`) = RATCHET od Etapu 3: pomiar WYŁĄCZNIE na
+  runnerze CI workflowem `lhci-measure.yml` (`workflow_dispatch`;
+  5 przebiegów na obu configach → `scripts/lhci-median.mjs` → mediany
+  w podsumowaniu biegu i artefakcie `lhci-measure`; GitHub pozwala
+  uruchomić workflow dispatch dopiero, gdy jego plik jest na main — z
+  brancha dopiero po pierwszym merge'u); wpis progów = osobny commit
+  (albo mały PR), zacieśnianie tylko świadomą decyzją Mateusza.
+  Do czasu wpisu median obowiązują progi luźne, tymczasowe. LHCI mierzy
+  WYŁĄCZNIE adresy wpisane w config — trasy ofert (stały adres listy
+  i detalu z fixture'u) trzeba dopisać, gdy powstaną ich widoki (4.2/4.3).
+  Lokalny `lhci` wypada gorzej niż CI (mnożnik CPU) — nie jest podstawą
+  ratchetu.
   ⚠️ Wariancja runnera na LCP bywa rzędu sekundy przy ZEROWEJ zmianie
   bajtów: próg bliżej niż ~1,3 s od mediany zamienia bramkę w loterię,
   a pojedynczy czerwony przebieg na LCP NIE dowodzi regresji — najpierw
-  porównaj `resource-summary` obu przebiegów.
+  porównaj `resource-summary` obu przebiegów. Próg LCP = max(mediana
+  × 1,15; mediana + 1 300 ms) — `lhci-median.mjs` liczy go gotowego.
 - Wersje `playwright` i `@playwright/test` podnoś PARĄ (jeden zestaw
   binariów); bump = też tag obrazu Dockera w procedurze baseline'ów.
 - Profile Playwright: 6 (chromium-1920/1366, firefox, webkit-SE/14,

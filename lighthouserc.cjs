@@ -2,11 +2,13 @@
 // CPU 4×, sieć 4G) = nasz proxy „słabszego Androida".
 // Profil desktop: lighthouserc.desktop.cjs.
 //
-// STAN Etapu 0: progi LUŹNE, TYMCZASOWE — łapią wyłącznie grubą regresję.
-// Realne budżety powstają w Etapie 3 z pomiaru szkieletu na runnerze CI
-// (mediana z `lhci collect` + scripts/lhci-median.mjs) i od tego momentu
-// działają jak RATCHET: zacieśnianie wyłącznie decyzją Mateusza, osobnym
-// commitem, po ponownym pomiarze w CI.
+// Mierzony jest build z FIXTURE (`pnpm build:visual` w jobie lighthouse) —
+// treść zamrożona, więc budżet nie pływa z nocnym syncem.
+// STAN: progi LUŹNE, TYMCZASOWE do czasu wpisu median z pomiaru na
+// runnerze CI (workflow lhci-measure.yml → scripts/lhci-median.mjs,
+// 5 przebiegów; próg LCP = max(mediana ×1,15; mediana + 1,3 s)). Od wpisu
+// median działają jak RATCHET: zacieśnianie wyłącznie decyzją Mateusza,
+// osobnym commitem, po ponownym pomiarze w CI.
 //
 // ⚠️ LOKALNY `lhci autorun` z tym configiem WYPADA GORZEJ NIŻ CI i to jest
 // normalne: emulacja mobile dokłada stały mnożnik CPU do hosta, więc wynik

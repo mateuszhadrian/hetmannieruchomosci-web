@@ -3,30 +3,19 @@
 // i ma znacznik karty; krótki adres `/{NUMER}` przekierowuje na detal
 // (reguła z `_redirects` — działa tylko na deployu, lokalny preview jej
 // nie czyta). Oferty przez helper; przy zerze ofert — skip z powodem.
-// Żądania do hosta mediów są przechwytywane (żadnej sieci w testach).
+// Żądania do hosta mediów są przechwytywane (useMediaStub — żadnej sieci
+// w testach).
 import { expect, test } from "@playwright/test";
-import { MEDIA_BASE } from "../../src/lib/site-config";
-import { collectPageIssues } from "../helpers/guards";
-import { offerRoutesFromData, readOffers } from "../helpers/offers";
+import { collectPageIssues, useMediaStub } from "../helpers/guards";
+import { offerRoutesFromData, readOffersTyped } from "../helpers/offers";
 
 const ROUTES = offerRoutesFromData();
-const OFFERS = readOffers();
+const OFFERS = readOffersTyped();
 const FIRST = ROUTES.details[0];
 const NO_OFFERS = "brak ofert w data/ (zero ofert = stan dopuszczalny)";
 
 test.describe("szkielet ofert", { tag: "@prod-smoke" }, () => {
-  test.beforeEach(async ({ page }) => {
-    // zaślepka zamiast zdjęć z zasobnika — bez żądań do sieci
-    if (MEDIA_BASE) {
-      await page.route(`${MEDIA_BASE}/**`, (route) =>
-        route.fulfill({
-          status: 200,
-          contentType: "image/gif",
-          body: Buffer.from("R0lGODlhAQABAAAAACw=", "base64"),
-        }),
-      );
-    }
-  });
+  useMediaStub();
 
   test("detal pierwszej oferty: 200, h1, numer, cena", async ({ page }) => {
     test.skip(!FIRST, NO_OFFERS);
@@ -34,7 +23,7 @@ test.describe("szkielet ofert", { tag: "@prod-smoke" }, () => {
     const res = await page.goto(FIRST!, { waitUntil: "networkidle" });
     expect(res?.status()).toBe(200);
     await expect(page.locator("main h1")).toBeAttached();
-    const number = String(OFFERS[0].number);
+    const number = OFFERS[0].number;
     await expect(page.locator("[data-offer-number]")).toHaveText(number);
     await expect(page.locator("[data-offer-price]")).not.toBeEmpty();
     expect(issues()).toEqual([]);
@@ -55,7 +44,7 @@ test.describe("szkielet ofert", { tag: "@prod-smoke" }, () => {
       !process.env.BASE_URL,
       "_redirects czyta tylko Cloudflare Pages — lokalny preview nie",
     );
-    const number = String(OFFERS[0].number);
+    const number = OFFERS[0].number;
     const res = await request.get(`/${number}`, { maxRedirects: 0 });
     expect(res.status()).toBe(301);
     expect(res.headers().location).toContain(FIRST!);

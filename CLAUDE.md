@@ -367,6 +367,64 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   oryginał z R2 (`mediaUrl`), w fixture kopia lokalna — prezentację
   ustala 4.3; (5) `tests/helpers/offers.ts` zna `offerRoutesFromData()`
   i `firstOfferPath()`, selektory po cechach nadal brak (Etap 3).
+  DOPISEK 2026-10-02 (po S2c): 2.9 WYKONANE 2026-10-01 (PR #9) — fixture
+  10 ofert z `tests/fixtures/offers/selection.json`, `media/` lokalne
+  WebP. Poprawki po S2c: PR #8 (CLI pomija samotne `--` z pnpm), PR #10
+  (bucket R2 ma jurysdykcję EU → endpoint `{account}.eu.r2…`, stała
+  `R2_JURISDICTION` w `index.ts`, `r2Endpoint()` w `r2.ts`). 2.11 WYKONANE
+  2026-10-02: dry-run w Actions OK; pierwszy bieg właściwy padł na Access
+  Denied (endpoint R2 bez `eu.`), drugi OK: 46 ofert, 609 zdjęć, 38 map,
+  218 s, commit bota `chore(data): sync ofert 2026-10-02`; `/{NUMER}` →
+  301 → detal 200 na `nowa.`; `test:smoke:prod` 49/49; wartość sekretu
+  `SYNC_AGREEMENT_SIGNAL` poprawiona (objaw: W1 ×37); klucze R2
+  wymienione. Stan ostrzeżeń w raportach: W2 ×3 (spodziewany szum, do
+  rozmowy z klientką w Etapie 7), W3 ×1. Pkt 4 z 2.11 (noc bez zmian):
+  pierwszy bieg crona 2026-10-03 — wynik do dopisania.
+- **Etap 3 (testy/CI na szkielecie) — W TOKU** (2026-10-02, gałąź
+  `chore/stage-3-ci`): `tests/helpers/offers.ts` w pełnej wersji (odczyt
+  typowany `readOffersTyped(source)` po schemacie strict, buforowany;
+  `pickOffer`/`pickOffers`/`filterOffers`/`matchesCriteria` z kryteriami
+  `status`, `mainType`, `transaction`, `market`, `withVideo`, `withTour`,
+  `withPlan`, `floor` (`0` = parter), `withPreviousPrice`,
+  `priceOnRequest`, `minPhotos`, `where`; `describeCriteria`; dotychczasowe
+  eksporty bez zmian); `guards.ts`: `useMediaStub()` (zaślepka
+  `page.route` na `MEDIA_BASE`, używana w `offers-skeleton`, `a11y`,
+  `seo`), `assertVisualFixture` wzmocniony — zbiór numerów kart pierwszej
+  listy typ×transakcja = fixture ORAZ sonda lokalnej kopii zdjęcia
+  (`/media/…webp` → 200; sama liczność kart przepuszczała dist z `data/`);
+  `a11y`: pierwsza lista i detal z `data/` (allowlista PUSTA, szkielet
+  bez naruszeń); `seo`: canonical/og:url i brak noindex pierwszej listy
+  i detalu, crawl linków obejmuje pierwszą listę; `smoke`: asercja
+  `x-robots-tag: noindex` fazy podglądu (tylko z `BASE_URL`; w Etapie 8
+  odwracana na apeksie); nowe unit: `offers-helpers` (kryteria na danych
+  syntetycznych, pokrycie wariantów `selection.json` na fixture),
+  `visual-fixture` (dist z `build:visual` = fixture co do detali, kart
+  i lokalnych mediów; skip bez `dist/media/`; w `ci.yml` bramkuje w jobie
+  `e2e` po `build:visual`); baseline'y darwin: 18 PNG (`chrome`,
+  `not-found`, 6 profili) z pierwszego `pnpm test:visual:update`, dwa
+  kolejne przebiegi zielone, progi bez zmian (0,0005 / fullPage 0,001),
+  masek wideo nie ma (szkielet bez wideo); `ci.yml`: job `lighthouse` sam
+  robi `pnpm build:visual` (mierzy build z fixture'u); nowy workflow
+  `lhci-measure.yml` (`workflow_dispatch`, 5 przebiegów × 2 configi →
+  `scripts/lhci-median.mjs` → mediany w podsumowaniu biegu i artefakcie
+  `lhci-measure`); `lhci-median.mjs` liczy próg LCP = max(×1,15;
+  +1 300 ms) i medianę rozmiaru fontów; `prod-smoke.yml` już celował
+  w `nowa.` — bez zmian. Weryfikacja: format/lint/typecheck, unit 312
+  (+2 skip; 307 + 7 skip na dist produkcyjnym), build 89 stron, `test:dist`
+  6/6, e2e 235 (+155 skip profili), `test:visual` 18/18 ×2; bramka bota
+  `test:unit && build && test:dist` zielona. ZOSTAŁO: baseline'y linux
+  (workflow z brancha PR-a — Mateusz), pomiar LHCI na runnerze
+  (`lhci-measure.yml` — Mateusz, dopiero Z MAIN po merge'u: workflow
+  dispatch nie istnieje dla GitHuba, dopóki plik nie jest na gałęzi
+  domyślnej) i wpis median do `lighthouserc*.cjs` osobnym PR-em, pkt 6 (ruleset: required `quality` + `e2e` +
+  `lighthouse`) po merge'u. DECYZJE W TRAKCIE: (1) `visual-fixture.test.ts`
+  biegnie w jobie `e2e`, nie w `quality` (tam dist nie istnieje);
+  (2) pomiar LHCI jako osobny workflow, nie input `ci.yml`; (3) progi
+  `lighthouserc*.cjs` NIE zmienione do czasu median. UWAGI dla Etapu 4:
+  (1) specy widoków biorą oferty przez `pickOffer` + `test.skip`;
+  (2) adres stałej listy i detalu z fixture'u do `lighthouserc*.cjs`
+  po 4.2/4.3; (3) próg TBT z mediany 0 ms wymaga ręcznego minimum
+  (skrypt wypisuje ×1,15 = 0).
 
 ## Dokumentacja
 

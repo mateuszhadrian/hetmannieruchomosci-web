@@ -21,8 +21,7 @@
 | Co                                                        | Do kiedy / warunek                              |
 | --------------------------------------------------------- | ----------------------------------------------- |
 | Wektor znaku, `favicon.svg`, finalne ikony i og-image     | Etap 6                                          |
-| Realne budżety Lighthouse (dziś progi luźne, tymczasowe)  | Etap 3                                          |
-| Baseline'y wizualne (linux + darwin)                      | Etap 3                                          |
+| Realne budżety Lighthouse (dziś progi luźne, tymczasowe)  | po pomiarze na runnerze CI (workflow `lhci-measure.yml`, Etap 3) — wpis median do `lighthouserc*.cjs` osobnym commitem; od tej chwili ratchet |
 | Klucz publiczny Turnstile (dziś pusty)                    | Etap 5                                          |
 | Przepięcie hosta mediów `MEDIA_BASE` na domenę klientki (dziś host tymczasowy) | Etap 8                                     |
 | Dopasowanie modułu ruchu do reveali z designu             | pierwszy widok z animacją wejścia (Etap 4)      |

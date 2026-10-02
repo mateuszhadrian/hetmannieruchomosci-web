@@ -3,8 +3,8 @@
 // deployu przeciw adresowi produkcyjnemu bieżącej fazy:
 // pnpm test:smoke:prod (BASE_URL).
 // Selektory celowo ogólne (main h1) — mają przetrwać wymianę szkieletu
-// Etapu 0 na docelowe widoki bez edycji smoke'a. Asercje formularzy
-// i nagłówka noindex fazy podglądu dochodzą w Etapach 3 i 5.
+// Etapu 0 na docelowe widoki bez edycji smoke'a. Asercja nagłówka noindex
+// fazy podglądu — Etap 3 (niżej); asercje formularzy dochodzą w Etapie 5.
 import { expect, test } from "@playwright/test";
 import { collectPageIssues } from "../helpers/guards";
 
@@ -39,6 +39,29 @@ test.describe("smoke", { tag: "@prod-smoke" }, () => {
     const html = await res.text();
     expect(html).toContain("Strona o podanym adresie nie istnieje");
     expect(html).toContain('name="robots" content="noindex"');
+  });
+
+  test("FAZA PODGLĄDU: nagłówek x-robots-tag: noindex JEST na deployu", async ({
+    request,
+  }) => {
+    // Nagłówek nadaje Cloudflare Pages z public/_headers (wpis dla
+    // nowa.hetmannieruchomosci.com i *.pages.dev) — lokalny preview go nie
+    // czyta, stąd tylko z BASE_URL. Chroni klientkę przed zaindeksowaniem
+    // podglądu obok obecnej strony (duplikat treści).
+    // ETAP 8 (przełączenie domeny): ta asercja jest ODWRACANA — na apeksie
+    // hetmannieruchomosci.com nagłówka NIE MA (domena główna nie ma wpisu
+    // w _headers); zmiana razem z PROD_URL i BASE_URL w tym samym PR.
+    test.skip(
+      !process.env.BASE_URL,
+      "nagłówki z _headers nadaje tylko Cloudflare Pages (BASE_URL)",
+    );
+    for (const path of ["/", "/oferty/"]) {
+      const res = await request.get(path);
+      expect(res.status(), path).toBe(200);
+      expect(res.headers()["x-robots-tag"], `${path}: x-robots-tag`).toMatch(
+        /noindex/,
+      );
+    }
   });
 
   test("kluczowe zasoby odpowiadają", async ({ request }) => {
