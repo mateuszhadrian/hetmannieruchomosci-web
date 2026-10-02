@@ -12,20 +12,29 @@
 import { expect, type Page } from "@playwright/test";
 import { settle } from "./scroll";
 
-/** Czyta `display` elementów spod podanych selektorów (klucz → selektor). */
+/** Element, który po danej stronie progu NIE ISTNIEJE w DOM (np. panel
+ *  filtrów odmontowany przez wyspę poniżej 1025 — 4.2 c, R33). Jako
+ *  wartość oczekiwana zamiast `display`. */
+export const ABSENT = "absent";
+
+/** Czyta `display` elementów spod podanych selektorów (klucz → selektor);
+ *  brak elementu = `ABSENT` (porównanie z oczekiwaniem i tak wykryje
+ *  literówkę w selektorze). */
 async function displays(
   page: Page,
   selectors: Record<string, string>,
 ): Promise<Record<string, string>> {
-  return page.evaluate((sels: Record<string, string>) => {
-    const out: Record<string, string> = {};
-    for (const [key, sel] of Object.entries(sels)) {
-      const el = document.querySelector(sel);
-      if (!el) throw new Error(`Brak elementu ${sel} (klucz ${key})`);
-      out[key] = getComputedStyle(el).display;
-    }
-    return out;
-  }, selectors);
+  return page.evaluate(
+    ({ sels, absent }: { sels: Record<string, string>; absent: string }) => {
+      const out: Record<string, string> = {};
+      for (const [key, sel] of Object.entries(sels)) {
+        const el = document.querySelector(sel);
+        out[key] = el ? getComputedStyle(el).display : absent;
+      }
+      return out;
+    },
+    { sels: selectors, absent: ABSENT },
+  );
 }
 
 /**
