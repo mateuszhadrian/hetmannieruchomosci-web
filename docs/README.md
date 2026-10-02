@@ -35,7 +35,7 @@
 | `plan/prompt-s2a.md` | Prompt sesji S2a (Etap 2, kroki 2.1–2.3) — wykonany 2026-09-30 (PR #1–#2) |
 | `plan/prompt-s2b.md` | Prompt sesji S2b (Etap 2, kroki 2.4–2.7) — wykonany 2026-10-01 (PR #5) |
 | `plan/prompt-s2c.md` | Prompt sesji S2c (Etap 2, kroki 2.8–2.11) — wykonany 2026-10-01 (PR #7–#10; fixture i pierwszy sync 2026-10-02) |
-| `plan/prompt-etap-3.md` | Prompt sesji Etapu 3 (testy/CI na szkielecie) — w realizacji 2026-10-02 (gałąź `chore/stage-3-ci`) |
+| `plan/prompt-etap-3.md` | Prompt sesji Etapu 3 (testy/CI na szkielecie) — wykonany 2026-10-02 (PR #11 + commit budżetów LHCI) |
 | `plan/rozmowa-z-joanna-etap-1.md` | Scenariusz rozmowy z klientką w Etapie 1 (Resend + wizyta w home.pl), krok po kroku |
 
 ## 🔒 Tylko lokalnie — `docs/kb/` (poza git)
