@@ -645,10 +645,10 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   — do dopisania (w chwili końca sesji (b) nie wystąpił).
 
 - **Etap 4 / 4.2 (c) (`/oferty/`: mobile, sheety, siatka/lista, stany
-  brzegowe) — W TOKU** (2026-10-02, gałąź `feat/oferty-mobile`, plan §13
-  w `docs/analiza-oferty.md` zaakceptowany z rekomendacjami; kod
-  i testy gotowe lokalnie, ZOSTAŁO: workflow baseline'ów linux, baseline'y
-  darwin, PR, merge, `prod-smoke`): `src/components/offers/sheets.tsx`
+  brzegowe) — WYKONANY** (2026-10-02, PR #19 zmergowany 21:53 UTC
+  z gałęzi `feat/oferty-mobile`, `prod-smoke` i `ci.yml` na main zielone;
+  baseline'y linux + darwin w PR; plan §13 w `docs/analiza-oferty.md`
+  zaakceptowany z rekomendacjami): `src/components/offers/sheets.tsx`
   (chunk z dynamicznego `import()`; powłoki `#ol-sheet-filters` /
   `#ol-sheet-sort` budowane w `<body>` przy pierwszym otwarciu, treść
   jako drugi root Preact `render(vnode, mount)`; `FiltersSheet` = ten
@@ -691,6 +691,21 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   Lekcja: komentarz frontmatteru `.astro` z `<` ze spacją psuje
   `astro check` (sections.md). Porządek po cronie: bieg 2026-10-03 —
   do dopisania (patrz wpis S2c; w chwili końca sesji nie wystąpił).
+  **Tym samym CAŁE 4.2 (a + b + c: trasy SSG, karta i lista, wyspa
+  wyszukiwarki, mobile i stany brzegowe) jest WYKONANE** (PR #14–#19).
+  PRÓG `script` LHCI po 4.2 (PR `chore/lhci-script`): pomiar
+  `lhci-measure.yml` 2026-10-02 22:06 UTC na main po #19 (5 × 2 configi):
+  `script` 28 223 B we WSZYSTKICH 20 przebiegach obu tras ofert (bajty
+  deterministyczne, rozrzut 0); TBT mobile `/oferty/` 0/7/11/11/1 238 ms
+  → mediana 11 ms (jeden przebieg odstający 1 238 ms > 600 — bramka liczy
+  medianę, obserwacja), lista rodzaju 0/0/0/1/3 ms, desktop 0 ms wszędzie;
+  LCP mobile `/oferty/` 2 343–2 504 → mediana 2 494 ms (margines 706 ms
+  do 3 200), lista rodzaju 2 345 ms; CLS 0,000. Próg `script` 30 000 →
+  40 000 B w OBU configach (reguła max(28 223 × 1,3; 28 223 + 10 000) =
+  38 223 → 39 000; decyzja Mateusza 2026-10-03: 40 000 z większym
+  zapasem, żeby lightbox 4.3 — ok. 4–6 KB gzip — i hero/ruch 4.4 — ok.
+  2–3 KB — weszły bez kolejnej zmiany progu); zapas wyłącznie na widoki,
+  pozostałe progi nietknięte.
 
 ## Dokumentacja
 
