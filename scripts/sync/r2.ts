@@ -15,11 +15,26 @@ export const RETENTION_DAYS = 30;
 /** limit S3 na jedno `DeleteObjects` */
 const DELETE_BATCH = 1000;
 
+/** Jurysdykcja bucketu R2. Bucket utworzony z jurysdykcją (np. `eu`) jest
+ *  dostępny WYŁĄCZNIE przez endpoint `{account}.eu.r2.cloudflarestorage.com`
+ *  — endpoint domyślny odpowiada 403 niezależnie od uprawnień tokenu. */
+export type R2Jurisdiction = "default" | "eu" | "fedramp";
+
 export interface R2Config {
   accountId: string;
   accessKeyId: string;
   secretAccessKey: string;
   bucket: string;
+  jurisdiction?: R2Jurisdiction;
+}
+
+/** Endpoint S3 dla konta i jurysdykcji. */
+export function r2Endpoint(
+  accountId: string,
+  jurisdiction: R2Jurisdiction = "default",
+): string {
+  const segment = jurisdiction === "default" ? "" : `${jurisdiction}.`;
+  return `https://${accountId}.${segment}r2.cloudflarestorage.com`;
 }
 
 /** Minimalny kontrakt klienta S3 — tyle, ile potrzebują testy do atrapy. */
@@ -39,7 +54,7 @@ export interface R2Store {
 export function createS3Client(config: R2Config): S3Client {
   return new S3Client({
     region: "auto",
-    endpoint: `https://${config.accountId}.r2.cloudflarestorage.com`,
+    endpoint: r2Endpoint(config.accountId, config.jurisdiction),
     credentials: {
       accessKeyId: config.accessKeyId,
       secretAccessKey: config.secretAccessKey,
