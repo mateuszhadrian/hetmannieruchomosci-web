@@ -164,3 +164,74 @@ export function cardBadges(e: OfferIndexEntry, now: Date): string[] {
 export function cardKicker(e: OfferIndexEntry): string {
   return formatKind(e.mainType, e.transaction);
 }
+
+// ── Panel wyszukiwarki (4.2 b) ──────────────────────────────────────────
+
+/** Etykiety panelu filtrów, paska narzędzi i paginacji. Podpowiedzi
+ *  w polach („np. …") to brzmienie z designu — PLACEHOLDER (U9). */
+export const PANEL = {
+  region: "Filtry",
+  type: "Typ nieruchomości",
+  transaction: "Transakcja",
+  location: "Lokalizacja",
+  // PLACEHOLDER (U9)
+  locationPlaceholder: "Miejscowość lub dzielnica",
+  removeLocation: "Usuń lokalizację",
+  price: "Cena",
+  area: "Powierzchnia",
+  from: "od",
+  to: "do",
+  currency: "zł",
+  areaUnit: "m²",
+  more: "Więcej filtrów",
+  less: "Mniej filtrów",
+  clear: "Wyczyść",
+  street: "Ulica",
+  // PLACEHOLDER (U9)
+  streetPlaceholder: "np. Milczańska",
+  rooms: "Pokoje",
+  roomsMax: "5+",
+  floor: "Piętro",
+  year: "Rok budowy",
+  yearSuffix: "r.",
+  market: "Rynek",
+  marketAny: "Dowolny",
+  elevator: "Winda",
+  furnished: "Umeblowane",
+  any: "Dowolnie",
+  yes: "Tak",
+  no: "Nie",
+  floors: "Liczba pięter w budynku",
+  floorsSuffix: "pięter",
+  description: "Szukaj w opisie",
+  // PLACEHOLDER (U9)
+  descriptionPlaceholder: "np. garaż, ogród",
+  number: "Numer oferty",
+  // PLACEHOLDER (U9)
+  numberPlaceholder: "np. SW376101",
+  sort: "Sortuj: ",
+  sortList: "Sortowanie",
+  suggestions: "Podpowiedzi",
+  pagination: "Paginacja",
+  prevPage: "Poprzednia strona",
+  nextPage: "Następna strona",
+  pageN: "Strona",
+  loading: "Wczytywanie ofert",
+  counting: "…",
+  noResultsOnPage: "Brak wyników na tej stronie",
+} as const;
+
+export const MARKET_LABEL: Record<OfferIndexEntry["market"], string> = {
+  pierwotny: "Pierwotny",
+  wtorny: "Wtórny",
+};
+
+export const FURNISHED_LABEL: Record<
+  NonNullable<OfferIndexEntry["furnished"]>,
+  string
+> = {
+  tak: "Tak",
+  nie: "Nie",
+  moze: "Może",
+  czesciowo: "Częściowo",
+};

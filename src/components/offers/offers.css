@@ -641,3 +641,624 @@ a.ol-pill:focus-visible {
     border-radius: 0 0 0 16px;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Wyspa wyszukiwarki (4.2 b): panel filtrów (`op-*`), pasek narzędzi,
+   sortowanie, paginacja, skeleton, zero wyników. Wartości z
+   docs/analiza-oferty.md §1.1–1.4. Wyspa ma `display: contents`, więc jej
+   bloki są elementami flexa `.ol-in`; `order` wplata nawigację SSG (a)
+   między nagłówek a resztę na telefonie. Panel i sortowanie tylko
+   ≥ 1025 (W PARZE z DESKTOP_MIN_PX); poniżej zostaje nawigacja (a).
+   ══════════════════════════════════════════════════════════════════════ */
+.ol-island {
+  display: contents;
+}
+.ol-head {
+  order: 0;
+}
+.ol-nav {
+  order: 1;
+}
+.op {
+  order: 2;
+  display: none;
+}
+.ol-tools {
+  order: 3;
+}
+.ol-grid,
+.ol-empty,
+.ol-zero {
+  order: 4;
+}
+.ol-pg {
+  order: 5;
+}
+.ol-grid > li[hidden] {
+  display: none;
+}
+
+/* pigułki jako przyciski (status, typ, pokoje, umeblowanie) */
+button.ol-pill {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  appearance: none;
+}
+.ol-pill[aria-pressed="true"] {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+  font-weight: 600;
+}
+button.ol-pill:hover {
+  border-color: var(--navy);
+}
+button.ol-pill:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 2px;
+}
+.ol-pill--sm {
+  min-height: 40px;
+  padding: 0 12px;
+  font-size: 14px;
+}
+
+/* ── Pasek narzędzi: statusy + sortowanie ─────────────────────────── */
+.ol-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.ol-tools .ol-status {
+  min-width: 0;
+  flex: 1;
+}
+.ol-sort {
+  position: relative;
+  display: none;
+  flex: none;
+}
+.ol-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 14px 0 12px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--navy);
+  background: var(--bg-card);
+  border: 1px solid var(--navy);
+  cursor: pointer;
+}
+.ol-sort-btn svg {
+  font-size: 18px;
+}
+.ol-sort-btn[aria-expanded="true"] {
+  background: var(--bg);
+}
+.ol-sort-pre {
+  font-weight: 500;
+}
+.ol-sort-chev {
+  display: inline-flex;
+  transition: transform 0.2s ease;
+}
+.ol-sort-btn[aria-expanded="true"] .ol-sort-chev {
+  transform: rotate(180deg);
+}
+.ol-sort-btn:focus-visible,
+.ol-sort-opt:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 2px;
+}
+.ol-sort-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 5;
+  min-width: 220px;
+  padding: 6px;
+  background: var(--bg-card);
+  border: 1px solid rgba(24, 58, 107, 0.15);
+  box-shadow: 0 18px 40px rgba(24, 58, 107, 0.14);
+}
+.ol-sort-list[hidden] {
+  display: none;
+}
+.ol-sort-opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+}
+.ol-sort-opt:hover {
+  background: var(--bg);
+}
+.ol-sort-opt[aria-selected="true"] {
+  font-weight: 600;
+  color: var(--navy);
+}
+.ol-sort-check {
+  display: inline-flex;
+  font-size: 18px;
+  color: var(--copper);
+  visibility: hidden;
+}
+.ol-sort-opt[aria-selected="true"] .ol-sort-check {
+  visibility: visible;
+}
+
+/* ── Panel filtrów (desktop) ──────────────────────────────────────── */
+.op {
+  background: var(--bg-card);
+  border: 1px solid rgba(24, 58, 107, 0.1);
+  border-radius: 0 0 0 24px;
+  padding: 24px 28px;
+}
+.op-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 20px 24px;
+}
+.op-grid--more {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(24, 58, 107, 0.1);
+}
+.op-f {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  grid-column: span 3;
+}
+.op-f--type {
+  grid-column: span 5;
+}
+.op-f--loc,
+.op-f--street,
+.op-f--rooms,
+.op-f--desc {
+  grid-column: span 4;
+}
+.op-f--actions {
+  grid-column: span 6;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+.op-f--actions-more {
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+}
+.op-f--floor,
+.op-f--year,
+.op-f--floors {
+  grid-column: span 2;
+}
+.op-f--furnished {
+  grid-column: span 6;
+}
+.op-label {
+  font-size: 12px;
+  line-height: 1.2;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--navy);
+}
+.op-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.op-seg {
+  display: flex;
+  border: 1px solid var(--navy);
+  border-radius: 0 0 0 12px;
+  overflow: clip;
+}
+.op-seg button {
+  flex: 1;
+  min-height: 40px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--navy);
+  background: var(--bg-card);
+  border: 0;
+  border-left: 1px solid var(--navy);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.op-seg button:first-child {
+  border-left: 0;
+}
+.op-seg button[aria-pressed="true"] {
+  background: var(--navy);
+  color: #fff;
+  font-weight: 600;
+}
+.op-seg button:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: -2px;
+}
+.op-input {
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--bg-card);
+  border: 1px solid rgba(24, 58, 107, 0.3);
+  border-radius: 0;
+}
+.op-input::placeholder {
+  color: var(--muted);
+}
+.op-input:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: -1px;
+}
+.op-input:disabled {
+  color: var(--disabled);
+  background: var(--bg-soft);
+  cursor: not-allowed;
+}
+.op-combo {
+  position: relative;
+}
+.op-combo-ico {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  font-size: 18px;
+  color: var(--navy);
+  pointer-events: none;
+}
+.op-combo-ico + .op-input {
+  padding-left: 38px;
+}
+.op-sugg {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 6;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--bg-card);
+  border: 1px solid rgba(24, 58, 107, 0.15);
+  box-shadow: 0 18px 40px rgba(24, 58, 107, 0.14);
+}
+.op-sugg[hidden] {
+  display: none;
+}
+.op-sugg-opt {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 10px;
+  font-size: 15px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.op-sugg-opt[data-active] {
+  background: var(--bg);
+}
+.op-sugg-label {
+  font-weight: 600;
+  color: var(--navy);
+}
+.op-sugg-info {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.op-sugg-count {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--muted);
+}
+.op-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.op-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 6px 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--navy);
+  border-radius: 999px;
+}
+.op-chip-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+  color: var(--navy);
+  background: #fff;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.op-chip-x:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 2px;
+}
+.op-range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.op-range--one {
+  grid-template-columns: 1fr;
+}
+.op-num {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+.op-num .op-input {
+  padding-right: 36px;
+}
+.op-suffix {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  font-size: 13px;
+  color: var(--muted);
+  pointer-events: none;
+}
+.op-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 2px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--navy);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid rgba(24, 58, 107, 0.12);
+  cursor: pointer;
+}
+.op-more[aria-expanded="true"] {
+  border-bottom-color: transparent;
+}
+.op-more-chev {
+  display: inline-flex;
+  font-size: 18px;
+  transition: transform 0.2s ease;
+}
+.op-more[aria-expanded="true"] .op-more-chev {
+  transform: rotate(180deg);
+}
+.op-more:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 2px;
+}
+.op-actions {
+  display: flex;
+  gap: 10px;
+}
+.op-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 20px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--navy);
+  background: var(--bg-card);
+  border: 1px solid var(--navy);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.op-btn--primary {
+  /* design: biały na miedzi (3,1:1 < AA) → --ink na miedzi (5,5:1), jak
+     przycisk „Zadzwoń" stopki (analiza chrome R6) */
+  color: var(--ink);
+  background: var(--copper);
+  border-color: var(--copper);
+  border-radius: 0 0 0 12px;
+  padding: 0 24px;
+}
+.op-btn--primary:hover {
+  background: var(--copper-hover);
+  border-color: var(--copper-hover);
+}
+.op-btn[aria-busy="true"] {
+  min-width: 140px;
+}
+.op-btn:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 3px;
+}
+
+/* ── Paginacja ─────────────────────────────────────────────────────── */
+.ol-pg {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: clamp(28px, 7.7vw, 40px);
+}
+.ol-pg-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ol-pg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--navy);
+  text-decoration: none;
+  background: var(--bg-card);
+  border: 1px solid rgba(24, 58, 107, 0.25);
+}
+.ol-pg-btn svg {
+  font-size: 18px;
+}
+a.ol-pg-btn:hover {
+  border-color: var(--navy);
+}
+.ol-pg-btn[aria-current="page"] {
+  color: #fff;
+  background: var(--navy);
+  border-color: var(--navy);
+}
+.ol-pg-btn[aria-disabled="true"] {
+  color: var(--disabled);
+  border-color: rgba(24, 58, 107, 0.12);
+}
+a.ol-pg-btn:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 2px;
+}
+
+/* ── Skeleton i zero wyników ───────────────────────────────────────── */
+.oc-skel {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid rgba(24, 58, 107, 0.1);
+  border-radius: 0 0 0 clamp(22px, 6vw, 30px);
+  overflow: clip;
+}
+.oc-skel-media {
+  aspect-ratio: 3 / 2;
+  background: var(--bg-photo);
+}
+.oc-skel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 20px 20px;
+}
+.oc-skel-body span {
+  display: block;
+  height: 14px;
+  background: var(--bg-photo);
+}
+.oc-skel-body span:nth-child(1) {
+  width: 40%;
+}
+.oc-skel-body span:nth-child(2) {
+  width: 85%;
+  height: 20px;
+}
+.oc-skel-body span:nth-child(3) {
+  width: 60%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .oc-skel {
+    animation: oc-skel-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes oc-skel-pulse {
+    50% {
+      opacity: 0.55;
+    }
+  }
+}
+.ol-zero {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: clamp(16px, 4.4vw, 24px);
+  padding: clamp(20px, 5.5vw, 28px) clamp(18px, 4.4vw, 24px);
+  background: var(--bg-card);
+  border: 1px solid rgba(24, 58, 107, 0.1);
+  border-radius: 0 0 0 24px;
+}
+.ol-zero-h {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(19px, 5vw, 24px);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--navy);
+  text-wrap: pretty;
+}
+.ol-zero-hints {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--slate);
+}
+
+/* ════ TABLET ≥ 768 ════ */
+@media (min-width: 768px) {
+  .ol-tools .ol-status {
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+}
+
+/* ════ DESKTOP ≥ 1025 (breakpoint projektu) ════ */
+@media (min-width: 1025px) {
+  .ol-nav {
+    display: none;
+  }
+  .op {
+    display: block;
+  }
+  .ol-sort {
+    display: block;
+  }
+  .ol-pg {
+    justify-content: center;
+  }
+  .ol-pg-btn {
+    font-size: 15px;
+  }
+}

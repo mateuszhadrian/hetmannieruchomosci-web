@@ -18,9 +18,10 @@ import {
   type Market,
   type OfferStatus,
   type Transaction,
-} from "./schema";
+} from "./enums";
 import { normalizeText } from "./text";
 import {
+  offerListPath,
   OFFERS_PATH,
   OFFER_TRANSACTION_SLUGS,
   OFFER_TYPE_SLUGS,
@@ -54,8 +55,13 @@ export type ElevatorOption = (typeof ELEVATOR_OPTIONS)[number];
 export interface SearchState {
   mainType?: MainType;
   transaction?: Transaction;
-  /** id węzła drzewa lokalizacji — dopasowanie prefiksowe */
+  /** id węzła drzewa lokalizacji (`?lokalizacja=`) — dopasowanie prefiksowe */
   location?: string;
+  /** segment lokalizacji z adresu listy SSG (`/…/poznan-winogrady/`) —
+   *  dopasowanie DOKŁADNE do `location.slug` wpisu (R18: lista SSG
+   *  z lokalizacją = dokładnie oferty tego slugu; hydratacja nie może
+   *  zmieniać zawartości strony). Nigdy nie trafia do parametrów. */
+  locationSlug?: string;
   /** nazwa ulicy (działa tylko razem z `location` — kaskada) */
   street?: string;
   priceFrom?: number;
@@ -117,7 +123,10 @@ export const PARAM = {
   statuses: "status",
   sort: "sort",
   page: "strona",
-} as const satisfies Record<Exclude<keyof SearchState, "invalid">, string>;
+} as const satisfies Record<
+  Exclude<keyof SearchState, "invalid" | "locationSlug">,
+  string
+>;
 
 // ── Parsowanie ──────────────────────────────────────────────────────────
 
@@ -194,13 +203,13 @@ function text(raw: string | null): string | undefined {
   return t ? t : undefined;
 }
 
-/** Stan z adresu: ścieżka (typ, transakcja, lokalizacja) ma pierwszeństwo
- *  przed parametrami; `resolveSlug` mapuje segment lokalizacji z adresu
- *  listy na id węzła drzewa (strona zna go z wpisów indeksu). */
+/** Stan z adresu: ścieżka (typ, transakcja) ma pierwszeństwo przed
+ *  parametrami; segment lokalizacji z adresu listy trafia do
+ *  `locationSlug` (dokładny), a `?lokalizacja=` do `location` (prefiks) —
+ *  oba mogą współistnieć (AND). */
 export function parseSearch(
   pathname: string,
   search: string | URLSearchParams = "",
-  resolveSlug: (slug: string) => string | undefined = () => undefined,
 ): SearchState {
   const q = typeof search === "string" ? new URLSearchParams(search) : search;
   const path = parsePath(pathname);
@@ -217,14 +226,11 @@ export function parseSearch(
             (STATUS_GROUPS as readonly string[]).includes(s),
           );
 
-  const fromSlug = path.locationSlug
-    ? resolveSlug(path.locationSlug)
-    : undefined;
-
   const state: SearchState = {
     mainType: path.mainType ?? oneOf(get("mainType"), MAIN_TYPES),
     transaction: path.transaction ?? oneOf(get("transaction"), TRANSACTIONS),
-    location: fromSlug ?? text(get("location")),
+    location: text(get("location")),
+    locationSlug: path.locationSlug,
     street: text(get("street")),
     priceFrom: parseNumber(get("priceFrom")),
     priceTo: parseNumber(get("priceTo")),
@@ -270,11 +276,12 @@ function compactState(state: SearchState): SearchState {
 }
 
 /** Parametry adresu dla stanu — tylko wartości różne od domyślnych
- *  i od tego, co niesie ścieżka (`pathState`). Kolejność stała = adres
+ *  i od tego, co niesie ścieżka (`pathState`); `locationSlug` nigdy nie
+ *  jest parametrem (żyje w ścieżce). Kolejność stała = adres
  *  deterministyczny. */
 export function serializeSearch(
   state: SearchState,
-  pathState: PathState & { location?: string } = {},
+  pathState: PathState = {},
 ): URLSearchParams {
   const q = new URLSearchParams();
   const put = (key: keyof typeof PARAM, value: unknown) => {
@@ -284,7 +291,7 @@ export function serializeSearch(
   if (state.mainType !== pathState.mainType) put("mainType", state.mainType);
   if (state.transaction !== pathState.transaction)
     put("transaction", state.transaction);
-  if (state.location !== pathState.location) put("location", state.location);
+  put("location", state.location);
   put("street", state.street);
   put("priceFrom", state.priceFrom);
   put("priceTo", state.priceTo);
@@ -302,8 +309,10 @@ export function serializeSearch(
   put("elevator", state.elevator);
   put("furnished", state.furnished);
   put("floorsTo", state.floorsTo);
+  // pusty zbiór statusów = `status=` (pusta wartość jest tu znacząca:
+  // „żadna grupa"), więc bez `put`, które pomija puste
   if (!sameStatuses(state.statuses, DEFAULT_STATE.statuses))
-    put("statuses", [...state.statuses].sort().join(","));
+    q.set(PARAM.statuses, [...state.statuses].sort().join(","));
   if (state.sort !== DEFAULT_SORT) put("sort", state.sort);
   if (state.page > 1) put("page", state.page);
   return q;
@@ -381,6 +390,11 @@ export function matchesEntry(
   if (
     state.location !== undefined &&
     !matchesLocation(entry.location.nodeId, state.location)
+  )
+    return false;
+  if (
+    state.locationSlug !== undefined &&
+    entry.location.slug !== state.locationSlug
   )
     return false;
   // ulica tylko w kaskadzie z lokalizacją (part2 §4.2)
@@ -563,5 +577,77 @@ export function runSearch(
   return {
     ...paginate(sorted, state.page),
     counts: statusCounts(withoutStatus),
+  };
+}
+
+// ── Adres dla stanu (wyspa: pushState) ──────────────────────────────────
+
+export interface TargetPath {
+  pathname: string;
+  pathState: PathState;
+  /** stan po przeniesieniu lokalizacji między ścieżką a parametrem */
+  state: SearchState;
+}
+
+/** Typ ∧ transakcja → ścieżka listy SSG; lokalizacja wchodzi do ścieżki
+ *  (segment slugu), gdy wybrany węzeł jest LIŚCIEM drzewa i istnieje wpis
+ *  tej kombinacji z tym slugiem (= lista SSG istnieje; liść ⇒ zbiór
+ *  prefiksowy = zbiór slugu). W przeciwnym razie lokalizacja zostaje
+ *  parametrem `?lokalizacja=`; slug z adresu bez listy dla nowego rodzaju
+ *  wraca do id węzła (prefiks). Reszta stanu w parametrach
+ *  (`serializeSearch(state, pathState)`). */
+export function targetPath(
+  state: SearchState,
+  entries: readonly OfferIndexEntry[],
+  nodes: readonly { id: string; parent: string | null }[],
+): TargetPath {
+  const next: SearchState = { ...state };
+  delete next.locationSlug;
+  const isLeaf = (id: string) => !nodes.some((n) => n.parent === id);
+  const nodeOfSlug = (slug: string) =>
+    entries.find((e) => e.location.slug === slug)?.location.nodeId;
+
+  if (state.mainType === undefined || state.transaction === undefined) {
+    if (state.location === undefined && state.locationSlug !== undefined) {
+      const id = nodeOfSlug(state.locationSlug);
+      if (id !== undefined) next.location = id;
+    }
+    return { pathname: OFFERS_PATH, pathState: {}, state: compactState(next) };
+  }
+
+  const { mainType, transaction } = state;
+  const ofKind = (e: OfferIndexEntry) =>
+    e.mainType === mainType && e.transaction === transaction;
+  const pathState: PathState = { mainType, transaction };
+  let slug: string | undefined;
+
+  if (state.location !== undefined) {
+    if (isLeaf(state.location)) {
+      const loc = state.location;
+      slug = entries.find((e) => ofKind(e) && e.location.nodeId === loc)
+        ?.location.slug;
+    }
+    if (slug !== undefined) delete next.location;
+  } else if (state.locationSlug !== undefined) {
+    const s = state.locationSlug;
+    if (entries.some((e) => ofKind(e) && e.location.slug === s)) slug = s;
+    else {
+      const id = nodeOfSlug(s);
+      if (id !== undefined) next.location = id;
+    }
+  }
+
+  if (slug !== undefined) {
+    pathState.locationSlug = slug;
+    next.locationSlug = slug;
+  }
+  return {
+    pathname: offerListPath(
+      TYPE_SLUG[mainType],
+      TRANSACTION_SLUG[transaction],
+      slug,
+    ),
+    pathState,
+    state: compactState(next),
   };
 }

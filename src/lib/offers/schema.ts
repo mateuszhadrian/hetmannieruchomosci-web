@@ -6,47 +6,47 @@
 //    tylko id, adres źródłowy, rodzaj i alt. Pola zdjęć dochodzą w 2.5.
 import { z } from "zod";
 
-export const MAIN_TYPES = [
-  "mieszkanie",
-  "dom",
-  "dzialka",
-  "komercyjny",
-] as const;
-export const TRANSACTIONS = ["sprzedaz", "wynajem"] as const;
-export const MARKETS = ["pierwotny", "wtorny"] as const;
-export const OFFER_STATUSES = [
-  "aktywna",
-  "rezerwacja",
-  "sprzedana",
-  "wynajeta",
-] as const;
-export const FURNISHED = ["tak", "nie", "moze", "czesciowo"] as const;
-export const CURRENCIES = ["PLN", "EUR", "USD"] as const;
-export const PHOTO_KINDS = ["photo", "plan"] as const;
-export const STREET_TYPES = ["ul.", "os."] as const;
-export const EXPOSURES = ["N", "E", "S", "W"] as const;
-export const METERS = ["prad", "cieplo", "woda", "gaz"] as const;
-export const EXTRA_KEYS = [
-  "balcony",
-  "loggia",
-  "terrace",
-  "basement",
-  "attic",
-  "storage",
-  "parking",
-  "parkingUnderground",
-  "garage",
-  "garden",
-  "entresol",
-] as const;
+// Słowniki wartości i ich typy żyją w `enums.ts` (moduł BEZ zoda), bo
+// trafiają do przeglądarki razem z wyspą wyszukiwarki (4.2 b: import
+// stąd wciągałby cały zod do bundla). Tu re-eksport dla dotychczasowych
+// konsumentów.
+import {
+  CURRENCIES,
+  EXPOSURES,
+  EXTRA_KEYS,
+  FURNISHED,
+  MAIN_TYPES,
+  MARKETS,
+  METERS,
+  OFFER_STATUSES,
+  PHOTO_KINDS,
+  STREET_TYPES,
+  TRANSACTIONS,
+} from "./enums";
 
-export type MainType = (typeof MAIN_TYPES)[number];
-export type Transaction = (typeof TRANSACTIONS)[number];
-export type Market = (typeof MARKETS)[number];
-export type OfferStatus = (typeof OFFER_STATUSES)[number];
-export type Furnished = (typeof FURNISHED)[number];
-export type PhotoKind = (typeof PHOTO_KINDS)[number];
-export type ExtraKey = (typeof EXTRA_KEYS)[number];
+export {
+  CURRENCIES,
+  EXPOSURES,
+  EXTRA_KEYS,
+  FURNISHED,
+  MAIN_TYPES,
+  MARKETS,
+  METERS,
+  OFFER_STATUSES,
+  PHOTO_KINDS,
+  STREET_TYPES,
+  TRANSACTIONS,
+};
+import type { ExtraKey } from "./enums";
+export type {
+  ExtraKey,
+  Furnished,
+  MainType,
+  Market,
+  OfferStatus,
+  PhotoKind,
+  Transaction,
+} from "./enums";
 
 /** Data-czas ISO 8601 z offsetem (`2026-07-30T11:01:42+02:00`). */
 const isoDateTime = z

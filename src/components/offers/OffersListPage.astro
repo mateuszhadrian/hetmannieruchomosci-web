@@ -1,36 +1,24 @@
 ---
-// Strona listy ofert (4.2 a): `/oferty/` i listy SSG typ × transakcja
-// [× lokalizacja]. Bez wyspy — WSZYSTKIE karty trasy w HTML (wzorzec E5,
-// docs/analiza-oferty.md §5.3), posortowane „najnowsze"; nawigacja po
-// listach SSG zwykłymi linkami (pigułki rodzajów z licznikami, pastylki
-// lokalizacji); pigułki statusu z licznikami jako informacja (filtr
-// interaktywny wchodzi z wyspą 4.2 b). Karta = `OfferCard.tsx` (Preact,
-// SSR, zero JS). Selektor `main h1` = kontrakt smoke; `data-offer-card`
-// = kontrakt strażnika fixture'u.
+// Strona listy ofert (4.2 a + b): `/oferty/` i listy SSG typ × transakcja
+// [× lokalizacja]. Powłoka SSG: sekcja `[data-offers-list][data-build-now]`,
+// blok nawigacji po listach SSG (zwykłe linki — na telefonie i bez JS;
+// ≥ 1025 zastępuje go panel wyspy) i CTA. Treść listy (nagłówek, panel
+// filtrów, pigułki statusu, sortowanie, WSZYSTKIE karty trasy — od 13.
+// z `hidden`, paginacja) renderuje `SearchIsland` w SSR i hydratuje
+// `client:load` na tym samym markupie. `<noscript>` odkrywa karty i chowa
+// panel oraz paginację. Selektor `main h1` = kontrakt smoke;
+// `data-offer-card` = kontrakt strażnika fixture'u.
 import "./offers.css";
 import ctaImage from "@/assets/img/onas-cta.webp";
 import Footer from "@/components/Footer.astro";
 import Navbar from "@/components/navbar/Navbar.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { BUILD_NOW, loadOffersData } from "@/lib/offers/data";
-import {
-  sortEntries,
-  statusCounts,
-  STATUS_GROUPS,
-  DEFAULT_SORT,
-} from "@/lib/offers/filters";
-import {
-  formatInt,
-  formatKindPlural,
-  formatOffersCount,
-} from "@/lib/offers/format";
+import { formatInt, formatKindPlural } from "@/lib/offers/format";
 import { toIndexEntry } from "@/lib/offers/index-entry";
 import {
   listDescription,
-  listHeading,
   listTitle,
-  STATUS_GROUP_LABEL,
-  STATUS_GROUP_TITLE,
   UI,
   type ListContext,
 } from "@/lib/offers/offers-ui";
@@ -43,7 +31,7 @@ import {
   TYPE_SLUG,
 } from "@/lib/offers/urls";
 import { CONTACT_PATH } from "@/lib/routes";
-import { OfferCard } from "./OfferCard";
+import { SearchIsland } from "./SearchIsland";
 
 interface Props {
   /** oferty tej trasy (już zawężone przez getStaticPaths) */
@@ -52,17 +40,17 @@ interface Props {
   context: ListContext & { locationSlug?: string };
 }
 const { offers, context } = Astro.props;
-const { offers: all } = loadOffersData();
+const { offers: all, locations } = loadOffersData();
 const nowIso = BUILD_NOW.toISOString();
 
-const entries = sortEntries(offers.map(toIndexEntry), DEFAULT_SORT);
-const counts = statusCounts(entries);
-const heading = listHeading(context);
+const entries = offers.map(toIndexEntry);
 const title = listTitle(context);
 const description = listDescription(context, entries.length);
 const currentPath = Astro.url.pathname.endsWith("/")
   ? Astro.url.pathname
   : `${Astro.url.pathname}/`;
+/** `/oferty/` niesie komplet ofert — wyspa nie pobiera indeksu. */
+const complete = !context.mainType && !context.transaction;
 
 // ── Nawigacja po listach SSG (tylko kombinacje z ≥ 1 ofertą) ─────────────
 interface NavPill {
@@ -118,32 +106,32 @@ if (context.mainType && context.transaction) {
   ];
 }
 const isCurrent = (href: string) => href === currentPath;
-
-/** Priorytet wczytywania zdjęć: pierwsze trzy karty w pierwszym ekranie. */
-const priority = (i: number) => (i === 0 ? "high" : i < 3 ? "eager" : "lazy");
 ---
 
 <BaseLayout title={title} description={description}>
   <Navbar />
   <main>
     <section class="ol" data-offers-list data-build-now={nowIso}>
+      {
+        /* bez JS: wszystkie karty widoczne, panel i paginacja ukryte,
+          nawigacja po listach także na desktopie */
+      }
+      <noscript>
+        <style>
+          .ol-grid > li[hidden] {
+            display: block;
+          }
+          .ol-pg,
+          .op,
+          .ol-sort {
+            display: none !important;
+          }
+          .ol-nav {
+            display: flex !important;
+          }
+        </style>
+      </noscript>
       <div class="ol-in">
-        <div class="ol-head">
-          <h1 class="ol-h1">{heading}</h1>
-          <p class="ol-count" data-offers-count={entries.length}>
-            {
-              entries.length > 0 ? (
-                <>
-                  {UI.found}{" "}
-                  <strong>{formatOffersCount(entries.length)}</strong>
-                </>
-              ) : (
-                <strong>{formatOffersCount(0)}</strong>
-              )
-            }
-          </p>
-        </div>
-
         <nav class="ol-nav" aria-label="Rodzaje ofert i lokalizacje">
           <div>
             <span class="ol-nav-label" id="ol-kinds-label">{UI.type}</span>
@@ -195,55 +183,14 @@ const priority = (i: number) => (i === 0 ? "high" : i < 3 ? "eager" : "lazy");
           }
         </nav>
 
-        {
-          entries.length > 0 && (
-            /* region przewijany poziomo na telefonie — tabindex dla
-               klawiatury (axe scrollable-region-focusable; wzorzec
-               role=region + aria-label z eslint.config) */
-            <div
-              class="ol-status"
-              role="region"
-              aria-label={UI.status}
-              tabindex="0"
-              data-offers-status
-            >
-              <ul class="ol-pills ol-pills--nowrap">
-                {STATUS_GROUPS.map((g) => (
-                  <li
-                    class="ol-pill ol-pill--on"
-                    title={STATUS_GROUP_TITLE[g]}
-                    data-status-group={g}
-                  >
-                    {STATUS_GROUP_LABEL[g]}{" "}
-                    <small>{formatInt(counts[g])}</small>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )
-        }
-
-        {
-          entries.length > 0 ? (
-            <ul class="ol-grid" data-offers-grid>
-              {entries.map((entry, i) => (
-                <li>
-                  <OfferCard
-                    entry={entry}
-                    nowIso={nowIso}
-                    priority={priority(i)}
-                  />
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p class="ol-empty" data-offers-empty>
-              {/* PLACEHOLDER (U9): stan listy bez ofert w danych */}
-              Aktualnie nie mamy ofert w tej kategorii. Zajrzyj do pozostałych
-              list albo zostaw nam swoje kryteria.
-            </p>
-          )
-        }
+        <SearchIsland
+          client:load
+          entries={entries}
+          complete={complete}
+          locations={locations}
+          pathname={currentPath}
+          nowIso={nowIso}
+        />
       </div>
     </section>
 
