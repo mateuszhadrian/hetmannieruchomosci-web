@@ -378,8 +378,12 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   301 → detal 200 na `nowa.`; `test:smoke:prod` 49/49; wartość sekretu
   `SYNC_AGREEMENT_SIGNAL` poprawiona (objaw: W1 ×37); klucze R2
   wymienione. Stan ostrzeżeń w raportach: W2 ×3 (spodziewany szum, do
-  rozmowy z klientką w Etapie 7), W3 ×1. Pkt 4 z 2.11 (noc bez zmian):
-  pierwszy bieg crona 2026-10-03 — wynik do dopisania.
+  rozmowy z klientką w Etapie 7), W3 ×1. Pkt 4 z 2.11 (noc bez zmian)
+  POTWIERDZONY 2026-10-02: bieg planowy wystartował 08:27 UTC (cron stoi
+  na 02:15 UTC — bieg o 02:15 nie wystąpił, opóźnienie ok. 6 h, znana
+  cecha harmonogramów GitHuba; harmonogram bez zmian, ewentualna korekta
+  godziny to osobna decyzja — Z5), 71 s, „bez zmian", 46 ofert widocznych
+  (poprzednio 46), bez commita bota. Bieg 2026-10-03 — do dopisania.
 - **Etap 3 (testy/CI na szkielecie) — WYKONANY** (2026-10-02, PR #11 +
   commit budżetów LHCI): `tests/helpers/offers.ts` w pełnej wersji (odczyt
   typowany `readOffersTyped(source)` po schemacie strict, buforowany;
@@ -433,6 +437,46 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   z fixture'u do `lighthouserc*.cjs` po 4.2/4.3 i ponowny pomiar
   `lhci-measure.yml`; (3) wynik pierwszego crona syncu (2026-10-03, pkt 4
   z 2.11) do dopisania pod wpisem S2c.
+
+- **Etap 4 / 4.1 (chrome globalny) — W TOKU** (2026-10-02, gałąź
+  `feat/chrome`, mini-analiza `docs/analiza-chrome.md` zaakceptowana):
+  `Navbar.astro` w wyglądzie docelowym — logo w dwóch wariantach
+  (WebP z Etapu 0; eksport designu NIE ma SVG, wektor zostaje na Etap 6),
+  6 pozycji z efektem liter generowanym w Astro (`.hn-ch`/`.hn-sp`,
+  `aria-label`, ruch tylko bez `prefers-reduced-motion`), telefon przez
+  slot; wariant „/" (`data-scroll-nav` + `data-hero` w SSR, tylko
+  `HOME_PATH`): przemalowanie POZYCJĄ SCROLLA z progiem liczonym
+  z `innerHeight` (`NAV_HOME_FADE_START = 0.32`, koniec = h − pasek,
+  smoothstep, pętla rAF z dociąganiem `NAV_HOME_LERP`, zmienne CSS
+  `--nav-*` na nagłówku; `<noscript>` przywraca pełny pasek);
+  mechanizm `[data-navref]`/`NAV_SOLID_HERO_PAD_PX` z Etapu 0 usunięty;
+  sheet bez zmian mechaniki (overlay.ts), podkład `.96`; `Footer.astro`
+  wg designu per breakpoint (mobile: logo + telefon, hasło, przyciski
+  „Zadzwoń"/„Napisz" ze slotami `data-fill="href"`, pastylki mapy strony;
+  desktop: hasło, telefon, CTA, linki wersalikami) + ROZJAZD R1
+  rozstrzygnięty na rzecz bazy wiedzy: wiersz `Firma:` z nazwą
+  rejestrową, siedzibą (pola `seat*` w `BUSINESS`, `jsonld.ts`; węzły
+  JSON-LD bez zmian), NIP, REGON oraz wiersz `E-mail:` ze slotem `biuro`;
+  rok © z `BUILD_NOW`; etykiety α .7 (design .45 < AA). Testy:
+  `navigation.spec` zaadaptowany i rozszerzony (wariant „/", zamknięcie
+  sheetu przy przejściu na desktop, litery + punktowy test `reduce`
+  z komentarzem, stopka z kompletem danych, przyciski bez JS →
+  `/kontakt/`), `chrome.spec` +3 zrzuty (`chrome-home-top`,
+  `chrome-home-solid`, `chrome-footer` z ukrytym paskiem). Weryfikacja
+  lokalna: format/lint/typecheck, unit 312 (+2 skip), build 89 stron,
+  `test:dist` 6/6, e2e 268 na 6 profilach zielone (axe 0 naruszeń po poprawce
+  kontrastu przycisku „Zadzwoń"), `test:visual` 31 czerwonych
+  OCZEKIWANYCH (18 nowych zrzutów bez baseline'u + 13 rozjazdów:
+  `chrome-bar` ×3, `chrome-sheet` ×3, `not-found-full` ×6,
+  `not-found-top` 1366; pomiar progiem 0: `not-found-top` różni się
+  o ok. 830–900 px także na 1920/firefox, czyli POD progiem — stąd
+  zalecany tryb `all` dla workflow linux). PLACEHOLDER (U9): hasło
+  stopki, CTA „Skontaktuj się z nami"/„Zadzwoń"/„Napisz", „Przeglądaj
+  oferty", linia „Realizacja", pisownia nazwy w ©. Budżety LHCI
+  (z `dist` po `build:visual`): patrz raport sesji; progi nietknięte.
+  DO DOMKNIĘCIA: baseline'y linux (workflow) i darwin (po diffie),
+  PR, numer PR i data merge'u w tym wpisie. Porządek po cronie:
+  bieg 2026-10-03 — do dopisania (sesja zakończona przed oknem).
 
 ## Dokumentacja
 

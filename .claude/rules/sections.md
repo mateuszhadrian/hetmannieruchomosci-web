@@ -50,19 +50,37 @@ odziedziczone z szablonu projektu i stan chrome'u po Etapie 0.
 - Warstwy testów po zmianie: `.claude/rules/testing.md`; sekcje dostają
   własne specy w `tests/visual/` razem z widokami.
 
-## Chrome (navbar/stopka) — stan po Etapie 0, wygląd docelowy w 4.1
+## Chrome (navbar/stopka) — stan po Etapie 4.1 (`docs/analiza-chrome.md`)
 
 - Pasek jest FIXED; treść stron odsuwa się o `var(--hdr-h)` (statyczny
   fallback w `global.css`, skrypt Navbara doprecyzowuje pomiarem).
-- Stany paska: `[data-hero]` (strona ma `[data-navref]` — pasek startuje
-  przezroczysty), `[data-solid]` (po zjechaniu z góry / z hero),
-  `[data-open]` (otwarty sheet). Bez hero szklane tło jest widoczne
-  zawsze. **Auto-hide paska NIE istnieje** — design go nie przewiduje.
+- Stany paska: `[data-scroll-nav]` + `[data-hero]` (SSR, WYŁĄCZNIE
+  `HOME_PATH` — wariant przezroczysty nad hero), `[data-solid]` (na „/"
+  po dojechaniu przemalowania do końca, na pozostałych trasach po
+  `NAV_SOLID_FALLBACK_PX`), `[data-open]` (otwarty sheet). Poza „/"
+  szklane tło jest widoczne zawsze. **Auto-hide paska NIE istnieje.**
+- **Wariant „/" to PRÓG SCROLLA, nie selektor hero:** postęp
+  `e = smoothstep((scrollY − 0,32·h) / (h − pasek − 0,32·h))`,
+  `h = innerHeight` (stałe `NAV_HOME_*` w `nav-config.ts`). Pętla rAF
+  dociąga wartość (reguła `scroll.md`) i pisze KILKA zmiennych CSS na
+  nagłówku (`--nav-e`, `--nav-c`, `--nav-ch`, `--nav-sh`, `--nav-bar`);
+  CSS konsumuje (szkło, scrim, crossfade logo jasne/ciemne, kolor
+  linków i kresek burgera). Przy `reduce` — skok bez dociągania (to
+  stan, nie animacja). Bez JS `<noscript>` przywraca pełny pasek.
+  Mechanizm `[data-navref]` z Etapu 0 nie istnieje — 4.4 nie potrzebuje
+  selektora hero (hero pełnoekranowe).
+- **Efekt liter** (`.hn-ch` z dwiema kopiami znaku, `.hn-sp` = spacja)
+  generuje Astro z `mainNavItems` — zero JS; link ma `aria-label`
+  w naturalnej pisowni, litery `aria-hidden`. Ruch liter WYŁĄCZNIE pod
+  `@media (prefers-reduced-motion: no-preference)`; litery to osobne
+  inline-blocki, więc kerning między nimi nie działa (jak w designie).
 - Menu mobilne = bottom sheet na `overlay.ts` (focus-trap, Esc, scrim,
   swipe-down, blokada scrolla). Nakładka z `data-overlay-kind="sheet"`
   uzbraja gest „przeciągnij w dół" i nadpisuje panelowi inline'owy
   `transform` — nie dawaj `kind="sheet"` nakładce, która na desktopie
-  jest wyśrodkowanym modalem (objaw: zgubiony klik).
+  jest wyśrodkowanym modalem (objaw: zgubiony klik). Podkład sheetu
+  `.96` zamiast szkła `.39` z designu (kontrast AA nad ciemnym hero).
+  Przejście na desktop (`NAV_DESKTOP_MIN_PX`) domyka sheet.
 - **Stan paska zamraża się na czas KAŻDEJ otwartej nakładki.**
   `overlay.ts` blokuje scroll przez `body{position:fixed;top:-scrollY}`,
   co zeruje `window.scrollY`; `onScroll` Navbara wychodzi wtedy od razu
@@ -70,8 +88,18 @@ odziedziczone z szablonu projektu i stan chrome'u po Etapie 0.
 - Pozycja „Praca" w menu i stopce stoi za przełącznikiem `SHOW_PRACA`
   (`src/lib/site-config.ts`) — pozycje menu bierz z `src/i18n/nav.ts`,
   nie wpisuj ich w komponent.
+- **Stopka** (R1 analizy): `Biuro:` (adres poznański → link do map,
+  otwierany po kliknięciu), `Godziny:`, `E-mail:` (slot `biuro`),
+  `Firma:` (nazwa rejestrowa, siedziba, NIP, REGON — dane z `BUSINESS`
+  w `src/lib/jsonld.ts`, pola `seat*`). Rok © z `BUILD_NOW`. Mobile ma
+  przyciski „Zadzwoń"/„Napisz" ze slotami `data-fill="href"` (bez JS
+  prowadzą na `/kontakt/`); desktop — telefon + CTA. Etykiety danych
+  α .7 (design .45 nie trzyma AA). `.ft a { color:#fff }` ma wyższą
+  specyficzność niż klasa przycisku — kolor tekstu przycisku
+  miedzianego ustawiaj przez `.ft .ft-btn--call`.
 - Firma nie ma profili w mediach społecznościowych — chrome nie ma
-  sekcji social.
+  sekcji social. Teksty-drafty oznaczone `PLACEHOLDER` w kodzie
+  (lista w `docs/analiza-chrome.md` §7).
 
 ## Dane kontaktowe (antyscraping)
 
