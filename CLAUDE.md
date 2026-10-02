@@ -622,7 +622,24 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   nawigacja (a) renderowana przez wyspę z propsa `nav` (rodzaje
   i lokalizacje liczone w Astro) w naturalnej kolejności DOM, `order`
   usunięte; CLS lokalnie 0,000 na obu stronach ofert; nowy test e2e
-  (kolejność DOM = ekran, `order` = 0, mobile 390 px). (c) = sheety
+  (kolejność DOM = ekran, `order` = 0, mobile 390 px). PR #17 zmergowany
+  2026-10-02 19:29 UTC, `prod-smoke` zielony; CLS na main OK, ale job
+  `lighthouse` na main CZERWONY ponownie — R27: TBT mobile na `/oferty/`
+  485 ms > 150 ms (ten sam kod na PR #17: 146 ms, na PR #16: 14 ms;
+  zadanie hydratacji wyspy na runnerze 64 → 196 → ~535 ms w trzech
+  biegach; lokalnie przy 4× CPU mediana TBT 23 ms przed i 19 ms po
+  poprawce, zadanie ~70 ms). Próg TBT 150 był ręcznym minimum z mediany
+  0 (szkielet bez JS) — wyspa to pierwszy realny JS, więc wg reguły
+  ratchetu: pomiar `lhci-measure.yml` na main (5 przebiegów) → próg
+  z median = decyzja Mateusza, osobny commit (pierwsze zadanie sesji (c),
+  prompt ją o to prosi). POMIAR 2026-10-02 19:43 UTC (sesja (c), main po
+  #17, 5 × 2 configi): mobile `/oferty/` TBT 31/40/47/54/456 → mediana
+  47 ms, lista rodzaju 5/22/24/24/62 → 24 ms; desktop 0 ms wszędzie;
+  `script` 26 054 B (87 % bramki); CLS 0,000; LCP mobile 2 360 ms.
+  Progi TBT (decyzja Mateusza: zapas ponad fałszywe czerwienie
+  runnera — odstający 456 i main 485 jako mediana): mobile 150 → 600,
+  desktop 100 → 300 — PR `chore/lhci-tbt` (numer do dopisania).
+  (c) = sheety
   mobile, Filtruj/Sortuj, siatka/lista, stany brzegowe (prompt lokalny
   `docs/plan/prompt-etap-4-2c.md`). Porządek po cronie: bieg 2026-10-03
   — do dopisania (w chwili końca sesji (b) nie wystąpił).
