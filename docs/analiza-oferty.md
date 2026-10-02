@@ -785,5 +785,171 @@ w każdym punkcie z promptu; porządek po cronie ma pierwszeństwo.
   main (485 jako mediana z 5) leżą powyżej — decyzja Mateusza: zapas
   ponad fałszywe czerwienie runnera, mobile 150 → **600 ms** (≈ 1,15 ×
   najgorszy przebieg, granica „poor" Google), desktop 100 → **300 ms**
-  (mediana 0, reguła) — PR `chore/lhci-tbt` (numer do dopisania po
-  merge'u).
+  (mediana 0, reguła) — PR #18, zmergowany 2026-10-02 20:21 UTC.
+
+## 13. Plan (c) — mobile, sheety, siatka/lista, stany brzegowe (`feat/oferty-mobile`)
+
+> **Status:** plan ZAAKCEPTOWANY 2026-10-02 (rekomendacje 13.2–13.4
+> przyjęte w całości); realizacja w tej samej sesji. Zakres: §0 (c)
+> + §12.7. Progi TBT rozstrzygnięte osobno (R27, PR #18).
+
+### 13.1 Co powstaje
+
+| Plik | Rola |
+| --- | --- |
+| `src/components/offers/sheets.tsx` (nowy, **dynamiczny `import()`**) | powłoki sheetów „Filtry" i „Sortuj" (`#ol-sheet-filters`, `#ol-sheet-sort`: scrim, panel `data-overlay-panel`, uchwyt `data-overlay-drag`, `h2` + X `data-overlay-close`, kontener treści) budowane w `<body>` przy pierwszym otwarciu; `FiltersSheet` (ten sam `SearchPanel` w wariancie `sheet` + sticky stopka Wyczyść / Pokaż N ofert) i `SortSheet` (dwie grupy segmentów + „Zastosuj", wybór tymczasowy) |
+| `SearchIsland.tsx` | pasek narzędzi < 1025 (`.ol-mtools`: „Filtruj" + „{bieżące sortowanie}"), host panelu `inline` / `sheet` z `matchMedia(1025)`, treść sheetu jako DRUGI root Preact (`render(vnode, mount)` w `useLayoutEffect`, `render(null)` po zamknięciu), `window.overlay.open/close` z `onClose`, przejście na ≥ 1025 domyka sheet, przełącznik siatka/lista (`data-view` na `[data-offers-grid]`), stany `invalid` / błąd pobrania z „Ponów", prefetch chunku sheetów przy pierwszym `touchstart`/`pointerdown` poniżej progu |
+| `search-panel.tsx` | prop `variant: "inline" \| "sheet"` (sheet: pola jedno pod drugim, większe kontrolki, „Więcej filtrów" jako pełny wiersz z podpowiedzią, bez akcji w siatce), eksport `PanelActions`, `aria-busy` + podpowiedź statusu na polu opisu podczas pobierania tekstów, „Pokaż" bez liczby po błędzie pobrania |
+| `combobox.tsx` | Esc przy otwartych podpowiedziach zatrzymuje propagację (inaczej `overlay.ts` zamykałby cały sheet) |
+| `offers.css` | pasek narzędzi mobile, grupa desktop (przełącznik widoku + sortowanie), widok listy, style sheetów (`ols-*`), bloki `invalid` / błąd; nawigacja (a) ukryta pod JS |
+| `OffersListPage.astro` | `<noscript>`: chowa pasek narzędzi mobile i grupę desktop, odkrywa nawigację (a) |
+| `offers-ui.ts`, `site-config.ts` | teksty sheetów, widoku, stanów brzegowych (nowe = PLACEHOLDER); `OFFERS_LIST_VIEW` (domyślny widok) |
+| `tests/helpers/breakpoint.ts` | wartość oczekiwana `absent` (element nie istnieje po danej stronie progu) |
+| `tests/e2e/oferty-mobile.spec.ts` (nowy), `oferty-wyspa.spec.ts`, `oferty.spec.ts`, `tests/visual/oferty.spec.ts` | 13.5 |
+
+Nietknięte: `overlay.ts` (używamy API), `filters.ts` (bez nowej reguły),
+`OfferCard.tsx`, `data.ts`, `schema.ts`, `enums.ts`, chrome, sync,
+fixture, `lighthouserc*.cjs` (po PR #18).
+
+### 13.2 Sheety a Preact (uzasadnienie)
+
+- Sheety są POZA drzewem vdom wyspy: `overlay.ts` przenosi każdy
+  `[data-overlay]` do `<body>` (`portalize`), a Preact przy kolejnym
+  renderze wstawiałby węzeł z powrotem na swoje miejsce; węzeł w SSR
+  wewnątrz wyspy psułby też hydratację. Powłoki buduje `sheets.tsx`
+  bezpośrednio w `<body>` (statyczny HTML bez treści z CRM), treść
+  renderuje Preact jako osobny root do kontenera powłoki.
+- **Jeden `SearchPanel`, zero duplikatu:** SSR renderuje panel inline
+  zawsze (hydratacja bez mutacji na desktopie; < 1025 `display:none`).
+  Po montażu host = `matchMedia(1025)`: poniżej progu panel inline jest
+  odmontowany (niewidoczny → zero CLS), a ten sam komponent z tym samym
+  draftem i tymi samymi id renderuje się w sheecie. ≥ 1025: sheet
+  domknięty, panel inline wraca.
+- Mechanika (Esc, X, scrim, swipe-down z uchwytu i z treści na górze,
+  focus-trap, blokada scrolla `body{position:fixed}` z powrotem pozycji,
+  reset `scrollTop`) w całości z `overlay.ts`; wyspa dostaje `onClose`
+  i tylko zeruje swój stan. Pasek Navbara zamraża się sam (`frozen()`).
+- Chunk sheetów ładowany dynamicznie: zero bajtów w pomiarze LHCI
+  (prefetch dopiero po pierwszym dotknięciu / wskaźniku, nie w idle).
+
+### 13.3 Rozstrzygnięcia
+
+| # | Rozjazd | Rozstrzygnięcie |
+| --- | --- | --- |
+| R28 | Nawigacja (a) na mobile po wejściu sheetów | **Znika pod JS** (design mobilny: pasek narzędzi → karty; sheet przejmuje typ, transakcję i lokalizację; blok zajmował 200–400 px nad pierwszą kartą). Zostaje w DOM dla `<noscript>` i crawlera |
+| R29 | Widok domyślny desktop: parytet „lista" vs design „siatka" | **Siatka** (parytet to wartość, design = wygląd). Stan NIETRWAŁY: odczyt `sessionStorage` po hydratacji dawałby skok siatka → lista u realnych użytkowników, a powrót z detalu przywraca stan przez bfcache. Domyślny widok w `OFFERS_LIST_VIEW` |
+| R30 | „Wyczyść" w sheecie | zeruje draft i stosuje (R20), sheet ZOSTAJE otwarty (licznik pokazuje komplet) |
+| R31 | Sheet „Sortuj" | wybór tymczasowy, „Zastosuj" stosuje i zamyka; Esc / X / scrim / swipe porzuca (parytet designu `pendSort`) |
+| R32 | Teksty stanów brzegowych (nieznany typ/transakcja, błąd pobrania, pobieranie opisów, „Więcej filtrów" z podpowiedzią) | brak w bazie wiedzy i designie (poza podpowiedzią) → PLACEHOLDER (U9) w `offers-ui.ts` |
+| R33 | Panel inline pod progiem nie istnieje | `expectBreakpointFlip` dostaje wartość `absent`; kontrakt progu: `.ol-mtools` flex/none, `.ol-view` none/flex, `.op` absent/block, `.ol-sort` none/block |
+
+### 13.4 Stany brzegowe
+
+- `invalid` (nieznany `?typ=`/`?transakcja=`) → blok `[data-offers-invalid]`
+  z komunikatem i linkiem „Wszystkie oferty" zamiast ogólnego zera wyników.
+- Błąd pobrania `index.json` / `index-text.json` → blok `[data-offers-error]`
+  z „Ponów" zamiast skeletonu i zamiast cichego fallbacku na wyniki
+  z puli trasy (mylące); „Pokaż" bez liczby, dopóki danych nie ma.
+- Pole opisu podczas pobierania tekstów: `aria-busy` + podpowiedź
+  statusu (`role="status"`).
+- `?strona=` ujemne / tekst → 1 (parser z (a)) — tylko test.
+- Zły slug lokalizacji / rodzaju → 404 Astro (SSG; bez zmian).
+
+### 13.5 Testy
+
+- **E2E `oferty-mobile.spec.ts`** (`chromium-pixel-5`, `webkit-iphone-14`;
+  tablet przez `setViewportSize(900)`): pasek narzędzi widoczny, panel
+  inline nieobecny, nawigacja (a) ukryta; „Filtruj" otwiera sheet
+  (`role=dialog`, `h2`), zamknięcie przez X / Esc / scrim / swipe-down;
+  focus-trap (Tab zostaje w sheecie); `body{position:fixed}` i powrót
+  pozycji scrolla; „Pokaż" = `runSearch` + adres + zamknięcie, draft
+  wspólny (ponowne otwarcie pokazuje wciśniętą pigułkę); „Więcej filtrów"
+  w sheecie; „Sortuj" → „Zastosuj" vs porzucenie (adres, etykieta
+  przycisku, kolejność); przejście na desktop domyka sheet i przywraca
+  panel inline; pigułki statusu i paginacja na mobile; tablet: karty
+  w wierszu + sheet; flip progu (R33); zero żądań trzecich po
+  interakcjach; axe z otwartym sheetem filtrów i sortowania.
+- **E2E `oferty-wyspa.spec.ts`** (1920): przełącznik siatka/lista
+  (kolumny siatki ↔ wiersz `.oc-link`, `aria-pressed`), stany brzegowe
+  (`?typ=zamek` → `[data-offers-invalid]`; `page.route` abort →
+  `[data-offers-error]` → „Ponów" → lista = `runSearch`; `?strona=-1`,
+  `?strona=abc` → strona 1); adaptacja kolejności DOM (bez panelu
+  na 390 px) i flipu progu. `oferty.spec`: nawigacja (a) w DOM, ukryta
+  pod JS, `<noscript>` w surowym HTML.
+- **Visual `oferty.spec.ts`**: `oferty-sheet-filtry`, `oferty-sheet-sortuj`
+  (zrzut strony z otwartym sheetem, profile mobilne), `oferty-tools-mobile`
+  (element `.ol-tools`, mobile), `oferty-list-view-list` (fullPage
+  po przełączeniu na listę, desktop). Rozjadą się fullPage `oferty-list`,
+  `oferty-list-location`, `oferty-list-filtered`, `oferty-zero` na
+  WSZYSTKICH profilach (mobile: pasek narzędzi zamiast nawigacji;
+  desktop: przełącznik widoku w pasku) — zamierzone; `oferty-card`,
+  `oferty-panel`, `oferty-panel-more`, `chrome`, `not-found` bez ruchu.
+
+### 13.6 Budżet
+
+Pomiar jak §12.5 po `build:visual`: osobno runtime, kod wyspy i chunk
+sheetów (ładowany poza pierwszym malowaniem). Prognoza: wyspa +2–3 KB
+brutto, sheety ~5 KB brutto w osobnym chunku; `script` LHCI ≈ 27 KB
+z 30 KB. Przekroczenie bramki = stop i zgłoszenie.
+
+### 13.7 Uzupełnienia po implementacji (c)
+
+- **Budżet (pomiar §12.5, `pnpm build:visual`, `dist/oferty/`):**
+
+  | Plik | Rola | brutto | gzip -9 |
+  | --- | --- | --- | --- |
+  | `SearchIsland.*.js` | kod wyspy (+ pasek narzędzi, host panelu, przełącznik widoku, stany brzegowe, drugi root) | 38 236 B (było 32 794) | 13 608 B (było 11 898) |
+  | `preact.module` + `hooks.module` + `client` | runtime | 15 955 B | 7 056 B |
+  | **wyspa + runtime** | | **54 191 B** | **20 664 B** |
+  | chrome (Navbar, Footer, `contact-details`, `site-config`) | bez zmian | 8 101 B | 3 342 B |
+  | **razem `script` na `/oferty/`** | | **62 471 B** | **24 153 B** |
+  | `sheets.*.js` | chunk sheetów — dynamiczny `import()`, poza pierwszym ładowaniem | 2 287 B | 1 059 B |
+  | `signals.module` | emitowany, nieładowany | 7 915 B | — |
+
+  LHCI lokalnie (1 przebieg, oba configi, asercje czyste): `script` na
+  `/oferty/` = **28 223 B = 94 % bramki 30 000 B** (po (b): 25 889 B,
+  86 %); `total` 299 KB mobile / 482 KB desktop; TBT 41 ms mobile,
+  0 desktop; CLS 0,000; LCP mobile 2 350 ms, desktop 524 ms. **Kolejny
+  skrypt widoku (lightbox 4.3, hero 4.4) nie zmieści się w bramce
+  `script`** — decyzja o progu PRZED 4.3 (zbliżenie zgłoszone już po (b)).
+  HTML `/oferty/` na fixture: 96,5 KB brutto / 13,6 KB gzip (`props`
+  28 434 znaków — przyrost wobec (b) to prop `nav` z R26).
+- **`oferty-card` na profilach mobilnych rozjechał się bez zmiany karty:**
+  nowy pasek narzędzi ma inną wysokość niż blok nawigacji (a), więc karta
+  leży na innej ułamkowej pozycji y — zrzut elementu różni się
+  antyaliasingiem całej treści (diff pokazuje kontury wszystkiego).
+  Regeneracja zamierzona, nie regres.
+- **Komentarz we frontmatterze `.astro` z `<` ze spacją** („sheety
+  < 1025") rozstraja kompilator Astro: `astro check` zgłasza `any`
+  w zupełnie innych liniach pliku. Lekcja w `sections.md`.
+- **Test błędu pobrania `index.json`** musi przejść przez panel: na liście
+  rodzaju żaden parametr adresu nie wymaga pełnego indeksu (typ
+  i transakcja idą ze ścieżki), wymaga go dopiero zmiana rodzaju
+  w panelu — stąd scenariusz „Wszystkie" typy → „Pokaż" bez liczby →
+  `[data-offers-error]` → „Ponów".
+- **axe przy otwartym sheecie** skanuje sam dialog (`include`) po wjeździe
+  (600 ms): treść pod scrimem liczy kontrast przez nakładkę, a w trakcie
+  przejścia `opacity` scrimu zaniżało kontrast elementów samego sheetu.
+- **WebKit a focus-trap:** Tab w WebKit pomija przyciski (jak
+  w `navigation.spec`) — test focus-trapu biegnie na `chromium-pixel-5`.
+- PLACEHOLDER (U9) nowe w (c): podpowiedź „pokoje, piętro, rok budowy,
+  rynek, winda…" (design), status „Wczytujemy opisy ofert…", teksty
+  `EDGE` (nieznany rodzaj, błąd pobrania) w `offers-ui.ts`.
+
+### 13.8 Co sprawdzić na fizycznym telefonie (po (c))
+
+1. Sheet „Filtry": swipe-down za uchwyt i z treści przewiniętej na górę
+   (gest NIE może odświeżać strony); przewijanie treści sheetu nie
+   przewija strony pod spodem; pozycja listy wraca po zamknięciu.
+2. Klawiatura ekranowa nad polami liczbowymi (`inputmode=numeric`)
+   i nad lokalizacją — podpowiedzi widoczne nad klawiaturą, bez zoomu
+   (podłoga 16 px); Safari: zwijany toolbar a sticky stopka Wyczyść /
+   Pokaż (`env(safe-area-inset-bottom)`).
+3. „Pokaż N ofert" zamyka sheet i lista się odświeża bez skoku;
+   pigułki statusu przewijane palcem.
+4. Sheet „Sortuj": segmenty tapnięciem, „Zastosuj" zmienia etykietę
+   przycisku; zamknięcie X / scrim / swipe nie zmienia sortowania.
+5. Tablet (iPad): przyciski Filtruj / Sortuj w jednym wierszu, karty
+   w wierszu, sheet na pełną szerokość.
+6. Obrót ekranu z otwartym sheetem (iPad w poziomie ≥ 1025 → sheet ma
+   się domknąć, panel inline pojawić).

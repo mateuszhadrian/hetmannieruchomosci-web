@@ -638,11 +638,59 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   `script` 26 054 B (87 % bramki); CLS 0,000; LCP mobile 2 360 ms.
   Progi TBT (decyzja Mateusza: zapas ponad fałszywe czerwienie
   runnera — odstający 456 i main 485 jako mediana): mobile 150 → 600,
-  desktop 100 → 300 — PR `chore/lhci-tbt` (numer do dopisania).
+  desktop 100 → 300 — PR #18 zmergowany 2026-10-02 20:21 UTC, `prod-smoke` zielony.
   (c) = sheety
   mobile, Filtruj/Sortuj, siatka/lista, stany brzegowe (prompt lokalny
   `docs/plan/prompt-etap-4-2c.md`). Porządek po cronie: bieg 2026-10-03
   — do dopisania (w chwili końca sesji (b) nie wystąpił).
+
+- **Etap 4 / 4.2 (c) (`/oferty/`: mobile, sheety, siatka/lista, stany
+  brzegowe) — W TOKU** (2026-10-02, gałąź `feat/oferty-mobile`, plan §13
+  w `docs/analiza-oferty.md` zaakceptowany z rekomendacjami; kod
+  i testy gotowe lokalnie, ZOSTAŁO: workflow baseline'ów linux, baseline'y
+  darwin, PR, merge, `prod-smoke`): `src/components/offers/sheets.tsx`
+  (chunk z dynamicznego `import()`; powłoki `#ol-sheet-filters` /
+  `#ol-sheet-sort` budowane w `<body>` przy pierwszym otwarciu, treść
+  jako drugi root Preact `render(vnode, mount)`; `FiltersSheet` = ten
+  sam `SearchPanel` w wariancie `sheet` + sticky stopka Wyczyść / Pokaż N
+  ofert; `SortSheet` z wyborem tymczasowym + „Zastosuj"); mechanika
+  sheetów w całości z `overlay.ts` (`window.overlay.open/close`,
+  `onClose`), bez zmian w nim; `SearchIsland.tsx`: host panelu
+  `inline`/`sheet` z `matchMedia(1025)` (poniżej progu panel inline
+  odmontowany — jeden `SearchPanel`, te same id), pasek narzędzi
+  `.ol-mtools` („Filtruj", „{sortowanie}" z `[data-sort-current]`),
+  grupa desktop `.ol-dtools` (przełącznik siatka/lista `data-view` na
+  `[data-offers-grid]`, czysto CSS, domyślnie `OFFERS_LIST_VIEW = "grid"`
+  w `site-config.ts`, stan nietrwały — R29), stany brzegowe
+  (`[data-offers-invalid]` z linkiem do `/oferty/`, `[data-offers-error]`
+  z „Ponów" zamiast cichego fallbacku, „Pokaż" bez liczby po błędzie,
+  pole opisu `aria-busy` + status), prefetch chunku sheetów po pierwszym
+  `touchstart`/`pointerdown` < 1025; nawigacja (a) pod JS UKRYTA na
+  każdej szerokości (R28; `<noscript>` ją odkrywa, chowa pasek narzędzi
+  i grupę desktop); combobox zatrzymuje Esc przy otwartych
+  podpowiedziach; `offers-ui.ts` + teksty sheetów, widoku i `EDGE`
+  (PLACEHOLDER U9); `tests/helpers/breakpoint.ts` + `ABSENT`.
+  Rozstrzygnięcia R28–R33 w §13.3. Testy: e2e nowy `oferty-mobile.spec.ts`
+  (20 testów, `chromium-pixel-5` + `webkit-iphone-14`, tablet przez
+  `setViewportSize`), `oferty-wyspa` +5 (widok, stany brzegowe) i 2
+  zaadaptowane, `oferty.spec` 1 zaadaptowany; visual +4
+  (`oferty-tools-mobile`, `oferty-sheet-filtry`, `oferty-sheet-sortuj`
+  — mobile; `oferty-list-view-list` — desktop) = 42 PNG na platformę.
+  Weryfikacja lokalna: format/lint/typecheck, unit 372 (+2 skip),
+  build 89 stron, `test:dist` 6/6, e2e 335 (+415 skip profili) na 6
+  profilach, axe 0 naruszeń (także z otwartymi sheetami);
+  `test:visual` 45 czerwonych OCZEKIWANYCH (12 nowych bez baseline'u +
+  33 rozjazdy: 5 fullPage × 6 profili z paskiem narzędzi / przełącznikiem
+  oraz `oferty-card` ×3 mobile przez ułamkowe przesunięcie karty pod
+  nowym paskiem), `chrome` i `not-found` bez ruchu. BUDŻET (§13.7):
+  wyspa 38,2 KB brutto / 13,6 KB gzip, z runtime 54,2 / 20,7 KB, cały
+  `script` 62,5 / 24,2 KB; chunk sheetów 2,3 KB poza pierwszym
+  ładowaniem; LHCI lokalnie `script` 28 223 B = **94 % bramki 30 000 B**
+  (asercje czyste; TBT 41 ms, CLS 0, LCP mobile 2 350 ms) — kolejny
+  skrypt widoku NIE zmieści się bez decyzji o progu (przed 4.3).
+  Lekcja: komentarz frontmatteru `.astro` z `<` ze spacją psuje
+  `astro check` (sections.md). Porządek po cronie: bieg 2026-10-03 —
+  do dopisania (patrz wpis S2c; w chwili końca sesji nie wystąpił).
 
 ## Dokumentacja
 
