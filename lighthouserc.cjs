@@ -4,11 +4,16 @@
 //
 // Mierzony jest build z FIXTURE (`pnpm build:visual` w jobie lighthouse) —
 // treść zamrożona, więc budżet nie pływa z nocnym syncem.
-// STAN: progi LUŹNE, TYMCZASOWE do czasu wpisu median z pomiaru na
-// runnerze CI (workflow lhci-measure.yml → scripts/lhci-median.mjs,
-// 5 przebiegów; próg LCP = max(mediana ×1,15; mediana + 1,3 s)). Od wpisu
-// median działają jak RATCHET: zacieśnianie wyłącznie decyzją Mateusza,
-// osobnym commitem, po ponownym pomiarze w CI.
+// BUDŻETY = RATCHET od pomiaru bazowego na runnerze CI (lhci-measure.yml,
+// 5 przebiegów, 2026-10-02, szkielet Etapu 3; mediany identyczne dla
+// trzech adresów): perf 1.00, LCP 1 808 ms, TBT 0 ms, CLS 0,0017,
+// script 4 KB, total 130 KB, fonty 4 pliki / 67 KB.
+// Reguły progów: LCP = max(mediana ×1,15; mediana + 1,3 s) zaokrąglone
+// w górę (wariancja runnera); TBT z mediany 0 dostaje ręczne minimum;
+// wagi zasobów z zapasem na przyrost sekcji widoków (Etap 4 dokłada
+// zdjęcia kart i moduły nakładek) — mimo to każdy widok, który budżet
+// przekroczy, wymaga świadomej decyzji, nie cichego podniesienia.
+// Zmiana progu = decyzja Mateusza, osobny commit, po ponownym pomiarze.
 //
 // ⚠️ LOKALNY `lhci autorun` z tym configiem WYPADA GORZEJ NIŻ CI i to jest
 // normalne: emulacja mobile dokłada stały mnożnik CPU do hosta, więc wynik
@@ -34,17 +39,23 @@ module.exports = {
     assert: {
       aggregationMethod: "median-run",
       assertions: {
-        "categories:performance": ["error", { minScore: 0.7 }],
-        "largest-contentful-paint": ["error", { maxNumericValue: 6000 }],
-        "total-blocking-time": ["error", { maxNumericValue: 300 }],
-        "cumulative-layout-shift": ["error", { maxNumericValue: 0.1 }],
-        "resource-summary:script:size": ["error", { maxNumericValue: 60000 }],
-        "resource-summary:total:size": ["error", { maxNumericValue: 1500000 }],
+        "categories:performance": ["error", { minScore: 0.9 }],
+        // mediana 1 808 ms + 1 300 ms = 3 108 → 3 200
+        "largest-contentful-paint": ["error", { maxNumericValue: 3200 }],
+        // mediana 0 ms — minimum ręczne (szkielet bez JS widoku)
+        "total-blocking-time": ["error", { maxNumericValue: 150 }],
+        // mediana 0,0017 — połowa progu „good" Google
+        "cumulative-layout-shift": ["error", { maxNumericValue: 0.05 }],
+        // mediana 4 KB; zapas na nakładki, wyszukiwarkę i galerię (Etap 4)
+        "resource-summary:script:size": ["error", { maxNumericValue: 30000 }],
+        // mediana 130 KB; zapas na zdjęcia kart listy i hero (Etap 4)
+        "resource-summary:total:size": ["error", { maxNumericValue: 1000000 }],
         // Cztery pliki: latin + polski subset dla dwóch krojów.
-        "resource-summary:font:count": ["warn", { maxNumericValue: 4 }],
-        // Fonty rosną wyłącznie wtedy, gdy ktoś świadomie doda krój albo
-        // poszerzy zakres znaków w scripts/subset-fonts.mjs.
-        "resource-summary:font:size": ["error", { maxNumericValue: 100000 }],
+        "resource-summary:font:count": ["error", { maxNumericValue: 4 }],
+        // mediana 67 KB → +10 % = 74 KB. Fonty rosną wyłącznie wtedy, gdy
+        // ktoś świadomie doda krój albo poszerzy zakres znaków
+        // w scripts/subset-fonts.mjs.
+        "resource-summary:font:size": ["error", { maxNumericValue: 76000 }],
       },
     },
     upload: { target: "temporary-public-storage" },
