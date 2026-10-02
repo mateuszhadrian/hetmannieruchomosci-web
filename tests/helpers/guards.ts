@@ -1,19 +1,37 @@
 // Strażniki wspólne dla testów Playwright.
 import { test, type Page } from "@playwright/test";
-import { offerRoutesFromFixture, readFixtureOffers } from "./offers";
+import { fixtureMediaPath } from "../../src/lib/img";
+import { listPath } from "../../src/lib/offers/urls";
+import { MEDIA_BASE } from "../../src/lib/site-config";
+import { offerRoutesFromFixture, readFixtureOffersTyped } from "./offers";
 
-/** Ile ofert ma zamrożony zestaw testów wizualnych
- *  (tests/fixtures/offers). Przez helper — fixture może jeszcze nie
- *  istnieć, a goły odczyt wywracałby WSZYSTKIE specy przy ładowaniu
- *  modułu (reguła testing.md). */
-const FIXTURE_OFFERS = readFixtureOffers().length;
+/** Zamrożony zestaw testów wizualnych (tests/fixtures/offers). Przez
+ *  helper — fixture może jeszcze nie istnieć, a goły odczyt wywracałby
+ *  WSZYSTKIE specy przy ładowaniu modułu (reguła testing.md). */
+const FIXTURE_OFFERS = readFixtureOffersTyped();
 
 /** Znacznik jednej karty oferty w HTML-u listy (szkielet S2c i widok
  *  4.2 niosą `data-offer-card="{numer}"`). Sprawdzana strona: pierwsza
  *  lista typ×transakcja z fixture'u — `/oferty/` do Etapu 4.2 jest
  *  szkieletem bez kart. */
-const OFFER_CARD_MARKER = /data-offer-card=/g;
+const OFFER_CARD_MARKER = /data-offer-card="([^"]+)"/g;
 const FIXTURE_LIST_PATH = offerRoutesFromFixture().lists[0];
+
+/** Zaślepka 1×1 GIF zamiast zdjęć z zasobnika — testy funkcjonalne nie
+ *  wykonują żądań do sieci (testing.md); w trybie fixture obrazy są
+ *  lokalne i reguła nic nie łapie. */
+const PIXEL_GIF = Buffer.from("R0lGODlhAQABAAAAACw=", "base64");
+
+/** Rejestruje `beforeEach` przechwytujący żądania do hosta mediów
+ *  (`MEDIA_BASE`) — dla speców, które otwierają trasy ofert. */
+export function useMediaStub(): void {
+  if (!MEDIA_BASE) return;
+  test.beforeEach(async ({ page }) => {
+    await page.route(`${MEDIA_BASE}/**`, (route) =>
+      route.fulfill({ status: 200, contentType: "image/gif", body: PIXEL_GIF }),
+    );
+  });
+}
 
 /** Strażnik preview: testy biegają na buildzie produkcyjnym (pnpm preview),
  *  NIGDY na dev serverze. Astro dev wstrzykuje klienta Vite — wykrywamy go
@@ -53,26 +71,52 @@ export function usePreviewGuard(): void {
  *  (zmieniają się co noc bez PR-a) i każdy zrzut listy, liczników i detalu
  *  rozjeżdża się co do piksela. Bez tego strażnika objawem jest pixel-diff,
  *  z nim — jedno czytelne zdanie.
+ *  Dwa dowody (Etap 3): (1) zbiór numerów kart na pierwszej liście
+ *  typ×transakcja = numery ofert fixture'u na tej liście — sama LICZBA kart
+ *  nie wystarcza, bo lista z `data/` o tej samej liczności przeszłaby;
+ *  (2) lokalna kopia pierwszego zdjęcia (`/media/…webp`) odpowiada 200 —
+ *  tylko `build:visual` kopiuje media fixture'u do dist (tryb fixture
+ *  = zero żądań do sieci).
  *  Dopóki fixture nie istnieje (Etapy 0–2), nie ma czego pilnować. */
 export async function assertVisualFixture(page: Page): Promise<void> {
-  if (FIXTURE_OFFERS === 0 || !FIXTURE_LIST_PATH) return;
+  if (FIXTURE_OFFERS.length === 0 || !FIXTURE_LIST_PATH) return;
+  const hint =
+    "Odpal: pnpm build:visual && pnpm test:visual (zwykły pnpm build " +
+    "wciąga dane produkcyjne i rozjeżdża baseline'y).";
   const res = await page.request.get(FIXTURE_LIST_PATH);
   if (!res.ok()) {
     throw new Error(
       `Testy wizualne wymagają buildu na zamrożonej treści: lista ` +
         `${FIXTURE_LIST_PATH} z fixture'u nie istnieje w dist ` +
-        `(HTTP ${res.status()}). Odpal: pnpm build:visual && pnpm test:visual.`,
+        `(HTTP ${res.status()}). ${hint}`,
     );
   }
   const html = await res.text();
-  const cards = (html.match(OFFER_CARD_MARKER) ?? []).length;
-  if (cards === 0 || cards > FIXTURE_OFFERS) {
+  const cards = [...html.matchAll(OFFER_CARD_MARKER)].map((m) => m[1]).sort();
+  const expected = FIXTURE_OFFERS.filter(
+    (o) => listPath(o, { withLocation: false }) === FIXTURE_LIST_PATH,
+  )
+    .map((o) => o.number)
+    .sort();
+  if (cards.join(",") !== expected.join(",")) {
     throw new Error(
       `Testy wizualne wymagają buildu na zamrożonej treści: ${FIXTURE_LIST_PATH} ma ` +
-        `${cards} kart, a tests/fixtures/offers ma ${FIXTURE_OFFERS} ofert. ` +
-        `Odpal: pnpm build:visual && pnpm test:visual (zwykły pnpm build ` +
-        `wciąga dane produkcyjne i rozjeżdża baseline'y).`,
+        `karty [${cards.join(", ")}], a fixture przewiduje [${expected.join(", ")}]. ${hint}`,
     );
+  }
+  const photo = FIXTURE_OFFERS.flatMap((o) => o.photos)[0];
+  if (photo) {
+    const media = await page.request.get(fixtureMediaPath(photo.r2Key));
+    if (
+      !media.ok() ||
+      !/image\/webp/.test(media.headers()["content-type"] ?? "")
+    ) {
+      throw new Error(
+        `Testy wizualne wymagają buildu na zamrożonej treści: lokalna kopia ` +
+          `zdjęcia fixture'u nie odpowiada (HTTP ${media.status()}) — dist nie ` +
+          `pochodzi z build:visual (brak dist/media/). ${hint}`,
+      );
+    }
   }
 }
 
