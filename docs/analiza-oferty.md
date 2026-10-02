@@ -1,0 +1,495 @@
+# Mini-analiza 4.2 — `/oferty/` (lista, wyszukiwarka, indeks JSON, SSG kombinacji)
+
+> **Status:** ZAAKCEPTOWANA 2026-10-02 (wszystkie rekomendacje §5 i §8),
+> część (a) ZREALIZOWANA na gałęzi `feat/oferty` (uzupełnienia po
+> implementacji: R17, §3 pkt 13 i §11). Część 4.2 Etapu 4 wg instrukcji
+> wykonawczej (dokument lokalny, `docs/plan/`) — tabela 4.2, „Kontrakty
+> zachowania", „Zasada rozjazdów". Referencja wyglądu:
+> `docs/design/export/oferty.html`, `assets/css/site.css` (sekcja Oferty),
+> `assets/js/site.js` §5 (wyłącznie UI — makieta nie filtruje, nie
+> stronicuje i nie czyta adresu). Baza wiedzy — odsyłacze sekcją, bez
+> cytowania: part2 §4 (zachowanie), §9 (hybryda), §12 (inwentarz), §3
+> (model); part3 §4.2 (lokalizacje), §7.2 (indeks), §2.4–2.6 (daty, cena,
+> typy), §3.1 (zdjęcia). Decyzje: D12, D15, D16, D29, D30, D31, O1, O3,
+> O5, O9.
+
+## 0. Podział na PR-y i zakres tej sesji
+
+Część 4.2 nie mieści się w jednym PR-ze (jedyna wyspa projektu, komplet
+17 filtrów, dwa tryby mobile/desktop, stany brzegowe). Podział:
+
+| PR  | Gałąź               | Zakres                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Wygląd po merge'u na `nowa.`                                                                                                                                                                      |
+| --- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| (a) | `feat/oferty`       | trasy SSG (`/oferty/` + typ × transakcja [× lokalizacja] tylko z ≥ 1 ofertą) w wyglądzie docelowym; **jeden komponent karty**; nagłówek z licznikiem; pigułki statusu z licznikami (SSR, bez interakcji); karty **wszystkie** (§5.3); sekcja CTA; `src/lib/offers/filters.ts` (czysta logika: parsowanie adresu, filtry, sortowanie, paginacja, liczniki) z testami unit; indeks `/oferty/index.json` + `/oferty/index-text.json` z testem kluczy; integracja Preact jako renderer SSR karty (§5.1); adres listy z fixture w `lighthouserc*.cjs`; specy e2e + visual (`tests/visual/oferty.spec.ts`); zero JS widoku | lista działa bez JS: wszystkie oferty danej trasy, linki do detali i do list SSG (typ, transakcja, lokalizacja) jako nawigacja; panel filtrów i sortowanie **jeszcze nie** (atrapy nie wchodzą) |
+| (b) | `feat/oferty-wyspa` | wyspa `SearchIsland.tsx` (desktop): panel podstawowy + rozszerzony, chipsy lokalizacji z autocomplete offline, pigułki statusu interaktywne, sortowanie, paginacja `?strona=N`, `pushState`/`popstate`, licznik „Pokaż N ofert", skeleton; wyspa woła wyłącznie `filters.ts`                                                                                                                                                                                                                                                             | pełna wyszukiwarka na desktopie; mobile ma listę i linki, bez sheetów                                                                                                                             |
+| (c) | `feat/oferty-mobile`| bottom sheety „Filtry" i „Sortuj" na `overlay.ts`, przyciski Filtruj/Sortuj, stan zero wyników (teksty part2 §4.3), zależność pól od typu w UI, przełącznik siatka/lista, stany brzegowe (nieznane parametry, strona poza zakresem, zły slug)                                                                                                                                                                                                                                                                                             | komplet 4.2                                                                                                                                                                                       |
+
+**Rekomendacja na TĘ sesję:** (a) do pełnego, zmergowalnego PR-a. Logika
+filtrów i indeks powstają już teraz (testowalne bez DOM), więc (b) jest
+czystym „podłączeniem UI". Start (b) w tej sesji tylko na Twoje „tak"
+(osobna gałąź od `feat/oferty`).
+
+## 1. Inwentarz z designu (`oferty.html`)
+
+Makieta ma dwie gałęzie DOM (`.br-m` ≤ 1024, `.br-d` ≥ 1025) i warianty
+`.vp-phone`/`.vp-tablet` — artefakt narzędzia, budujemy jeden markup.
+Kontener 1360 px, `1cqw ≈ 13,6 px` na desktopie. Motyw rogu: zaokrąglony
+WYŁĄCZNIE lewy dolny róg (karta 24 px, CTA 12–16 px); pigułki 999 px;
+inputy bez promienia.
+
+### 1.1 Nagłówek i pasek narzędzi
+
+| Element              | Desktop (≥ 1025)                                                                                      | Mobile                                                                         |
+| -------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Sekcja               | padding-top `96 + clamp(24,2.6cqw,48)`, boki `clamp(48,5cqw,120)`, tło `--bg`                         | padding-top pasek + `clamp(19.6,5.641cqw,29.3)`, boki `--pad`                  |
+| `h1` „Oferty"        | Manrope 600 `clamp(40,3.6cqw,56)`, lh 1, ls −0,02 em, `--navy`                                        | `clamp(28,8cqw,40)`, lh 1,05                                                   |
+| Licznik              | „Znaleziono **45 ofert**" 17 px `--muted`, `strong` `--navy` 600, do prawej, wyrównanie do dołu h1    | 15 px                                                                          |
+| Pasek narzędzi       | lewa: 3 pigułki statusu; prawa: przełącznik Siatka/Lista (44×44, obrys granat) + przycisk „Sortuj: Najnowsze" z listą (`role=listbox`, 4 opcje, ptaszek miedziany) | siatka 2 przycisków „Filtruj" / „{bieżące sortowanie}" (min-h 48, obrys granat), pod nimi pigułki statusu w rzędzie przewijanym poziomo do krawędzi |
+| Pigułka statusu      | h 44, padding 0 16, 15 px/600, licznik α .7 waga 500; wciśnięta = tło i obrys `--navy`, tekst biały; wyłączona = białe tło, obrys `rgba(24,58,107,.3)`, tekst granat 500 | identycznie                                                                    |
+
+### 1.2 Panel filtrów (desktop inline; mobile w bottom sheecie)
+
+Panel: białe pudełko, obrys `rgba(24,58,107,.1)`, promień `0 0 0 24`,
+siatka 12 kolumn (`gap 20/24`, padding `24 28`). Etykieta pola: 12 px,
+ls 0,12 em, wersaliki, 600, granat.
+
+| Pole (span)                 | Kontrolka                                                                                                           | Uwagi                                       |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| Typ nieruchomości (5)       | 5 pigułek h 40: Wszystkie · Mieszkanie · Dom · Działka · Komercyjny                                                 | etykieta → R1                               |
+| Transakcja (3)              | segment 3 pól (obrys granat, promień `0 0 0 12`): Wszystkie · Sprzedaż · Wynajem                                    |                                             |
+| Lokalizacja (4)             | input h 44 z lupą, placeholder „Miejscowość lub dzielnica"; chipy pod polem (h 36, granat, X w kółku)              | chip „Poznań" = preset → R3                 |
+| Cena (3), Powierzchnia (3)  | dwa inputy od/do, sufiks w polu („zł", „m²"), `inputmode=numeric`                                                    | „do 800 000" = preset → R3                  |
+| Akcje (6)                   | „Więcej filtrów" (tekst + chevron, `aria-expanded`), Wyczyść (obrys), Pokaż (miedź, promień `0 0 0 12`, hover `--copper-dark`) | „Pokaż" bez liczby → §3                     |
+| **Rozszerzony** (`#more-i`) | Ulica (input „np. Milczańska") · Pokoje (pigułki 1–5+) · Piętro od/do · Rok budowy od/do (sufiks „r.") · Rynek (segment Dowolny/Pierwotny/Wtórny) · Winda (Dowolnie/Tak/Nie) · Umeblowane (pigułki Dowolnie/Tak/Nie/Może/Częściowo) · Liczba pięter w budynku (input „do", sufiks „pięter") · Szukaj w opisie („np. garaż, ogród") · Numer oferty („np. SW376101") · Wyczyść + Pokaż | przy rozwinięciu przyciski z wiersza podstawowego znikają |
+
+Mobile (sheet „Filtry"): te same pola jedno pod drugim, większe (pigułki
+h 44, inputy h 48/16 px, chipy h 44); „Więcej filtrów" jako pełny wiersz
+z podpowiedzią „pokoje, piętro, rok budowy, rynek, winda…"; stopka sheetu
+sticky: Wyczyść + Pokaż (miedź, `1fr`). Sheet „Sortuj": dwie grupy
+segmentów (Data dodania: Najnowsze/Najstarsze; Cena: Rosnąco/Malejąco)
++ „Zastosuj" — wybór tymczasowy do zatwierdzenia. Oba sheety: uchwyt
+40×4, nagłówek `h2` + X 44×44, scrim `#08101e` α .26, panel `max-height
+92%`, promień `18 18 0 0`.
+
+### 1.3 Karta oferty (jeden szkielet, cztery warianty)
+
+Karta = `<a>` na całość (aria-label „{kicker}: {tytuł}, {lokalizacja},
+{cena}[ — status]"), białe tło, obrys `rgba(24,58,107,.1)`, promień
+`0 0 0 24`, hover `translateY(-4px)` + cień `0 18px 40px rgba(24,58,107,.14)`
+(telefon bez hovera).
+
+| Strefa              | Design                                                                                                                                                                                                                 | Port                                                                                                         |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Zdjęcie             | `aspect-ratio 3/2`, tło `--bg-photo`, `background-image` cover; sprzedane: `grayscale(.55)` + nakładka `rgba(14,32,60,.42)`; brak zdjęć: ikona budynku + „Zdjęcia wkrótce"                                             | `<img>` z `imgAt(r2Key,"card")`, `width`/`height`, `loading=lazy`, `object-fit: cover`; grayscale NIE (R4)   |
+| Plakietki           | lewy górny róg, h 26, 12 px/600, ls 0,1 em, wersaliki, białe: Nowość `--navy`, Rezerwacja `--copper`, Sprzedane `--ink`                                                                                                 | + Wynajęte (R5), z `status`/`badges`/`isNewOffer`                                                            |
+| Ikony mediów        | prawy dolny róg, pastylki `rgba(14,32,60,.72)` + blur 8, h 26: aparat + liczba zdjęć, play („Film"), „360°"                                                                                                            | jak design; blur tylko na desktopie (koszt na mobile — §7)                                                   |
+| Kicker              | 12 px, ls 0,14 em, wersaliki, 600, `--copper`: „Mieszkanie na sprzedaż"                                                                                                                                                | `formatKind(mainType, transaction)` (R9)                                                                     |
+| Tytuł `h2`          | 600, lh 1,3, ls −0,01 em, **clamp 2 linie**; 19 px (siatka) / 22 px (lista) / `clamp(17,4.6cqw,21)` (telefon)                                                                                                          | `offer.title` jako tekst; pusty tytuł → `typeName` (dane: tytuły 0–50 znaków)                                 |
+| Lokalizacja         | pinezka miedziana 17 px + „Poznań, Malta · ul. Milczańska", 15 px `--slate`                                                                                                                                             | `formatLocation(offer.location)`                                                                             |
+| Fakty `ul`          | 1–4 pozycje, ikona 17 px granat + tekst 14 px (telefon 15 px), `gap 6/14`; mieszkanie/lokal: m² · pokoje · piętro („parter z 4") · rok; dom: m² · pokoje · rok · działka; działka: m²                                 | macierz per typ (§3.6), `format.ts`                                                                          |
+| Cena                | 700, ls −0,02 em, granat (sprzedane `--muted`); 26 px (siatka) / 28 (lista) / `clamp(22,6cqw,27)`; cena/m² 14 px `--muted`; siatka: jeden wiersz z linią nad; lista: kolumna prawa `min-width 200`                      | `formatPrice`/`formatPricePerM2`; „Zapytaj o cenę" (part3 §2.5); obniżka → §3                                |
+| Numer               | mono 12 px, ls 0,06 em, `--faint`                                                                                                                                                                                      | `offer.number`                                                                                               |
+| „0% prowizji"       | obrys miedziany h 24, 12 px/600                                                                                                                                                                                        | z `badges`                                                                                                   |
+
+Układy: siatka `repeat(auto-fill, minmax(max(272px,(100% − 48px)/3),1fr))`
+(maks. 3 kolumny, gap 24); lista: wiersz zdjęcie `clamp(280,30cqw,380)` +
+treść + kolumna ceny; tablet (768–1024) ZAWSZE wiersz (zdjęcie
+`clamp(260,36cqw,340)`); telefon (< 768) ZAWSZE jedna kolumna kart.
+
+### 1.4 Paginacja i CTA
+
+Paginacja: przyciski 44×44, 15 px/600, obrys `rgba(24,58,107,.25)`;
+bieżąca = granat; „Poprzednia"/„Następna" tylko ikonami z `aria-label`;
+skrajna wyłączona `#9a968f`; desktop wyśrodkowana, mobile `space-between`.
+Numery wszystkie (bez skracania) — zgodne z part2 §4.3.
+
+CTA „02 cta kontakt": zdjęcie `onas-cta` + gradient granatowy, eyebrow
+„Nie znalazłeś?" `--copper-light`, `h2` „Nie ma tu tego, czego szukasz?
+**Opisz nam to.**", akapit, przyciski „Zostaw kryteria" (miedź →
+`/kontakt/`) i „Zadzwoń" (obrys biały → slot `data-tel`, R11).
+
+### 1.5 Ikony
+
+19 inline'owych SVG `viewBox 0 0 24 24`, `stroke currentColor 1.75`,
+rozmiar z `font-size` rodzica: pinezka, narożniki (m²), aparat, drzwi
+(pokoje), kalendarz (rok), schodki (piętro), warstwy (działka), play,
+budynek, X, ptaszek, chevrony (↓ ← →), sortowanie, lupa, siatka, lista,
+suwaki. Port: jeden plik `src/components/offers/icons.ts` (funkcje
+zwracające ścieżki) używany przez kartę w Preact i przez komponenty
+`.astro`.
+
+## 2. Rozjazdy design ↔ baza wiedzy — rozstrzygnięcia
+
+| #   | Rozjazd                                                                                                                                                  | Rozstrzygnięcie                                                                                                                                                                                                                                                                                                 | Źródło                                 |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| R1  | Pigułka typu „Komercyjny"                                                                                                                                | **„Lokal komercyjny"** (także w kickerze karty i nagłówkach list) — `TYPE_LABEL` z `format.ts`                                                                                                                                                                                                                  | D16                                    |
+| R2  | Trzecia pigułka statusu „Sprzedane i wynajęte" (design) vs „Oferty archiwalne" (D12)                                                                     | **Decyzja Mateusza (M3a)** — rekomendacja w §5.2                                                                                                                                                                                                                                                                | D12, O1                                |
+| R3  | Presety w makiecie: Mieszkanie, Sprzedaż, chip Poznań, cena do 800 000, pokoje 3, wszystkie statusy wciśnięte                                            | **Bez presetów** na `/oferty/`; listy SSG mają typ, transakcję i lokalizację ze ścieżki. Stan statusów → M3b (§5.2)                                                                                                                                                                                              | O3, part2 §4.1                         |
+| R4  | Zdjęcie sprzedanej oferty w grayscale + ciemna nakładka                                                                                                  | **Bez grayscale i nakładki**: plakietka zostaje, zdjęcie bez zmian (stempel Esti na zdjęciu + plakietka wystarczą). Cena sprzedanych w `--muted` zostaje (prezentacja)                                                                                                                                           | O9                                     |
+| R5  | Design nie ma plakietki „Wynajęte" (ma tylko Sprzedane)                                                                                                  | **Dochodzi „Wynajęte"** dla `status === "wynajeta"`, styl jak „Sprzedane"                                                                                                                                                                                                                                       | part2 §3.1 (`status`), D12             |
+| R6  | Cena przy sprzedanych/wynajętych: design pokazuje                                                                                                        | Pokazujemy wg `SHOW_PRICE_WHEN_SOLD` (dziś `true`); `false` → wiersz ceny znika, numer zostaje                                                                                                                                                                                                                  | O5, `site-config.ts`                   |
+| R7  | Sortowanie po cenie przy „wszystkie transakcje" — makieta nie ma logiki                                                                                  | **Grupowanie**: rosnąco = wynajem (ceny miesięczne) przed sprzedażą, w grupach po cenie; malejąco = odwrotnie; „Zapytaj o cenę" zawsze na końcu                                                                                                                                                                 | part2 §9 (świadoma poprawka)           |
+| R8  | Paginacja mobile to martwe `<a href="#">`                                                                                                                | Prawdziwe linki `?strona=N` obsługiwane przez wyspę; bez JS wszystkie karty są w HTML (§5.3), więc paginacja jest ukryta                                                                                                                                                                                         | part2 §12                              |
+| R9  | Kicker karty = typ + transakcja („Dom na sprzedaż"), bez podtypu; obecna strona ma w podtytule `{Typ (podtyp)}`                                          | **Jak design** (podtyp trafia do detalu 4.3 i do pola `typeName` w indeksie) — to prezentacja karty, nie logika wyszukiwania                                                                                                                                                                                    | zasada 3 (design = wygląd)             |
+| R10 | Przycisk „Pokaż" bez liczby                                                                                                                              | Plan wymaga licznika na żywo → **„Pokaż N ofert"** z odmianą (`formatOffersCount`) — (b)                                                                                                                                                                                                                        | instrukcja 4.2 (wyspa)                 |
+| R11 | CTA „Zadzwoń" z jawnym `tel:` w HTML                                                                                                                     | Slot `a[data-tel][data-fill="href"]`, bez JS → `/kontakt/` (jak stopka)                                                                                                                                                                                                                                         | `contact-details.ts`, analiza 4.1 R2   |
+| R12 | Zdjęcie karty jako `div role=img` z `background-image` na pełny `_max`                                                                                   | `<img>` + `imgAt(r2Key, "card")`, `alt` z danych, `width`/`height` z manifestu, `loading="lazy"` (pierwsze 3 karty `eager` + `fetchpriority="high"` dla pierwszej — LCP listy)                                                                                                                                 | D29, stała techniczna 3                |
+| R13 | Wariant karty „Zdjęcia wkrótce"                                                                                                                          | Zostaje jako stan `photos.length === 0` (dane: 0 przypadków dziś, schemat dopuszcza pustą tablicę)                                                                                                                                                                                                              | odporność                              |
+| R14 | Winda „Nie" w designie jako zwykła opcja; dane: `elevators` undefined = brak danych, nie „nie"                                                           | „Nie" filtruje **wyłącznie `elevators === 0`** (jawna dana); brak danych nie jest ani „tak", ani „nie". Przy dzisiejszych danych „Nie" daje 0 wyników — to prawda o danych, nie błąd (pytanie 4 w §8)                                                                                                            | schemat `elevators`, D14 (nie wnioskować) |
+| R15 | Kolory tekstu designu (`#1c1b19`, `#2f3a4c`, `#6b6864`, `#8a867f`, `#9a968f`)                                                                            | Tokeny `--ink`, `--slate`, `--muted`, `--faint`; `#9a968f` (stan wyłączony) = nowy token `--disabled` w `global.css`                                                                                                                                                                                             | `docs/design/README.md`                |
+| R16 | Design: „Poznań, Malta · ul. Milczańska" (dzielnica po przecinku)                                                                                        | `formatLocation` daje dokładnie ten format; dla ofert bez dzielnicy „Kórnik · ul. Zwierzyniecka"; dla `placeName` z gminą poza Poznaniem bez dopisku `info` na karcie (jest w autocomplete)                                                                                                                      | part3 §4.2                             |
+| R17 | Kolory designu w drobnym druku: kicker i tag `--copper` (3,1:1), numer i stan bez zdjęć `--faint` (3,6:1), plakietka „Rezerwacja” biały na miedzi (3,1:1) — poniżej AA 4,5:1 | **Tokeny AA** (allowlista axe pusta): `--copper-text` #965d1c (5,4:1) dla kickera i tagu, `--muted` dla numeru i stanu bez zdjęć, plakietka „Rezerwacja” z tekstem `--ink` na miedzi (5,5:1). Ta sama zasada co R6 chrome’u | reguła a11y (`testing.md`) |
+
+Bez rozjazdu: 12 kart na stronę (part2 §4.3 = design 4 strony × 12),
+cztery sortowania (`newest`/`oldest`/`priceAsc`/`priceDesc` ↔ part2 §4.2
+`sort`), formaty cen i m² (part2 §3.4 = design), „parter" (format.ts),
+trzy pigułki statusu z licznikami (D12/O1 = design), filtry łączone AND.
+
+## 3. Czego design nie ma, a trzeba zbudować
+
+1. **Stan zero wyników** (part2 §4.3: nagłówek „Znaleziono 0 ofert",
+   komunikat i trzy podpowiedzi) — (c); na `/oferty/` przy zerze ofert
+   w danych (stan dopuszczalny builda) ten sam blok renderuje SSR w (a).
+2. **Skeleton** przy ładowaniu indeksu — (b); w (a) niepotrzebny (SSR).
+3. **Nagłówek i meta per lista SSG**: `h1` „Mieszkania na sprzedaż" /
+   „… — Poznań Winogrady", `<title>`, `description`; liczba mnoga typów
+   = nowa mapa `TYPE_LABEL_PLURAL` w `format.ts` (Mieszkania, Domy,
+   Działki, Lokale komercyjne).
+4. **Linki nawigacyjne bez JS** (zamiast panelu): w (a) pasek „typ" i
+   „transakcja" to zwykłe linki do list SSG (pigułki jak w designie, ale
+   `<a>`); lista lokalizacji danej kombinacji jako pastylki z licznikami
+   (`locations.json`). W (b) wyspa przejmuje te same elementy
+   (progressive enhancement, ten sam markup).
+5. **Obsługa parametrów URL** (`?strona`, filtry, sortowanie) — czysta
+   funkcja w (a) (`parseSearch`/`serializeSearch`), UI w (b).
+6. **Zależność pól od typu** (macierz; filtr nieadekwatny do typu jest
+   ignorowany, a w UI (c) ukryty):
+
+   | Pole                   | Mieszkanie | Dom | Działka        | Lokal komercyjny |
+   | ---------------------- | ---------- | --- | -------------- | ---------------- |
+   | powierzchnia (`area`)  | ✓          | ✓   | ✓ (= działka)  | ✓                |
+   | działka (`plotArea`)   | –          | ✓   | –              | –                |
+   | pokoje                 | ✓          | ✓   | –              | ✓                |
+   | piętro                 | ✓          | –   | –              | ✓                |
+   | liczba pięter          | ✓ („z N")  | ✓   | –              | ✓                |
+   | rok budowy             | ✓          | ✓   | –              | ✓                |
+   | winda                  | ✓          | –   | –              | ✓                |
+   | umeblowanie            | ✓          | –   | –              | –                |
+   | rynek                  | ✓          | ✓   | ✓              | ✓                |
+
+   Fakty na karcie wg tej samej macierzy (dom: m² · pokoje · rok ·
+   działka; działka: m²; mieszkanie/lokal: m² · pokoje · piętro · rok);
+   fakt bez danych znika, lista faktów ma 0–4 pozycje.
+7. **Plakietka „Wynajęte"** (R5) i **obniżka ceny**: przy
+   `previousPrice > price` poprzednia cena przekreślona obok ceny
+   (part3 §2.5; design nie ma) — w (a), bo karta jest jedna.
+8. **„Zapytaj o cenę"** na karcie (`price === null`): zamiast ceny, bez
+   wiersza cena/m² (fixture: SW372150 przez nadpisanie).
+9. **Liczniki pigułek statusu** liczone z OFERT BIEŻĄCEJ TRASY (lista
+   `mieszkanie-na-wynajem` liczy swoje), nie z całego zbioru.
+10. **Breadcrumbs** — nie w 4.2 (okruszki wchodzą z detalem 4.3; lista ma
+    nagłówek z kontekstem i link „Wszystkie oferty").
+11. **Autocomplete offline** z `info` dla miejscowości poza Poznaniem
+    (part3 §4.2) — (b).
+12. **Lokalizacja oferty → węzeł drzewa**: `offers.json` nie niesie id
+    węzła; algorytm ścieżki slugów żyje w `scripts/sync/locations.ts`
+    (`leafId`). Strona potrzebuje go do filtra prefiksowego →
+    `src/lib/offers/location-path.ts` (ta sama logika) + test
+    równoważności z funkcją syncu na danych syntetycznych, fixture
+    i `data/` (bez dotykania `scripts/sync/**`; przeniesienie źródła do
+    `src/lib` i import w syncu = propozycja osobnego, małego PR-a, §8).
+
+13. **Nawigacja (a) bez wyspy** — po implementacji: zamiast osobnych
+    pigułek typu (z domyślną sprzedażą, §8 pkt 8) lista dostała pigułki
+    RODZAJÓW: typ × transakcja z ≥ 1 ofertą, każda z licznikiem, plus
+    „Wszystkie oferty”; na liście rodzaju — pastylki lokalizacji
+    z licznikami. Powód: pigułka typu bez listy „typ × wszystkie
+    transakcje” byłaby ślepym linkiem albo cichym przekierowaniem na
+    sprzedaż. Wyspa (b) zastępuje ten blok panelem designu.
+
+## 4. Filtry: pole w indeksie → reguła → test (komplet part2 §4.2 + status)
+
+Indeks `/oferty/index.json` = `{ offers: OfferIndexEntry[], locations:
+LocationsFile }` (drzewo z `data/locations.json` jedzie w tym samym pliku
+— autocomplete i liczniki chipów offline). Pola wpisu (allow-lista
+`INDEX_FIELDS`, test „brak kluczy spoza listy"): `number`, `path`,
+`title`, `typeName`, `mainType`, `transaction`, `market`, `status`,
+`badges`, `addedAt`, `price`, `pricePerM2`, `previousPrice`, `currency`,
+`area`, `plotArea`, `rooms`, `floor`, `floorsInBuilding`, `buildingYear`,
+`elevators`, `furnished`, `location` (`city`, `district`, `street`,
+`streetType`, `placeName`, `slug`, `nodeId`), `photo` (`r2Key`, `width`,
+`height`, `alt`), `photosCount`, `hasVideo`, `hasTour`, `hasPlan`.
+Opis osobno: `/oferty/index-text.json` = `{ [number]: tekst }` (tytuł +
+opis bez HTML, małe litery, bez diakrytyków), ładowany dopiero przy
+„szukaj w opisie". Rozmiar: 46 ofert ≈ 40 KB + 5 KB drzewa (part3 §7.2
+prognozuje 37 KB dla 32 pól).
+
+| Filtr (part2 §4.2 `name`)                     | Parametr URL / źródło           | Pole w indeksie                   | Reguła (AND z resztą)                                                                                                            | Test unit (`filters.test.ts`)                                                                                                   |
+| --------------------------------------------- | ------------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `main_type_id`                                | ścieżka `{typ}-na-…` / `?typ=`  | `mainType`                        | równość; brak = wszystkie; nieznana wartość → 0 wyników (parytet)                                                                | synt.: każdy z 4 typów zawęża do swoich; `typ=foo` → 0                                                                          |
+| `transaction`                                 | ścieżka `…-na-{transakcja}` / `?transakcja=` | `transaction`         | równość                                                                                                                          | synt.                                                                                                                           |
+| `location` (ścieżka `a\|b\|c…`, `0` dowolny)  | ścieżka `/{slug}/` lub `?lokalizacja={nodeId}` | `location.nodeId`     | **prefiks po segmentach** (`nodeId === p || nodeId.startsWith(p + "/")`); slug listy SSG → nodeId przez wpisy indeksu              | synt.: Poznań obejmuje dzielnice; `wielkopolskie` = wszystko; obcy prefiks → 0; `poznan` nie pasuje do `poznanski`              |
+| `street`                                      | `?ulica=`                       | `location.street`                 | równość bez wielkości liter po `slugify`; **tylko gdy ustawiona lokalizacja** (kaskada); brak ulicy w ofercie → odpada             | synt.: bez lokalizacji ignorowane; z lokalizacją zawęża                                                                         |
+| `price_from`, `price_to`                      | `?cena-od=`, `?cena-do=`        | `price`                           | zakres domknięty; jedna skala (parytet); `null` (zapytaj o cenę) odpada przy dowolnym limicie                                      | synt. (w tym `price=null`); fixture: `cena-od=500000` → zbiór z fixture'u                                                       |
+| `area_total_from/_to`                         | `?pow-od=`, `?pow-do=`          | `area`                            | zakres (działka: `area` = powierzchnia działki)                                                                                   | synt.; fixture: `pow-od=60` liczy z 10                                                                                          |
+| `description`                                 | `?opis=`                        | `index-text.json[number]`         | `includes` po normalizacji (małe litery, bez diakrytyków); **obejmuje tytuł** (świadoma poprawka)                                | synt.: fraza z opisu, fraza z tytułu, brak → 0; wartownik `FORBIDDEN_SENTINEL` NIE występuje w tekście                          |
+| `number`                                      | `?numer=`                       | `number`                          | równość bez wielkości liter, po `trim`; częściowy numer → 0 (parytet)                                                            | synt.: `sw…` = `SW…`; `376` → 0                                                                                                 |
+| `apartment_room_number_from/_to`              | `?pokoje-od=`, `?pokoje-do=`    | `rooms`                           | zakres; „5+" = `od=5`; brak `rooms` odpada                                                                                       | synt.                                                                                                                           |
+| `apartment_floor_from/_to`                    | `?pietro-od=`, `?pietro-do=`    | `floor`                           | zakres; **`0` jest wartością** (`pietro-do=0` = tylko parter) — świadoma poprawka; `floor` undefined odpada                      | synt.: `pietro-od=0&pietro-do=0` → tylko parter; fixture: 2 oferty z parteru                                                    |
+| `building_year_from/_to`                      | `?rok-od=`, `?rok-do=`          | `buildingYear`                    | zakres                                                                                                                           | synt.                                                                                                                           |
+| `market`                                      | `?rynek=pierwotny\|wtorny`      | `market`                          | równość                                                                                                                          | synt.; fixture 3/7                                                                                                              |
+| `building_elevatornumber` (Tak/Nie)           | `?winda=tak\|nie`               | `elevators`                       | `tak` = `> 0`; `nie` = `=== 0` (R14); undefined odpada w obu                                                                      | synt. z trzema wariantami (1, 0, undefined)                                                                                     |
+| `apartment_furnishings`                       | `?umeblowane=tak\|nie\|moze\|czesciowo` | `furnished`               | równość                                                                                                                          | synt.; fixture: tak 2, nie 1, czesciowo 1                                                                                       |
+| `building_floornumber_to`                     | `?pieter-do=`                   | `floorsInBuilding`                | `≤`; undefined odpada                                                                                                            | synt.; fixture: `pieter-do=4` → 3 oferty                                                                                        |
+| **status** (D12)                              | `?status=aktywna,rezerwacja,archiwalne` | `status`                  | zbiór; `archiwalne` = `sprzedana ∪ wynajeta`; pusty zbiór = pusty wynik; brak parametru = domyślny stan (M3b)                     | synt.; fixture: liczniki 2 / 1 / 7                                                                                              |
+| `sort`                                        | `?sort=newest\|oldest\|priceAsc\|priceDesc` | `addedAt`, `price`, `transaction` | newest = `SORT_NEWEST_BY` malejąco (remis → numer); price wg R7; nieznany → newest                                   | synt.: porządek, remisy, `null` na końcu, grupowanie przy mieszanych transakcjach                                                |
+| `searchIndex` (strona)                        | `?strona=N`                     | —                                 | 12 na stronę (`PAGE_SIZE` w `filters.ts`); `0`, `-1`, `abc` → 1; poza zakresem → pusta strona z nagłówkiem „Znaleziono N ofert" (parytet) | synt.: 25 wpisów → 3 strony, krawędzie                                                                                   |
+| (pola zależne od typu)                        | —                               | `mainType`                        | filtr pola nieadekwatnego do wybranego typu jest **ignorowany** (macierz §3.6); przy „wszystkie typy" działa normalnie            | synt.: `typ=dzialka&pokoje-od=3` = wszystkie działki                                                                            |
+
+Wartości parametrów liczbowych: tekst nienumeryczny ignorowany bez błędu
+(parytet). Puste = brak filtra. `serializeSearch` pomija wartości
+domyślne — adres `/oferty/` bez parametrów to stan domyślny.
+
+## 5. Decyzje do akceptacji
+
+### 5.1 Integracja Preact już w (a) — rekomendacja
+
+Plan: „jeden komponent karty dla SSG i klienta". Jeśli (a) napisze kartę
+w `.astro`, (b) musi ją przepisać do `.tsx` i od tej chwili istnieją dwa
+źródła tego samego markupu (albo wyrzucamy pierwsze). Rekomendacja:
+`@astrojs/preact` + `preact` wchodzą w (a), `OfferCard.tsx` renderuje się
+WYŁĄCZNIE po stronie serwera (bez dyrektywy `client:*` → zero bajtów JS
+w `dist`). W (b) ta sama karta trafia do wyspy. Koszt w (a): dwie
+zależności w `package.json`, `jsx`/`jsxImportSource` w `tsconfig.json`,
+renderer w `astro.config.mjs`. Alternatywa: karta w `.astro` teraz,
+przepisanie w (b) — mniej zależności w tym PR-ze, ale podwójna praca
+i ryzyko rozjazdu.
+
+### 5.2 M3 — pigułki statusu
+
+**(M3a) Etykieta trzeciej pigułki.** Rekomendacja: termin klientki z D12
+w formie równoległej do „Aktywne"/„Rezerwacje": **„Archiwalne"** (pełne
+„Oferty archiwalne — sprzedane i wynajęte" w `aria-label` i w `title`).
+Uzasadnienie: baza wiedzy wygrywa z designem w wartościach; krótsza
+etykieta mieści się w rzędzie na telefonie (design: „Sprzedane
+i wynajęte" to najdłuższa pigułka). Jeśli wolisz dosłownie „Oferty
+archiwalne" albo wersję designu — jedna stała w `offers-ui.ts`.
+
+**(M3b) Stan domyślny filtra statusu.** Rekomendacja: **wszystko
+włączone** (parytet, wartość domyślna planu). Dziś 37/46 ofert to
+archiwum; przejrzystość daje plakietka + pigułki z licznikami (D12), a
+klientka chce archiwum jako referencje. Alternatywa „aktywne +
+rezerwacje" ukryłaby 80 % listy za kliknięciem i zmieniłaby to, co
+klientka zna. Sygnał do przemyślenia w Etapie 7 po testach Joanny.
+Niezależnie od wyboru: parametr `?status=` zapisuje stan w adresie.
+
+### 5.3 HTML listy: wszystkie karty czy tylko pierwsza strona
+
+Rekomendacja: **wszystkie karty w HTML** (wzorzec E5), paginacja po
+stronie klienta. Uzasadnienie: (1) bez JS cała lista jest dostępna, a
+linki `?strona=N` nie prowadzą do stanu, którego nie da się pokazać;
+(2) wyspa w stanie domyślnym nie musi nic przerenderować (hydratacja na
+tym samym markupie, zero migotania); (3) koszt to HTML: ~1,3 KB na kartę
+→ 46 ofert ≈ 60 KB (gzip ≈ 8 KB), 200 ofert ≈ 260 KB (gzip ≈ 30 KB) —
+obrazy są `lazy`, więc LCP i `total` LHCI nie rosną z liczbą kart;
+(4) listy SSG z lokalizacją są małe (1–7 kart). Mechanika w (b): karty
+od 13. w górę dostają `hidden` w SSR, a `<noscript><style>` je odkrywa —
+JS pokazuje 12 od pierwszej klatki (bez skoku układu), brak JS pokazuje
+wszystko. W (a) (bez wyspy) wszystkie karty są widoczne, bez paginacji.
+Alternatywa (tylko 12 w HTML): mniejszy HTML przy 200+ ofertach, ale bez
+JS strony 2+ są nieosiągalne.
+
+### 5.4 Budżet wyspy < 15 KB — jak zmierzę
+
+Po `pnpm build:visual`: suma rozmiarów plików `dist/_astro/*.js`
+ładowanych przez `/oferty/` (z `<script>` w HTML i importów), brutto
+i po `gzip -9` (budżet 15 KB liczę **brutto, bez kompresji** —
+ostrożniej; LHCI `script:size` też liczy bajty przesyłane). Osobno
+Preact runtime (~4 KB) i kod wyspy. Wynik do PR-a (b) i do raportu.
+W (a) skrypt listy = 0 B; raport poda zużycie `script` po (a) dla
+porównania.
+
+### 5.5 LHCI — adres listy SSG z fixture
+
+Do `lighthouserc.cjs` i `lighthouserc.desktop.cjs` dochodzi
+`/oferty/mieszkanie-na-sprzedaz/` (fixture: 2 karty — SW303888,
+SW486462, w tym obniżka ceny i plakietka Sprzedane). `/oferty/` już jest
+mierzone (10 kart z fixture'u). Po merge'u (a) — `lhci-measure.yml`
+(5 przebiegów) i ewentualny wpis median to osobna decyzja.
+
+### 5.6 Przypadki, których fixture nie pokrywa — propozycje do `selection.json` (bez edycji)
+
+| Luka                                                                | Skutek                                                              | Propozycja (numer dobiera Mateusz z listy publicznej)                              |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| 10 ofert < 13 → `/oferty/` ma jedną stronę                          | zrzut i e2e paginacji w (b) nie mają fixture'u                      | dołożyć ≥ 3 oferty (np. 2 mieszkania na wynajem + dom), razem ≥ 13                 |
+| brak oferty z `elevators` (winda)                                   | filtr „winda: tak" bez przypadku na fixture (unit na synt. zostaje) | mieszkanie z windą (dane: 3 aktywne mają `elevators`)                              |
+| brak lokalu komercyjnego na wynajem                                 | lista `lokal-komercyjny-na-wynajem` bez zrzutu                      | 1 lokal na wynajem (dane: 1 aktywny)                                               |
+| brak oferty aktywnej z działek/domów poza Poznaniem                 | karta z `info` gminy tylko sprzedana                                | opcjonalnie                                                                        |
+| brak oferty z `availableFrom` w przyszłości                         | dotyczy detalu 4.3, nie listy                                       | — (nadpisanie `availableFrom` istnieje w mechanice)                                |
+
+Zmiana `selection.json` = `pnpm fixtures:build` + oba komplety baseline'ów
+w tym samym PR — najlepiej razem z PR-em (b), nie w (a).
+
+## 6. Kontrakty i testy
+
+**Utrzymane z szkieletu:** `data-offer-card="{numer}"` na karcie
+(strażnik `assertVisualFixture`, `visual-fixture.test.ts`,
+`offers-skeleton.spec.ts`), `main h1` (smoke), `data-offer-detail`/
+`-number`/`-price` na detalu (szkielet detalu nietknięty), adresy
+z `routes.ts`/`urls.ts`, sitemapa = trasy statyczne + listy + detale.
+
+**Nowe moduły (a):**
+
+| Plik                                        | Rola                                                                                                                                                                                        |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/offers/location-path.ts`           | `locationPath(loc)`, `leafId(loc)` — ścieżka slugów (ta sama co w syncu; test równoważności)                                                                                                |
+| `src/lib/offers/index-entry.ts`             | `INDEX_FIELDS`, `toIndexEntry(offer)`, `toIndexText(offer)` (tekst opisu bez HTML — `htmlparser2` już w zależnościach), `buildIndex(data)`                                                  |
+| `src/lib/offers/filters.ts`                 | `PAGE_SIZE = 12`, typy `SearchState`, `parseSearch(pathname, search)`, `serializeSearch(state)`, `applyFilters(entries, state, texts?)`, `sortEntries`, `paginate`, `statusCounts`, `isFieldRelevant(type, field)` |
+| `src/lib/offers/offers-ui.ts`               | etykiety UI listy (typy, transakcje, statusy wg M3a, sortowania, teksty zero wyników z part2 §4.3), `TYPE_LABEL_PLURAL`, `listTitle(state)`                                                  |
+| `src/components/offers/OfferCard.tsx`       | karta (Preact, SSR w (a)); treści z CRM jako tekst — bez `dangerouslySetInnerHTML`                                                                                                           |
+| `src/components/offers/icons.ts`            | ścieżki SVG designu                                                                                                                                                                         |
+| `src/components/offers/OffersList.astro`    | nagłówek + licznik, linki typ/transakcja/lokalizacja (SSG), pigułki statusu (SSR), siatka kart, CTA; przyjmuje `offers` trasy i `state`                                                      |
+| `src/pages/oferty/index.astro`              | `/oferty/` = `OffersList` na wszystkich ofertach (zero ofert → stan pusty)                                                                                                                  |
+| `src/pages/oferty/[...path].astro`          | listy → `OffersList`; detal bez zmian                                                                                                                                                       |
+| `src/pages/oferty/index.json.ts`            | endpoint statyczny z `buildIndex(loadOffersData())`                                                                                                                                         |
+| `src/pages/oferty/index-text.json.ts`       | endpoint statyczny z opisami                                                                                                                                                                |
+
+**Testy unit (a):** `offers-filters` (tabela §4 na danych syntetycznych
+`syntheticFullOffers()` + liczniki na fixture ze skipem), `offers-index`
+(klucze ⊆ `INDEX_FIELDS`, `findForbiddenKeys` puste, brak `descriptionHtml`
+w indeksie, `index-text` bez tagów i bez `FORBIDDEN_SENTINEL`, każdy wpis
+ma `path === offerPath(offer)`), `offers-location-path` (równość z
+`scripts/sync/locations.ts` na synt./fixture/`data/`; każdy `nodeId`
+istnieje w `locations.json`), `offers-format` (+ `TYPE_LABEL_PLURAL`).
+`test:dist` skanuje też `index.json` i `index-text.json` (już obejmuje
+`dist/**/*.json`).
+
+**E2E (a) — `tests/e2e/oferty.spec.ts`** (dane produkcyjne, `pickOffer` +
+`test.skip`, `useMediaStub`): `/oferty/` 200, `h1`, licznik = liczba
+ofert w `data/`, liczba kart = liczba ofert; karta: link na
+`offerPath(o)`, `<img>` z `width`/`height` i `alt`, cena =
+`formatPrice(o)`, numer; parter → tekst „parter" (`pickOffer({floor: 0})`);
+plakietka dla `sprzedana`/`wynajeta`/`rezerwacja` (po jednej, skip gdy
+brak); „0% prowizji" (skip); „Nowość" tylko gdy `isNewOffer` (asercja
+dwustronna: jest ↔ `BUILD_NOW` w oknie); lista typ×transakcja×lokalizacja
+ma DOKŁADNIE oferty tej kombinacji; linki typu/transakcji/lokalizacji
+prowadzą na istniejące listy (< 400); kolejność kart = `addedAt` malejąco;
+`index.json` 200, `Content-Type` JSON, liczba wpisów = liczba ofert,
+klucze ⊆ `INDEX_FIELDS`; kontrakt breakpointu siatki (`expectBreakpointFlip`
+1025: kolumny 3 ↔ 1; 768 pilnuje unit na CSS? — nie: drugi flip na 768
+mierzony `grid-template-columns`); CTA „Zadzwoń" bez JS → `/kontakt/`,
+z JS `tel:`; zero żądań poza własny host i `MEDIA_BASE` (nasłuch sieci).
+`offers-skeleton.spec.ts` zostaje (kontrakty nadal prawdziwe).
+
+**Visual (a) — `tests/visual/oferty.spec.ts`** (fixture,
+`useVisualFixtureGuard`, `prepareSweep`): `oferty-list` (pełna strona
+`/oferty/`, 10 kart, próg fullPage 0,001 jak `not-found-full`),
+`oferty-card` (element pierwszej karty listy `/oferty/mieszkanie-na-sprzedaz/`
+— obniżka + Sprzedane), `oferty-list-location` (pełna strona
+`/oferty/mieszkanie-na-wynajem/poznan-piatkowo/` — jedna karta z parterem
+i „Nowość"). 3 zrzuty × 6 profili = 18 PNG na platformę. Zrzuty
+chrome'u nie powinny się ruszyć (chrome nietknięty).
+
+**Baseline'y:** kolejność święta — kod → workflow „Update linux visual
+baselines" z `feat/oferty` (spec `tests/visual/oferty.spec.ts`, mode
+`changed`) → `git pull` → diff darwin → `pnpm test:visual:update` → commit
+darwin na końcu. Nieśledzone darwin PNG z pierwszego lokalnego
+`test:visual` usuwam po przebiegu.
+
+**LHCI:** §5.5; zużycie budżetów po `build:visual` w raporcie.
+
+## 7. Co sprawdzić na fizycznym telefonie (po (a); reszta po (c))
+
+1. Lista `/oferty/` na iOS Safari i Chrome Android: karty 1 kolumna,
+   zdjęcia 3:2 bez skoku układu przy dogrywaniu (`width`/`height`),
+   `lazy` nie zostawia pustych kart przy szybkim przewijaniu.
+2. Pastylki mediów na zdjęciu (`backdrop-filter`) — klatkowanie na
+   słabszym Androidzie = sygnał do wyłączenia bluru na mobile.
+3. Rząd pigułek statusu przewijany poziomo: brak paska, przewija się
+   palcem, nie łapie gestu „wstecz" systemu.
+4. Tap w kartę trafia w link (cały obszar), bez opóźnienia; hover-lift
+   nie „wisi" po tapie (telefon bez hovera — `@media (hover: hover)`).
+5. Tytuły 2-liniowe z `line-clamp` przy długich tytułach i dużych
+   czcionkach systemowych.
+6. CTA „Zadzwoń" otwiera dialer (slot), „Zostaw kryteria" → `/kontakt/`.
+7. Tablet (iPad, 768–1024): karty w wierszach (zdjęcie z lewej),
+   kolumna ceny nie łamie się przy „Zapytaj o cenę".
+8. Po (c): sheety filtrów i sortowania (swipe-down, klawiatura ekranowa
+   nad polami liczbowymi `inputmode=numeric`, podłoga 16 px pól).
+
+## 8. Pytania do Mateusza
+
+1. **Podział (a)/(b)/(c)** i zakres tej sesji — §0. Akceptujesz (a) jak
+   opisano (wszystkie karty widoczne, linki zamiast panelu, bez
+   paginacji do (b))?
+2. **Preact w (a)** jako renderer SSR karty (§5.1) — tak / nie (karta
+   w `.astro`, przepisanie w (b))?
+3. **M3a** etykieta: „Archiwalne" (rekomendacja) / „Oferty archiwalne" /
+   „Sprzedane i wynajęte". **M3b** stan domyślny: wszystko włączone
+   (rekomendacja) / aktywne + rezerwacje.
+4. **Winda „Nie"** = wyłącznie `elevators === 0` (R14). Przy dzisiejszych
+   danych daje 0 wyników. Alternatywa „Nie = 0 albo brak danych" łamie
+   zasadę niewnioskowania — nie rekomenduję.
+5. **Wszystkie karty w HTML** (§5.3, rekomendacja) czy tylko pierwsze 12?
+6. **`location-path.ts` jako duplikat** logiki syncu z testem
+   równoważności (ta sesja nie dotyka `scripts/sync/**`). Osobny mały PR
+   „sync importuje ścieżkę z `src/lib`" — chcesz go po (a)?
+7. **Wariant obrazu karty**: dziś `card = width=640`; proponuję
+   `width=720,height=480,fit=cover` (3:2 jak karta, ostre na telefonie
+   @2×, serwer tnie zamiast przeglądarki). Zmienia adresy wszystkich
+   zdjęć kart (46 nowych transformacji, w limicie 5 000/mies.). Tak / nie
+   (zostaje `width=640`, `object-fit` w CSS)?
+8. **Linki typ/transakcja w (a)**: pigułki-linki zgodnie z designem, ale
+   bez „Wszystkie" jako pigułki aktywnej na `/oferty/`? Proponuję:
+   „Wszystkie" linkuje na `/oferty/`, typ na `/oferty/{typ}-na-sprzedaz/`
+   (sprzedaż jako domyślna transakcja linku, bo bez wyspy nie ma listy
+   „typ × wszystkie transakcje"); z wyspą (b) pigułki stają się filtrami.
+   Alternatywa: w (a) bez pigułek typu — tylko pastylki lokalizacji.
+
+## 9. Lista PLACEHOLDER (U9; zamykana w 7.7)
+
+| Tekst                                                                                                                                       | Miejsce                      | Uwagi                                                                  |
+| ------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | ---------------------------------------------------------------------- |
+| „Nie znalazłeś?" / „Nie ma tu tego, czego szukasz? Opisz nam to." / „Zostaw swoje kryteria w formularzu kontaktowym — odezwiemy się, gdy pojawi się pasująca oferta. Możesz też po prostu zadzwonić." | `OffersList.astro` (CTA)     | drafty z designu                                                       |
+| „Zostaw kryteria", „Zadzwoń"                                                                                                                | `OffersList.astro` (CTA)     | brzmienie z designu                                                    |
+| „Zdjęcia wkrótce"                                                                                                                           | `OfferCard.tsx`              | brzmienie z designu (stan bez zdjęć)                                   |
+| Meta `description` list SSG („Mieszkania na sprzedaż w Poznaniu — oferty biura Hetman Nieruchomości…")                                      | `offers-ui.ts`               | szablon do szlifu w Etapie 6                                           |
+| Teksty zero wyników                                                                                                                         | `offers-ui.ts`               | parytet z obecną stroną (part2 §4.3) — nie draft, ale do przeglądu (c) |
+
+Nie są placeholderami: etykiety filtrów i opcji (design + D16), „Znaleziono
+N ofert" (parytet), „Nowość"/„Rezerwacja"/„Sprzedane"/„Wynajęte"/„0%
+prowizji", „Zapytaj o cenę" (part3 §2.5), formaty liczb (`format.ts`).
+
+## 10. Pliki do zmiany (po akceptacji, część (a))
+
+- nowe: `src/lib/offers/{location-path,index-entry,filters,offers-ui}.ts`,
+  `src/components/offers/{OfferCard.tsx,icons.ts,OffersList.astro}`,
+  `src/pages/oferty/{index.json.ts,index-text.json.ts}`,
+  `tests/unit/{offers-filters,offers-index,offers-location-path}.test.ts`,
+  `tests/e2e/oferty.spec.ts`, `tests/visual/oferty.spec.ts`;
+- zmienione: `src/pages/oferty/index.astro`, `src/pages/oferty/[...path].astro`
+  (gałąź listy), `src/lib/offers/format.ts` (`TYPE_LABEL_PLURAL`),
+  `src/lib/img.ts` (wariant `card` — pytanie 7), `src/styles/global.css`
+  (token `--disabled`), `astro.config.mjs`, `tsconfig.json`,
+  `package.json`/`pnpm-lock.yaml` (Preact — pytanie 2),
+  `lighthouserc*.cjs`, `tests/unit/img.test.ts` (jeśli pytanie 7 = tak),
+  `.claude/rules/{testing,sections}.md`, `CLAUDE.md`, `docs/README.md`;
+- nietknięte: `scripts/sync/**`, `data/**`, `tests/fixtures/offers/**`,
+  `Navbar.astro`, `Footer.astro`, `overlay.ts`, `data.ts`, `schema.ts`,
+  detal w `[...path].astro`.
+
+## 11. Uzupełnienia po implementacji (a)
+
+- **Zależności:** `@astrojs/preact` 5.1.5 (linia 6.x wymaga Vite 8 /
+  Astro 7) + `preact` 10.29; `vite` 7.3.5 trafił do devDependencies, bo
+  po dodaniu integracji peer-y `@tailwindcss/vite` i `vitest` przeskoczyły
+  na Vite 8 i `astro check` padał na niezgodnych typach pluginów.
+- **Osierocone chunki Preact w `dist/_astro`** (`client.*.js`,
+  `signals.module.*.js`, razem ≈ 22 KB): integracja emituje runtime
+  kliencki nawet bez `client:*`; żadna strona ich nie ładuje (LHCI
+  i budżety nietknięte). Zużyje je dopiero wyspa (b).
+- **Preact SSR a `fetchpriority`:** atrybut przechodzi jako zwykły
+  atrybut HTML; `width`/`height` obrazu z danych (nie z wariantu 720×480)
+  — CSS `aspect-ratio: 3/2` i `object-fit: cover` rozstrzygają układ.
+- **Pigułki statusu w (a)** to informacja (liczniki trasy), nie
+  przełączniki — bez `aria-pressed`; interakcja wchodzi z wyspą.

@@ -25,6 +25,7 @@
 | `placeholdery-tresci.md`                      | **Lista tekstów-draftów i placeholderów** z adresem pliku i osobą zamykającą (powstaje przy domknięciu Etapów 4–5, zamykana w kroku 7.7)                                                                                         |
 | `analiza-*.md`                                | **Mini-analizy części** (powstają w Etapach 4–5, po jednej na część): decyzje portu z designu, sekcja „Rozjazdy design ↔ baza wiedzy", lista rzeczy do sprawdzenia na telefonie                                                  |
 | `analiza-chrome.md` | **Mini-analiza 4.1 (chrome globalny)**: inwentarz navbara, wariantu „/", bottom sheetu i stopki z designu; rozjazdy R1–R10 (m.in. siedziba i e-mail w stopce wg bazy wiedzy); kontrakty testów i zrzutów; lista PLACEHOLDER |
+| `analiza-oferty.md` | **Mini-analiza 4.2 (`/oferty/`)**: podział na PR-y (a) trasy SSG + karta + lista, (b) wyspa Preact i filtry, (c) mobile i stany brzegowe; inwentarz listy, panelu filtrów, karty, paginacji, CTA i sheetów z designu; rozjazdy R1–R16 (etykieta „Lokal komercyjny", bez presetów, bez grayscale, plakietka „Wynajęte", winda „Nie", grupowanie ceny); tabela filtr → pole indeksu → reguła → test; decyzje M3, HTML wszystkie karty, budżet wyspy, LHCI; kontrakty testów; PLACEHOLDER |
 
 ## 🔒 Tylko lokalnie — `docs/plan/` (poza git)
 
@@ -37,7 +38,8 @@
 | `plan/prompt-s2b.md` | Prompt sesji S2b (Etap 2, kroki 2.4–2.7) — wykonany 2026-10-01 (PR #5) |
 | `plan/prompt-s2c.md` | Prompt sesji S2c (Etap 2, kroki 2.8–2.11) — wykonany 2026-10-01 (PR #7–#10; fixture i pierwszy sync 2026-10-02) |
 | `plan/prompt-etap-3.md` | Prompt sesji Etapu 3 (testy/CI na szkielecie) — wykonany 2026-10-02 (PR #11 + commit budżetów LHCI) |
-| `plan/prompt-etap-4-1.md` | Prompt sesji 4.1 (chrome globalny: navbar, wariant „/", bottom sheet, stopka) + porządek po pierwszym cronie syncu — w toku (2026-10-02) |
+| `plan/prompt-etap-4-1.md` | Prompt sesji 4.1 (chrome globalny: navbar, wariant „/", bottom sheet, stopka) + porządek po pierwszym cronie syncu — wykonany 2026-10-02 (PR #13) |
+| `plan/prompt-etap-4-2.md` | Prompt sesji 4.2 (`/oferty/`: lista, wyszukiwarka, indeks JSON, SSG kombinacji; bramka startowa + porządek po cronie; obsługuje kolejne sesje części (a)/(b)/(c)) — w toku (2026-10-02) |
 | `plan/rozmowa-z-joanna-etap-1.md` | Scenariusz rozmowy z klientką w Etapie 1 (Resend + wizyta w home.pl), krok po kroku |
 
 ## 🔒 Tylko lokalnie — `docs/kb/` (poza git)

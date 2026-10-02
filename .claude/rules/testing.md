@@ -4,6 +4,37 @@ Harness odziedziczony z szablonu projektu (konfiguracja
 Playwright/Vitest/axe/LHCI, 6 profili, helpery); liczby szablonu NIE
 obowiązują — baseline'y i budżety powstają od nowa w Etapie 3.
 
+STAN po Etapie 4.2 (a) (lista ofert): unit — `offers-filters` (tabela
+filtr → pole → reguła z `docs/analiza-oferty.md` §4 na danych
+syntetycznych + liczniki na fixture), `offers-index` (klucze wpisu ⊆
+`INDEX_FIELDS`, brak pól zabronionych i opisu, `index-text` bez HTML),
+`offers-location-path` (równoważność kopii reguły ścieżki slugów
+z `scripts/sync/locations.ts` na synt./fixture/`data/` + każdy id
+w `locations.json`, liczniki węzłów = poddrzewo), `offers-format`
+(+ liczba mnoga, rok); e2e `oferty` (chromium-1920; dane produkcyjne,
+`pickOffer` + skip: `/oferty/` 200 + h1 „Oferty” + licznik
+`[data-offers-count]` + karty = oferty z `data/` w kolejności `addedAt`
+malejąco; karta: link `offerPath`, `img.oc-img` z `width/height/alt`,
+cena `formatPrice`, `.oc-num`, `.oc-pill` z liczbą zdjęć; „parter”;
+plakietki `.oc-badge[data-badge]` Sprzedane/Wynajęte/Rezerwacja; tag
+„0%”; „Zapytaj o cenę” bez `.oc-ppm`; „Nowość” ⇔ `isNewOffer` względem
+`[data-offers-list][data-build-now]`; pigułki `[data-status-group]`
+sumują się do liczby ofert; nawigacja `nav.ol-nav` (1 + liczba rodzajów
+linków, każdy < 400, jedna `aria-current`); listy typ×transakcja
+i z lokalizacją = DOKŁADNIE oferty kombinacji, h1 z `placeName`,
+`[data-offers-locations]`; CTA `a[data-tel]` bez JS → `/kontakt/`, z JS
+`tel:`; nasłuch sieci = własny host + `MEDIA_BASE`; kontrakt progów:
+`.oc-link` `flex-direction` column/row/row/column przy 767/768/1024/1025
+i 3 kolumny `[data-offers-grid]` przy 1366, zdjęcie 3:2 sub-pikselowo;
+`/oferty/index.json` i `index-text.json`); visual `oferty` (fixture,
+`useVisualFixtureGuard`): `oferty-list` (fullPage `/oferty/`, próg
+0,001), `oferty-card` (element pierwszej karty
+`/oferty/mieszkanie-na-sprzedaz/` — obniżka + Sprzedane),
+`oferty-list-location` (fullPage `/oferty/mieszkanie-na-wynajem/poznan-piatkowo/`
+— parter + Nowość) = 18 PNG na platformę. `offers-skeleton.spec`
+zostaje (kontrakty prawdziwe). LHCI mierzy dodatkowo
+`/oferty/mieszkanie-na-sprzedaz/`.
+
 STAN po Etapie 4.1 (chrome): e2e `navigation` niesie kontrakty chrome'u
 — selektory `header.hdr[data-nav]`, `.hdr-logo`, `.hdr-nav`, `.nav-link`
 (z `.hn-ch`/`.hn-sp` liter), `.hdr-tel`, `.mbtn[data-burger]`,
@@ -83,18 +114,19 @@ spec otwierający trasy ofert), `useChromium1920Only`, `collectPageIssues`.
 
 ## Co zmieniasz → co uruchamiasz
 
-| Zmiana                                                                  | Warstwa (komenda)                                                                                |
-| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `scripts/sync/**`, `src/lib/offers/**` (allow-lista, schemat, parser)   | `pnpm test:unit` (kontrakt danych)                                                               |
-| `src/lib/img.ts`, `MEDIA_BASE`, `IMG_VARIANTS`                          | `pnpm test:unit` (`img`, `media-r2`)                                                             |
-| `src/lib/offers/data.ts`, `redirects.ts`, integracje, `[...path].astro` | `pnpm test:unit && pnpm build && pnpm test:dist`                                                 |
-| `scripts/sync/pipeline.ts`, `index.ts`, `fixtures.ts`, `sync.yml`       | `pnpm test:unit` (`sync-index`, `sync-fixtures`); workflow NIE uruchamiać w sesji                |
-| `src/i18n/**`, `src/lib/*.ts` (img, routes, contact-form, jsonld, …)    | `pnpm test:unit`                                                                                 |
-| `scripts/subset-fonts.mjs`, `src/styles/fonts.css`                      | `pnpm test:unit` (kontrakt subsetów)                                                             |
-| `src/scripts/**`, navbar, stopka, wyszukiwarka, galeria, formularze     | `pnpm build && pnpm test:e2e`                                                                    |
-| `tests/helpers/**`, `lighthouserc*.cjs`, `.github/workflows/*.yml`      | `pnpm test:unit` (helpery) + warstwa, której spec używa helpera; workflow NIE uruchamiać w sesji |
-| Każda zmiana wyglądu                                                    | `pnpm build:visual && pnpm test:visual`                                                          |
-| Przed release                                                           | pełne `pnpm test` + `/release-check`                                                             |
+| Zmiana                                                                                                                    | Warstwa (komenda)                                                                                           |
+| ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `scripts/sync/**`, `src/lib/offers/**` (allow-lista, schemat, parser)                                                     | `pnpm test:unit` (kontrakt danych)                                                                          |
+| `src/lib/img.ts`, `MEDIA_BASE`, `IMG_VARIANTS`                                                                            | `pnpm test:unit` (`img`, `media-r2`)                                                                        |
+| `src/lib/offers/data.ts`, `redirects.ts`, integracje, `[...path].astro`                                                   | `pnpm test:unit && pnpm build && pnpm test:dist`                                                            |
+| `scripts/sync/pipeline.ts`, `index.ts`, `fixtures.ts`, `sync.yml`                                                         | `pnpm test:unit` (`sync-index`, `sync-fixtures`); workflow NIE uruchamiać w sesji                           |
+| `src/i18n/**`, `src/lib/*.ts` (img, routes, contact-form, jsonld, …)                                                      | `pnpm test:unit`                                                                                            |
+| `scripts/subset-fonts.mjs`, `src/styles/fonts.css`                                                                        | `pnpm test:unit` (kontrakt subsetów)                                                                        |
+| `src/scripts/**`, navbar, stopka, wyszukiwarka, galeria, formularze                                                       | `pnpm build && pnpm test:e2e`                                                                               |
+| `src/lib/offers/{filters,index-entry,location-path,offers-ui,text}.ts`, `src/components/offers/**`, `src/pages/oferty/**` | `pnpm test:unit && pnpm build && pnpm test:dist && pnpm test:e2e` (+ warstwa wizualna przy zmianie wyglądu) |
+| `tests/helpers/**`, `lighthouserc*.cjs`, `.github/workflows/*.yml`                                                        | `pnpm test:unit` (helpery) + warstwa, której spec używa helpera; workflow NIE uruchamiać w sesji            |
+| Każda zmiana wyglądu                                                                                                      | `pnpm build:visual && pnpm test:visual`                                                                     |
+| Przed release                                                                                                             | pełne `pnpm test` + `/release-check`                                                                        |
 
 ## Zasady twarde
 

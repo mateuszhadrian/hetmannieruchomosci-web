@@ -438,8 +438,8 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   `lhci-measure.yml`; (3) wynik pierwszego crona syncu (2026-10-03, pkt 4
   z 2.11) do dopisania pod wpisem S2c.
 
-- **Etap 4 / 4.1 (chrome globalny) — W TOKU** (2026-10-02, gałąź
-  `feat/chrome`, mini-analiza `docs/analiza-chrome.md` zaakceptowana):
+- **Etap 4 / 4.1 (chrome globalny) — WYKONANY** (2026-10-02, PR #13,
+  gałąź `feat/chrome`, mini-analiza `docs/analiza-chrome.md` zaakceptowana):
   `Navbar.astro` w wyglądzie docelowym — logo w dwóch wariantach
   (WebP z Etapu 0; eksport designu NIE ma SVG, wektor zostaje na Etap 6),
   6 pozycji z efektem liter generowanym w Astro (`.hn-ch`/`.hn-sp`,
@@ -474,9 +474,64 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   stopki, CTA „Skontaktuj się z nami"/„Zadzwoń"/„Napisz", „Przeglądaj
   oferty", linia „Realizacja", pisownia nazwy w ©. Budżety LHCI
   (z `dist` po `build:visual`): patrz raport sesji; progi nietknięte.
-  DO DOMKNIĘCIA: baseline'y linux (workflow) i darwin (po diffie),
-  PR, numer PR i data merge'u w tym wpisie. Porządek po cronie:
-  bieg 2026-10-03 — do dopisania (sesja zakończona przed oknem).
+  Baseline'y linux (workflow) i darwin wgrane w PR #13; po merge'u
+  `prod-smoke` zielony (bieg 2026-10-02 11:06 UTC na commicie #13).
+  Porządek po cronie: bieg 2026-10-03 — do dopisania (patrz wpis S2c).
+
+- **Etap 4 / 4.2 (a) (`/oferty/`: trasy SSG + karta + lista bez wyspy) —
+  W TOKU** (2026-10-02, gałąź `feat/oferty`, mini-analiza
+  `docs/analiza-oferty.md` zaakceptowana w całości — podział (a)/(b)/(c),
+  Preact w (a), M3a „Archiwalne”, M3b wszystkie statusy włączone, winda
+  „Nie” = wyłącznie `elevators === 0`, wszystkie karty w HTML, kopia
+  reguły ścieżki slugów w `src/lib`, wariant `card` 720×480 cover,
+  pigułki rodzajów jako linki): integracja `@astrojs/preact` 5.1.5 +
+  `preact` 10 (Astro 6 wymaga linii 5.x; 6.x ciągnie Vite 8) oraz
+  `vite` 7.3.5 w devDependencies (bez tego peer-y `@tailwindcss/vite`
+  i `vitest` przeskakiwały na Vite 8 i `astro check` padał na typach);
+  `jsx: react-jsx` + `jsxImportSource: preact` w `tsconfig.json`;
+  `src/lib/offers/`: `location-path.ts` (kopia `locationPath`/`leafId`
+  z syncu + `matchesLocation` — prefiks po segmentach),
+  `index-entry.ts` (`INDEX_FIELDS`, `toIndexEntry`, `toIndexText`,
+  `buildIndex`), `filters.ts` (komplet filtrów part2 §4.2 + status,
+  `parsePath`/`parseSearch`/`serializeSearch` z polskimi parametrami,
+  `sortEntries` z grupowaniem transakcji po cenie, `paginate` 12,
+  `statusCounts`, `runSearch`, macierz pól per typ `isFieldRelevant`,
+  nieznany typ/transakcja w parametrze → `invalid` = 0 wyników),
+  `text.ts` (`normalizeText`), `offers-ui.ts` (etykiety, nagłówki list,
+  `cardFacts`/`cardBadges`/`cardKicker`); `format.ts` +
+  `TYPE_LABEL_PLURAL`, `formatKindPlural`, `formatYear`,
+  `TRANSACTION_LABEL`; `img.ts`: `card` =
+  `width=720,height=480,fit=cover`; tokeny `--disabled` i `--copper-text`
+  (#965d1c, 5,4:1) w `global.css`; `src/components/offers/`:
+  `OfferCard.tsx` (Preact SSR, zero JS; wejście = wpis indeksu),
+  `icons.ts` (19 ikon designu), `offers.css`, `OffersListPage.astro`
+  (h1 + licznik, pigułki rodzajów typ×transakcja z licznikami, pastylki
+  lokalizacji rodzaju, pigułki statusu z licznikami jako region
+  przewijany, WSZYSTKIE karty trasy posortowane „najnowsze”, stan bez
+  ofert, CTA ze slotem `data-tel`); `src/pages/oferty/index.astro`
+  i gałąź listy `[...path].astro` (detal = szkielet bez zmian);
+  endpointy `index.json.ts` (46 ofert ≈ 48 KB, wpisy + drzewo)
+  i `index-text.json.ts` (≈ 148 KB), poza sitemapą; `lighthouserc*.cjs`
+  dostały `/oferty/mieszkanie-na-sprzedaz/`. Testy: unit `offers-filters`,
+  `offers-index`, `offers-location-path`, `offers-format` (+2);
+  e2e `oferty.spec.ts` (18 testów, chromium-1920); visual
+  `oferty.spec.ts` (3 zrzuty × 6 profili). Weryfikacja lokalna:
+  format/lint/typecheck, unit 356 (+7 skip), build 89 stron, `test:dist`
+  6/6, e2e 285 (+255 skip profili) na 6 profilach — zielone; a11y 0
+  naruszeń po dwóch poprawkach (kontrast kicker/numer/tag/plakietka
+  „Rezerwacja”, `tabindex` regionu pigułek); `test:visual`: 18
+  czerwonych OCZEKIWANYCH (nowe zrzuty bez baseline’u), chrome i 404
+  bez rozjazdu; LHCI lokalnie (1 przebieg, oba configi) — asercje
+  czyste. ROZJAZDY poza mini-analizą: R17 kolory designu poniżej AA
+  zastąpione tokenami (sections.md); nawigacja (a) to pigułki RODZAJÓW
+  (typ × transakcja z ≥ 1 ofertą) zamiast osobnych pigułek typu
+  z domyślną sprzedażą — bez ślepych linków. Zużycie budżetów LHCI po
+  `build:visual`: patrz raport sesji. PLACEHOLDER (U9): teksty CTA,
+  „Zdjęcia wkrótce”, stan bez ofert, szablon meta description list.
+  DO DOMKNIĘCIA: baseline’y linux (workflow, spec
+  `tests/visual/oferty.spec.ts`, mode `changed`) i darwin, PR, numer PR
+  i data merge’u; (b) wyspa i (c) mobile — kolejne sesje 4.2. Porządek
+  po cronie: bieg 2026-10-03 — do dopisania.
 
 ## Dokumentacja
 

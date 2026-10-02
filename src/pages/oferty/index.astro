@@ -1,10 +1,10 @@
 ---
-import SkeletonPage from "@/components/SkeletonPage.astro";
-import { ui } from "@/i18n/ui";
+// `/oferty/` — lista wszystkich ofert (stan domyślny bez presetów, O3).
+// Widok 4.2 (a): OffersListPage; wyspa wyszukiwarki dochodzi w (b).
+import OffersListPage from "@/components/offers/OffersListPage.astro";
+import { loadOffersData } from "@/lib/offers/data";
+
+const { offers } = loadOffersData();
 ---
 
-<SkeletonPage
-  title={ui.pl["offersPage.title"]}
-  description={ui.pl["offersPage.description"]}
-  heading="Oferty"
-/>
+<OffersListPage offers={offers} context={{}} />

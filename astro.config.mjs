@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from "astro/config";
 
+import preact from "@astrojs/preact";
 import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 
@@ -16,6 +17,10 @@ export default defineConfig({
   // Sitemapa: wszystkie trasy poza stroną 404 (filtr jawny — nie polegamy
   // na zachowaniu domyślnym integracji). Trasy druku dojdą tu w Etapie 7.
   integrations: [
+    // Jedyna wyspa projektu (4.2): karta oferty `OfferCard.tsx` renderuje
+    // się w SSG; wyspa wyszukiwarki (4.2 b) hydratuje ją na kliencie.
+    // Bez dyrektywy `client:*` komponent Preact nie wysyła żadnego JS.
+    preact(),
     sitemap({
       filter: (page) => !/\/404\/?$/.test(new URL(page).pathname),
     }),

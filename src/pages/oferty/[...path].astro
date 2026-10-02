@@ -1,21 +1,22 @@
 ---
-// Trasy ofert — WERSJA SZKIELETOWA (2.8). Adresy list i detali powstają
-// z danych (`data.ts` → `offerRoutes()`), żeby cały łańcuch CRM → data/ →
-// build → adres → zdjęcie z zasobnika → przekierowanie `/{NUMER}` dał się
-// sprawdzić od pierwszego syncu. Treść minimalna, bez stylu docelowego —
-// widoki 4.2 (lista, wyszukiwarka, /oferty/index.json) i 4.3 (detal)
-// podmieniają treść, nie adresy. Selektor `main h1` = kontrakt smoke.
+// Trasy ofert: listy typ × transakcja [× lokalizacja] w widoku 4.2 (a)
+// (`OffersListPage`) oraz detal w WERSJI SZKIELETOWEJ (2.8) — podmienia go
+// Etap 4.3. Adresy powstają z danych (`data.ts` → `offerRoutes()`) —
+// wyłącznie kombinacje z ≥ 1 ofertą (D30). Selektor `main h1` = kontrakt
+// smoke; `data-offer-detail/-number/-price` = kontrakt szkieletu detalu.
+import OffersListPage from "@/components/offers/OffersListPage.astro";
 import SkeletonPage from "@/components/SkeletonPage.astro";
 import { imgAt, mediaUrl } from "@/lib/img";
 import { loadOffersData } from "@/lib/offers/data";
-import { formatKind, formatLocation, formatPrice } from "@/lib/offers/format";
+import { parsePath } from "@/lib/offers/filters";
+import { formatLocation, formatPrice } from "@/lib/offers/format";
 import { coordKey } from "@/lib/offers/map-key";
 import type { Offer } from "@/lib/offers/schema";
 import {
   offerStaticPaths,
   type OfferRouteProps,
 } from "@/lib/offers/static-paths";
-import { offerPath } from "@/lib/offers/urls";
+import { OFFERS_PATH } from "@/lib/offers/urls";
 
 export function getStaticPaths() {
   return offerStaticPaths(loadOffersData().offers);
@@ -36,32 +37,38 @@ function mapUrl(offer: Offer): string | undefined {
     : mediaUrl(entry.r2Key);
 }
 
-const first = props.kind === "list" ? props.offers[0] : props.offer;
-const heading =
+// Kontekst listy ze ścieżki (typ, transakcja, segment lokalizacji);
+// etykieta lokalizacji z pierwszej oferty (wszystkie mają ten sam slug).
+const path = `${OFFERS_PATH}${Astro.params.path}/`;
+const listContext =
   props.kind === "list"
-    ? `${formatKind(first.mainType, first.transaction)} — ${props.offers.length}`
-    : props.offer.title || props.offer.number;
-const title =
-  props.kind === "list"
-    ? `${formatKind(first.mainType, first.transaction)} — Oferty`
-    : `${props.offer.title || props.offer.number} — Oferta ${props.offer.number}`;
+    ? (() => {
+        const p = parsePath(path);
+        return {
+          mainType: p.mainType,
+          transaction: p.transaction,
+          locationSlug: p.locationSlug,
+          locationLabel: p.locationSlug
+            ? props.offers[0]?.location.placeName
+            : undefined,
+        };
+      })()
+    : undefined;
+
+const detailTitle =
+  props.kind === "detail"
+    ? `${props.offer.title || props.offer.number} — Oferta ${props.offer.number}`
+    : "";
 ---
 
-<SkeletonPage title={title} heading={heading}>
-  {
-    props.kind === "list" ? (
-      <ul data-offer-list>
-        {props.offers.map((offer) => (
-          <li data-offer-card={offer.number}>
-            <a href={offerPath(offer)}>
-              {offer.number} · {offer.title || offer.typeName} ·{" "}
-              {formatPrice(offer.price, offer.transaction, offer.currency)} ·{" "}
-              {formatLocation(offer.location)}
-            </a>
-          </li>
-        ))}
-      </ul>
-    ) : (
+{
+  props.kind === "list" ? (
+    <OffersListPage offers={props.offers} context={listContext!} />
+  ) : (
+    <SkeletonPage
+      title={detailTitle}
+      heading={props.offer.title || props.offer.number}
+    >
       <article data-offer-detail={props.offer.number}>
         <p data-offer-number>{props.offer.number}</p>
         <p data-offer-price>
@@ -93,6 +100,6 @@ const title =
           />
         )}
       </article>
-    )
-  }
-</SkeletonPage>
+    </SkeletonPage>
+  )
+}

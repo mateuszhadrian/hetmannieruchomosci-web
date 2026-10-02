@@ -2,6 +2,7 @@
 paths:
   - "src/components/sections/**"
   - "src/components/navbar/**"
+  - "src/components/offers/**"
   - "src/components/Footer.astro"
 ---
 
@@ -100,6 +101,44 @@ odziedziczone z szablonu projektu i stan chrome'u po Etapie 0.
 - Firma nie ma profili w mediach społecznościowych — chrome nie ma
   sekcji social. Teksty-drafty oznaczone `PLACEHOLDER` w kodzie
   (lista w `docs/analiza-chrome.md` §7).
+
+## Lista ofert — stan po Etapie 4.2 (a) (`docs/analiza-oferty.md`)
+
+- **Jedna karta dla SSG i klienta:** `src/components/offers/OfferCard.tsx`
+  (Preact; w (a) renderowana przez Astro BEZ `client:*` → zero JS).
+  Wejściem karty jest WPIS INDEKSU (`OfferIndexEntry` z
+  `index-entry.ts`), nie `Offer` — SSG robi `toIndexEntry(offer)`, wyspa
+  (b) czyta `/oferty/index.json`. Treści z CRM wyłącznie jako tekst;
+  `dangerouslySetInnerHTML` zabronione. „Teraz" do „Nowości" karta
+  dostaje w propie `nowIso` (SSG: `BUILD_NOW`; lista niesie je też
+  w `data-build-now` — kontrakt e2e).
+- Style karty i listy w `src/components/offers/offers.css` (klasy
+  `oc-*`, `ol-*`; komponent Preact nie ma scope'u). Progi W PARZE
+  z `site-config.ts`: `< 768` jedna kolumna (karta w kolumnie),
+  `768–1024` karta w WIERSZU (zdjęcie z lewej, zawsze), `≥ 1025` siatka
+  maks. 3 kolumn (karta w kolumnie) — kontrakt e2e mierzy
+  `flex-direction` `.oc-link` po obu stronach obu progów.
+- **Wszystkie karty trasy w HTML** (wzorzec E5, analiza §5.3); paginacja
+  i filtry dochodzą z wyspą (b) — karty od 13. dostaną wtedy `hidden`
+  - `<noscript>` odkrywający. Kolejność SSG = `sortEntries(…, "newest")`.
+- Kolory z designu poniżej AA (allowlista axe PUSTA): kicker i tag
+  „0% prowizji" → `--copper-text` (nowy token), numer oferty i stan bez
+  zdjęć → `--muted`, plakietka „Rezerwacja" = tekst `--ink` na miedzi.
+  Bez grayscale na sprzedanych (O9); plakietka „Wynajęte" (R5).
+- Rząd pigułek statusu na telefonie to region przewijany poziomo:
+  `role="region"` + `aria-label` + `tabindex="0"` (axe
+  `scrollable-region-focusable`; reguła eslint dopuszcza `region`).
+- Nawigacja (a) = zwykłe linki do list SSG z `routes.ts`: pigułki
+  rodzajów (typ × transakcja z ≥ 1 ofertą, z licznikami) i pastylki
+  lokalizacji rodzaju; wyspa (b) przejmuje te elementy jako filtry.
+- Obraz karty: `imgAt(r2Key, "card")` = `720×480 fit=cover` (3:2, serwer
+  tnie), `width`/`height` z danych, `loading="lazy"` poza pierwszymi
+  trzema (`eager`, pierwsza `fetchpriority="high"`).
+- CTA pod listą: slot `a[data-tel][data-fill="href"]` (bez JS →
+  `/kontakt/`), teksty PLACEHOLDER (U9) w `offers-ui.ts` (`UI.cta*`).
+- Indeks: `/oferty/index.json` (wpisy + `locations`), `index-text.json`
+  (opisy) — endpointy statyczne, poza sitemapą; nazwy kluczy =
+  `INDEX_FIELDS` (test unit + skan `test:dist`).
 
 ## Dane kontaktowe (antyscraping)
 

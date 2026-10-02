@@ -9,7 +9,12 @@ module.exports = {
   ci: {
     collect: {
       staticDistDir: "./dist",
-      url: ["/", "/polityka-prywatnosci/", "/oferty/"],
+      url: [
+        "/",
+        "/polityka-prywatnosci/",
+        "/oferty/",
+        "/oferty/mieszkanie-na-sprzedaz/",
+      ],
       numberOfRuns: 5,
       settings: { preset: "desktop" },
     },
