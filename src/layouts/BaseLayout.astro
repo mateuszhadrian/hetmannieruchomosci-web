@@ -34,6 +34,11 @@ interface Props {
    *  canonical wskazywałby na adres, który nie istnieje (Cloudflare Pages
    *  serwuje 404.html pod KAŻDYM błędnym adresem). */
   noindex?: boolean;
+  /** Własny `og:image` (detal oferty: pierwsze zdjęcie w wariancie `og`
+   *  1200×630 z transformacji — D29); domyślnie og-image.png marki.
+   *  Adres absolutny albo względny od korzenia. */
+  ogImage?: string;
+  ogImageAlt?: string;
 }
 const {
   title = SITE_TITLE,
@@ -41,6 +46,8 @@ const {
   description,
   canonicalPath,
   noindex = false,
+  ogImage,
+  ogImageAlt,
 } = Astro.props;
 
 // Adresy absolutne dla podglądów linków (iMessage/Messenger/X wymagają pełnego URL).
@@ -53,7 +60,8 @@ const {
 // wybierają przypadkowy duży obrazek ze strony.
 const urlBase = import.meta.env.DEV ? Astro.url : Astro.site;
 const canonicalUrl = new URL(canonicalPath ?? Astro.url.pathname, urlBase);
-const ogImageUrl = new URL("/og-image.png", urlBase);
+const ogImageUrl = new URL(ogImage ?? "/og-image.png", urlBase);
+const ogAlt = ogImageAlt ?? SITE_TITLE;
 ---
 
 <!doctype html>
@@ -140,7 +148,7 @@ const ogImageUrl = new URL("/og-image.png", urlBase);
     <meta property="og:image" content={ogImageUrl} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content={SITE_TITLE} />
+    <meta property="og:image:alt" content={ogAlt} />
     <meta property="og:locale" content="pl_PL" />
     {
       /* summary_large_image, nie summary: przy kadrze 1,91:1 „summary"

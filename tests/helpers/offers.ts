@@ -16,8 +16,10 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  MapsFileSchema,
   OffersFileSchema,
   type MainType,
+  type MapManifest,
   type Market,
   type Offer,
   type OfferStatus,
@@ -86,6 +88,21 @@ export function readOffersTyped(source: OfferSource = "data"): Offer[] {
   const offers = raw.length === 0 ? [] : OffersFileSchema.parse(raw);
   typedCache.set(source, offers);
   return offers;
+}
+
+/** Manifest map (`maps.json`) ze wskazanego źródła; pusty obiekt, gdy
+ *  pliku nie ma. Detal oferty pokazuje mapę tylko dla wpisu bez
+ *  `goneSince` — specy liczą oczekiwanie tą samą regułą. */
+const mapsCache = new Map<OfferSource, MapManifest>();
+export function readMapsTyped(source: OfferSource = "data"): MapManifest {
+  const cached = mapsCache.get(source);
+  if (cached) return cached;
+  const path = join(SOURCE_DIR[source], "maps.json");
+  const maps: MapManifest = existsSync(path)
+    ? MapsFileSchema.parse(JSON.parse(readFileSync(path, "utf8")))
+    : {};
+  mapsCache.set(source, maps);
+  return maps;
 }
 
 /** Oferty fixture'u jako `Offer[]` — skrót dla `readOffersTyped("fixture")`. */

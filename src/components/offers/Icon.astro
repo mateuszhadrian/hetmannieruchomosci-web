@@ -1,0 +1,25 @@
+---
+// Ikona z tablicy ścieżek designu (`icons.ts`) dla komponentów `.astro`
+// — ten sam zestaw, którego używa karta Preact (`OfferCard.tsx`).
+// Rozmiar steruje `font-size` rodzica (`1em`).
+import { ICON_VIEWBOX } from "./icons";
+import { ALL_FILLED, ALL_ICONS, type DetailIconName } from "./icons-detail";
+
+interface Props {
+  name: DetailIconName;
+}
+const { name } = Astro.props;
+const filled = ALL_FILLED.has(name);
+---
+
+<svg
+  viewBox={ICON_VIEWBOX}
+  width="1em"
+  height="1em"
+  fill={filled ? "currentColor" : "none"}
+  stroke={filled ? "none" : "currentColor"}
+  stroke-width="1.75"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"><path d={ALL_ICONS[name]}></path></svg
+>

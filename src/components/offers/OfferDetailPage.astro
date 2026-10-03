@@ -1,0 +1,907 @@
+---
+// Detal oferty (4.3 a) — JEDEN markup responsywny wg `oferta.html`
+// (docs/analiza-oferta.md §1–§3). Sekcje: okruszki, nagłówek (na mobile
+// nad dolną częścią hero, na desktopie nad siatką galerii), galeria (hero =
+// tor scroll-snap ze wszystkimi zdjęciami, kafle 2×2, miniatury), meta
+// (kopiuj numer, „Dodano", udostępnij, kopiuj link, Drukuj/PDF), pasek
+// kotwic, skróty, „Dane szczegółowe" z `details-rows.ts`, opis
+// (`descriptionHtml` przez `set:html` — JEDYNE w projekcie, sanityzowany
+// w syncu), „Rzuty", film i spacer (iframe DOPIERO po kliknięciu — do tego
+// czasu zwykłe linki), mapa statyczna z `maps.json`, sekcja kontaktu
+// z kartą agenta (sloty antyscrapingowe; miejsce na formularz 5B), panel
+// boczny (desktop) i pasek dolny (mobile). Kontrakty szkieletu zostają:
+// `data-offer-detail`, `data-offer-number`, `data-offer-price`,
+// `data-offer-photo`, `data-offer-map`, `main h1`.
+// Zero Preact — czysty Astro + `src/scripts/offer-detail.ts`.
+import "./offer-detail.css";
+import ctaImage from "@/assets/img/onas-cta.webp";
+import Footer from "@/components/Footer.astro";
+import Navbar from "@/components/navbar/Navbar.astro";
+import JsonLd from "@/components/seo/JsonLd.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { imgAt, mediaUrl } from "@/lib/img";
+import { realEstateListing } from "@/lib/jsonld";
+import { BUILD_NOW, loadOffersData } from "@/lib/offers/data";
+import {
+  detailDescription,
+  detailTitle,
+  offerHeading,
+} from "@/lib/offers/detail-meta";
+import { detailRows, priceVisible } from "@/lib/offers/details-rows";
+import {
+  ASK_FOR_PRICE,
+  formatDateShort,
+  formatInt,
+  formatKind,
+  formatKindPlural,
+  formatLocation,
+  formatPrice,
+  formatPricePerM2,
+} from "@/lib/offers/format";
+import { toIndexEntry } from "@/lib/offers/index-entry";
+import { coordKey } from "@/lib/offers/map-key";
+import {
+  cardBadges,
+  cardFacts,
+  DETAIL,
+  type FactIcon,
+} from "@/lib/offers/offers-ui";
+import type { Offer } from "@/lib/offers/schema";
+import {
+  listPath,
+  offerPath,
+  OFFERS_PATH,
+  offerListPath,
+  TRANSACTION_SLUG,
+  TYPE_SLUG,
+} from "@/lib/offers/urls";
+import { CONTACT_PATH } from "@/lib/routes";
+import {
+  AGENT,
+  OFFER_JSONLD_IMAGES,
+  OFFER_THUMBS_EAGER,
+  SHOW_PRICE_WHEN_SOLD,
+} from "@/lib/site-config";
+import Icon from "./Icon.astro";
+import type { DetailIconName as IconName } from "./icons-detail";
+
+interface Props {
+  offer: Offer;
+}
+const { offer } = Astro.props;
+const { maps } = loadOffersData();
+
+const path = offerPath(offer);
+const entry = toIndexEntry(offer);
+const heading = offerHeading(offer);
+const kicker = formatKind(offer.mainType, offer.transaction);
+const location = formatLocation(offer.location);
+const badges = cardBadges(entry, BUILD_NOW);
+const showPrice = priceVisible(offer, SHOW_PRICE_WHEN_SOLD);
+const price = formatPrice(offer.price, offer.transaction, offer.currency);
+const perM2 =
+  offer.price === null
+    ? null
+    : formatPricePerM2(offer.pricePerM2, offer.transaction, offer.currency);
+const discount =
+  offer.price !== null &&
+  offer.previousPrice !== undefined &&
+  offer.previousPrice > offer.price
+    ? formatPrice(offer.previousPrice, offer.transaction, offer.currency)
+    : null;
+const commission = offer.badges.find((b) => /^0\s?%/.test(b));
+const statusBadge = badges.find((b) => b !== "Nowość");
+
+// ── zdjęcia: galeria = `photo`, rzuty = `plan` (kolejność z CRM) ────────
+const photos = offer.photos.filter((p) => p.kind === "photo");
+const plans = offer.photos.filter((p) => p.kind === "plan");
+const all = [...photos, ...plans];
+const first = all[0];
+const tiles = photos.slice(1, 5);
+const absolute = (p: string) => new URL(p, Astro.site).href;
+const heroAlt = (i: number) =>
+  `${DETAIL.photoOf} ${i + 1} ${DETAIL.of} ${all.length}`;
+
+// ── mapa ────────────────────────────────────────────────────────────────
+const mapEntry = maps[coordKey(offer.location.lat, offer.location.lon)];
+const map =
+  mapEntry && !mapEntry.goneSince
+    ? {
+        src:
+          import.meta.env.MEDIA_SOURCE === "fixture"
+            ? imgAt(mapEntry.r2Key, "card")
+            : mediaUrl(mapEntry.r2Key),
+        width: mapEntry.width,
+        height: mapEntry.height,
+        href: `https://maps.google.com/?q=${offer.location.lat},${offer.location.lon}`,
+      }
+    : undefined;
+
+// ── treść ───────────────────────────────────────────────────────────────
+const description = offer.descriptionHtml.trim();
+const rows = detailRows(offer, { now: BUILD_NOW, showPrice });
+const rowsPerColumn = Math.ceil(rows.length / 2);
+const facts = cardFacts(entry);
+const FACT_LABEL: Record<FactIcon, string> = {
+  area: "powierzchnia",
+  rooms: "pokoje",
+  floor: "piętro",
+  year: "rok budowy",
+  plot: "działka",
+};
+const FACT_ICON: Record<FactIcon, IconName> = {
+  area: "area",
+  rooms: "rooms",
+  floor: "floor",
+  year: "year",
+  plot: "plot",
+};
+
+// ── kotwice (warunkowe) ─────────────────────────────────────────────────
+const anchors = [
+  { id: "szczegoly", label: DETAIL.anchorDetails, on: true },
+  { id: "opis", label: DETAIL.anchorDescription, on: description.length > 0 },
+  { id: "film", label: DETAIL.anchorVideo, on: offer.videoId !== undefined },
+  { id: "spacer", label: DETAIL.anchorTour, on: offer.tourUrl !== undefined },
+  { id: "mapa", label: DETAIL.anchorMap, on: map !== undefined },
+  { id: "kontakt", label: DETAIL.anchorContact, on: true },
+].filter((a) => a.on);
+
+// ── okruszki ────────────────────────────────────────────────────────────
+const kindPath = offerListPath(
+  TYPE_SLUG[offer.mainType],
+  TRANSACTION_SLUG[offer.transaction],
+);
+const crumbs = [
+  { href: OFFERS_PATH, label: DETAIL.crumbsRoot },
+  {
+    href: kindPath,
+    label: formatKindPlural(offer.mainType, offer.transaction),
+  },
+  { href: listPath(offer), label: offer.location.placeName },
+];
+
+// ── meta / OG / JSON-LD ─────────────────────────────────────────────────
+const title = detailTitle(offer);
+const metaDescription = detailDescription(offer);
+const ogImage = first ? imgAt(first.r2Key, "og") : undefined;
+const shareUrl = absolute(path);
+const shareText = `${heading} — ${kicker}, ${offer.location.placeName}`;
+const share = {
+  facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
+  whatsapp: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
+  x: `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,
+};
+const jsonLd = realEstateListing(Astro.site!, offer, path, {
+  description: metaDescription,
+  images: all
+    .slice(0, OFFER_JSONLD_IMAGES)
+    .map((p) => absolute(imgAt(p.r2Key, "hero"))),
+});
+const videoHref = offer.videoId
+  ? `https://www.youtube.com/watch?v=${offer.videoId}`
+  : undefined;
+---
+
+<BaseLayout
+  title={title}
+  description={metaDescription}
+  ogImage={ogImage}
+  ogImageAlt={first?.alt}
+>
+  <JsonLd slot="head" data={jsonLd} />
+  {
+    first && (
+      <link
+        slot="head"
+        rel="preload"
+        as="image"
+        href={imgAt(first.r2Key, "hero")}
+        fetchpriority="high"
+      />
+    )
+  }
+  <Navbar />
+  <main
+    class="od"
+    data-offer-detail={offer.number}
+    data-offer-status={offer.status}
+    data-build-now={BUILD_NOW.toISOString()}
+    style={`--od-rows:${rowsPerColumn}`}
+  >
+    {
+      /* bez JS: przyciski wymagające skryptu znikają (‹ ›, kopiuj, drukuj,
+         natywne udostępnianie), galeria przewija się natywnie, opis jest
+         pełny (zwijanie dokłada JS) */
+    }
+    <noscript>
+      <style>
+        .od-gal-nav,
+        [data-offer-copy],
+        [data-offer-print],
+        [data-offer-share-native],
+        .od-more {
+          display: none !important;
+        }
+      </style>
+    </noscript>
+
+    <nav class="od-crumbs" aria-label={DETAIL.crumbsLabel} data-offer-crumbs>
+      <ol>
+        {
+          crumbs.map((c) => (
+            <li>
+              <a href={c.href}>{c.label}</a>
+            </li>
+          ))
+        }
+        <li>
+          <span aria-current="page">{offer.number}</span>
+        </li>
+      </ol>
+    </nav>
+
+    <div class="od-top">
+      <header class="od-head">
+        <div class="od-head-main">
+          <p class="od-kicker">{kicker}</p>
+          <h1 class="od-title">{heading}</h1>
+          <p class="od-loc">
+            <span class="od-ico"><Icon name="pin" /></span>
+            <a href={listPath(offer)}>{location}</a>
+          </p>
+        </div>
+        <div class="od-head-price">
+          <p
+            class="od-price"
+            data-offer-price
+            data-sold={showPrice ? undefined : ""}
+          >
+            {
+              showPrice ? (
+                <>
+                  {discount && <s class="od-prev">{discount}</s>}
+                  <span class="od-amount">{price}</span>
+                  {perM2 && price !== ASK_FOR_PRICE && (
+                    <span class="od-ppm">{perM2}</span>
+                  )}
+                </>
+              ) : (
+                <span class="od-amount od-amount--status">{statusBadge}</span>
+              )
+            }
+          </p>
+          {commission && <span class="od-tag">{commission}</span>}
+        </div>
+      </header>
+
+      <section
+        class="od-gal"
+        aria-label={DETAIL.gallery}
+        data-offer-gallery
+        data-count={all.length}
+      >
+        {
+          first ? (
+            <>
+              <div class="od-hero">
+                <div
+                  class="od-track"
+                  data-gal-track
+                  role="region"
+                  aria-roledescription="karuzela"
+                  aria-label={DETAIL.gallery}
+                  tabindex="0"
+                >
+                  {all.map((p, i) => (
+                    <figure
+                      class="od-slide"
+                      data-gal-slide={i}
+                      data-portrait={p.height > p.width ? "" : undefined}
+                      data-plan={p.kind === "plan" ? "" : undefined}
+                      role="group"
+                      aria-label={heroAlt(i)}
+                    >
+                      {p.height > p.width && (
+                        <img
+                          class="od-blur"
+                          src={imgAt(p.r2Key, "card")}
+                          alt=""
+                          aria-hidden="true"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      )}
+                      <img
+                        class="od-img"
+                        src={imgAt(p.r2Key, "hero")}
+                        alt={p.alt}
+                        width={p.width}
+                        height={p.height}
+                        loading={i === 0 ? "eager" : "lazy"}
+                        decoding="async"
+                        fetchpriority={i === 0 ? "high" : undefined}
+                        data-offer-photo={i === 0 ? "" : undefined}
+                        data-gal-open={i}
+                      />
+                    </figure>
+                  ))}
+                </div>
+                <div class="od-hero-top">
+                  <div class="od-pills">
+                    {badges.map((b) => (
+                      <span class="od-badge" data-badge={b}>
+                        {b}
+                      </span>
+                    ))}
+                    {offer.videoId && (
+                      <span class="od-pill">
+                        <Icon name="play" />
+                        {DETAIL.video.toUpperCase()}
+                      </span>
+                    )}
+                    {offer.tourUrl && <span class="od-pill">360°</span>}
+                  </div>
+                  <span class="od-pill od-pill--count">
+                    <Icon name="camera" />
+                    <span data-gal-count aria-live="polite">
+                      {`1 / ${all.length}`}
+                    </span>
+                  </span>
+                </div>
+                {all.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      class="od-gal-nav od-gal-nav--prev"
+                      data-gal-prev
+                      aria-label={DETAIL.prevPhoto}
+                    >
+                      <Icon name="chevronLeft" />
+                    </button>
+                    <button
+                      type="button"
+                      class="od-gal-nav od-gal-nav--next"
+                      data-gal-next
+                      aria-label={DETAIL.nextPhoto}
+                    >
+                      <Icon name="chevronRight" />
+                    </button>
+                  </>
+                )}
+              </div>
+              {tiles.length > 0 && (
+                <div class="od-tiles" aria-hidden="true">
+                  {tiles.map((p, i) => (
+                    <button
+                      type="button"
+                      class="od-tile"
+                      data-gal-open={i + 1}
+                      tabindex="-1"
+                    >
+                      <img
+                        src={imgAt(p.r2Key, "card")}
+                        alt=""
+                        width={p.width}
+                        height={p.height}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+              {all.length > 1 && (
+                <div class="od-thumbs">
+                  <div class="od-thumbs-track">
+                    {/* miniatury spoza pierwszych OFFER_THUMBS_EAGER dostają
+                        `data-src` — natywne `lazy` ładowało w poziomym pasku
+                        WSZYSTKIE (22 × `card` ≈ 1 MB); JS dogrywa je, gdy
+                        wjeżdżają w pasek (IntersectionObserver z root = pasek) */}
+                    {photos.map((p, i) => (
+                      <button
+                        type="button"
+                        class="od-thumb"
+                        data-gal-thumb={i}
+                        data-gal-open={i}
+                        aria-label={heroAlt(i)}
+                        aria-current={i === 0 ? "true" : undefined}
+                      >
+                        <img
+                          src={
+                            i < OFFER_THUMBS_EAGER
+                              ? imgAt(p.r2Key, "card")
+                              : undefined
+                          }
+                          data-src={
+                            i < OFFER_THUMBS_EAGER
+                              ? undefined
+                              : imgAt(p.r2Key, "card")
+                          }
+                          alt=""
+                          width={p.width}
+                          height={p.height}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      class="od-thumb od-thumb--all"
+                      data-gal-all
+                      data-gal-open="0"
+                    >
+                      <span class="od-ico">
+                        <Icon name="camera" />
+                      </span>
+                      {`${DETAIL.allPhotos} (${formatInt(all.length)})`}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div class="od-nophoto">
+              <span class="od-ico">
+                <Icon name="building" />
+              </span>
+              <span>Zdjęcia wkrótce</span>
+            </div>
+          )
+        }
+      </section>
+    </div>
+
+    <div class="od-meta">
+      <div class="od-meta-left">
+        <span class="od-num" data-offer-number>{offer.number}</span>
+        <button
+          type="button"
+          class="od-copy"
+          data-offer-copy="number"
+          data-copy-value={offer.number}
+          aria-label={`${DETAIL.copyNumber} ${offer.number}`}
+        >
+          <Icon name="copy" />
+        </button>
+        <span
+          class="od-copied"
+          data-offer-copied
+          role="status"
+          aria-live="polite"></span>
+        <span class="od-added"
+          >{`${DETAIL.added} ${formatDateShort(offer.addedAt)}`}</span
+        >
+      </div>
+      <div class="od-share">
+        <span class="od-share-label">{DETAIL.share}</span>
+        <div class="od-share-links">
+          <a
+            class="od-mbtn od-mbtn--ico"
+            href={share.facebook}
+            target="_blank"
+            rel="noopener"
+            aria-label={DETAIL.shareFacebook}
+            title={DETAIL.shareFacebook}
+            data-offer-share="facebook"><Icon name="facebook" /></a
+          >
+          <a
+            class="od-mbtn od-mbtn--ico"
+            href={share.whatsapp}
+            target="_blank"
+            rel="noopener"
+            aria-label={DETAIL.shareWhatsApp}
+            title={DETAIL.shareWhatsApp}
+            data-offer-share="whatsapp"><Icon name="whatsapp" /></a
+          >
+          <a
+            class="od-mbtn od-mbtn--ico"
+            href={share.x}
+            target="_blank"
+            rel="noopener"
+            aria-label={DETAIL.shareX}
+            title={DETAIL.shareX}
+            data-offer-share="x"><Icon name="x" /></a
+          >
+        </div>
+        <button
+          type="button"
+          class="od-mbtn od-mbtn--ico"
+          data-offer-share-native
+          data-share-title={heading}
+          data-share-text={shareText}
+          aria-label={DETAIL.share}
+          title={DETAIL.share}
+          hidden><Icon name="share" /></button
+        >
+        <button
+          type="button"
+          class="od-mbtn"
+          data-offer-copy="link"
+          data-copy-value={shareUrl}
+          title={DETAIL.copyLinkTitle}
+        >
+          <Icon name="copy" />
+          <span data-copy-label>{DETAIL.copyLink}</span>
+        </button>
+        <button
+          type="button"
+          class="od-mbtn"
+          data-offer-print
+          title={DETAIL.printTitle}
+        >
+          <Icon name="print" />
+          <span>{DETAIL.print}</span>
+        </button>
+      </div>
+    </div>
+
+    <nav class="od-anchors" aria-label={DETAIL.anchors} data-offer-anchors>
+      <div class="od-anchors-in">
+        {
+          anchors.map((a, i) => (
+            <a
+              href={`#${a.id}`}
+              data-anchor={a.id}
+              aria-current={i === 0 ? "true" : undefined}
+            >
+              {a.label}
+            </a>
+          ))
+        }
+      </div>
+    </nav>
+
+    <div class="od-body">
+      <div class="od-main">
+        {
+          facts.length > 0 && (
+            <ul class="od-facts" data-offer-facts>
+              {facts.map((f) => (
+                <li class="od-fact">
+                  <span class="od-ico">
+                    <Icon name={FACT_ICON[f.icon]} />
+                  </span>
+                  <span class="od-fact-txt">
+                    <span class="od-fact-val">{f.text}</span>
+                    <span class="od-fact-lbl">{FACT_LABEL[f.icon]}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+
+        <section id="szczegoly" class="od-sec" aria-labelledby="od-h-rows">
+          <h2 id="od-h-rows" class="od-h2">{DETAIL.details}</h2>
+          <dl class="od-rows" data-offer-rows>
+            {
+              rows.map((r) => (
+                <div class="od-row" data-row={r.id}>
+                  <dt>{r.label}</dt>
+                  <dd>
+                    {r.value.previous && (
+                      <s class="od-row-prev">{r.value.previous}</s>
+                    )}
+                    <span>{r.value.text}</span>
+                    {r.value.note && (
+                      <small class="od-row-note">{r.value.note}</small>
+                    )}
+                  </dd>
+                </div>
+              ))
+            }
+          </dl>
+        </section>
+
+        {
+          description && (
+            <section id="opis" class="od-sec" aria-labelledby="od-h-desc">
+              <h2 id="od-h-desc" class="od-h2">
+                {DETAIL.description}
+              </h2>
+              <div class="od-desc-wrap" data-offer-desc-wrap>
+                {/* JEDYNE set:html w projekcie — HTML z CRM sanityzowany
+                     w syncu (whitelista tagów, style zamienione na klasy) */}
+                <div
+                  class="od-desc"
+                  id="od-desc"
+                  data-offer-desc
+                  set:html={description}
+                />
+              </div>
+              <button
+                type="button"
+                class="od-more"
+                data-offer-desc-btn
+                aria-controls="od-desc"
+                aria-expanded="true"
+                hidden
+              >
+                <span class="od-more-open">{DETAIL.readMore}</span>
+                <span class="od-more-close">{DETAIL.readLess}</span>
+              </button>
+            </section>
+          )
+        }
+
+        {
+          plans.length > 0 && (
+            <section
+              id="rzuty"
+              class="od-sec"
+              aria-labelledby="od-h-plans"
+              data-offer-plans
+            >
+              <h2 id="od-h-plans" class="od-h2">
+                {DETAIL.plans}
+              </h2>
+              <div class="od-plans">
+                {plans.map((p, i) => (
+                  <button
+                    type="button"
+                    class="od-plan"
+                    data-gal-open={photos.length + i}
+                    aria-label={heroAlt(photos.length + i)}
+                  >
+                    <img
+                      src={imgAt(p.r2Key, "card")}
+                      alt={p.alt}
+                      width={p.width}
+                      height={p.height}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </button>
+                ))}
+              </div>
+            </section>
+          )
+        }
+
+        {
+          (offer.videoId || offer.tourUrl) && (
+            <div class="od-embeds">
+              {offer.videoId && videoHref && (
+                <section id="film" class="od-sec" aria-labelledby="od-h-video">
+                  <h2 id="od-h-video" class="od-h2">
+                    {DETAIL.video}
+                  </h2>
+                  {/* kafel = link do YouTube; JS podmienia go na iframe
+                      youtube-nocookie dopiero po kliknięciu (D32) */}
+                  <a
+                    class="od-embed"
+                    href={videoHref}
+                    target="_blank"
+                    rel="noopener"
+                    data-offer-video={offer.videoId}
+                    data-embed-title={DETAIL.videoTitle}
+                  >
+                    {first && (
+                      <img
+                        src={imgAt(first.r2Key, "card")}
+                        alt=""
+                        width={first.width}
+                        height={first.height}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    )}
+                    <span class="od-play" aria-hidden="true">
+                      <Icon name="play" />
+                    </span>
+                    <span class="od-embed-lbl">{DETAIL.videoSource}</span>
+                    <span class="sr-only">{DETAIL.playVideo}</span>
+                  </a>
+                  <p class="od-note">{DETAIL.videoNote}</p>
+                </section>
+              )}
+              {offer.tourUrl && (
+                <section id="spacer" class="od-sec" aria-labelledby="od-h-tour">
+                  <h2 id="od-h-tour" class="od-h2">
+                    {DETAIL.tour}
+                  </h2>
+                  <a
+                    class="od-embed od-embed--tour"
+                    href={offer.tourUrl}
+                    target="_blank"
+                    rel="noopener"
+                    data-offer-tour={offer.tourUrl}
+                    data-embed-title={DETAIL.tourTitle}
+                  >
+                    {first && (
+                      <img
+                        src={imgAt(first.r2Key, "card")}
+                        alt=""
+                        width={first.width}
+                        height={first.height}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    )}
+                    <span class="od-360" aria-hidden="true">
+                      360°
+                    </span>
+                    <span class="od-embed-btn">{DETAIL.startTour}</span>
+                  </a>
+                </section>
+              )}
+            </div>
+          )
+        }
+
+        {
+          map && (
+            <section id="mapa" class="od-sec" aria-labelledby="od-h-map">
+              <h2 id="od-h-map" class="od-h2">
+                {DETAIL.map}
+              </h2>
+              {/* obraz w naturalnych proporcjach manifestu — pasek
+                  atrybucji u dołu jest wymagany licencją (bez kadrowania) */}
+              <img
+                class="od-map"
+                src={map.src}
+                alt={`${DETAIL.mapAlt}: ${location}`}
+                width={map.width}
+                height={map.height}
+                loading="lazy"
+                decoding="async"
+                data-offer-map
+              />
+              <div class="od-map-foot">
+                <p class="od-loc od-loc--map">
+                  <span class="od-ico">
+                    <Icon name="pin" />
+                  </span>
+                  <span>{location}</span>
+                </p>
+                <a
+                  class="od-link"
+                  href={map.href}
+                  target="_blank"
+                  rel="noopener"
+                  data-offer-map-link
+                >
+                  {DETAIL.openMaps}
+                  <Icon name="external" />
+                </a>
+              </div>
+            </section>
+          )
+        }
+      </div>
+
+      <aside
+        class="od-panel"
+        aria-label={DETAIL.priceAndContact}
+        data-offer-panel
+      >
+        <div class="od-panel-price">
+          <span class="od-eyebrow">{DETAIL.price}</span>
+          <p class="od-panel-amount">
+            {
+              showPrice ? (
+                <>
+                  {discount && <s class="od-prev">{discount}</s>}
+                  <span class="od-amount">{price}</span>
+                  {perM2 && price !== ASK_FOR_PRICE && (
+                    <span class="od-ppm">{perM2}</span>
+                  )}
+                </>
+              ) : (
+                <span class="od-amount od-amount--status">{statusBadge}</span>
+              )
+            }
+          </p>
+        </div>
+        <div class="od-cta2">
+          {/* slot antyscrapingowy: numer wstawia JS; bez JS → /kontakt/ */}
+          <a
+            class="od-btn od-btn--navy"
+            data-tel
+            data-fill="href"
+            href={CONTACT_PATH}>{DETAIL.call}</a
+          >
+          <a class="od-btn od-btn--copper" href="#kontakt">{DETAIL.write}</a>
+        </div>
+        <div class="od-agent od-agent--panel">
+          <span class="od-avatar" aria-hidden="true">{AGENT.initials}</span>
+          <div class="od-agent-txt">
+            <p class="od-agent-name">{AGENT.name}</p>
+            <p class="od-agent-role">
+              {`${AGENT.role} · lic. ${AGENT.licenseNo}`}
+            </p>
+          </div>
+        </div>
+        <div class="od-agent-links">
+          <a class="od-agent-tel" data-tel href={CONTACT_PATH} hidden>
+            <span data-slot></span>
+          </a>
+          <a
+            class="od-agent-mail"
+            data-mail={AGENT.mailSlot}
+            href={CONTACT_PATH}
+            hidden
+          >
+            <span data-slot></span>
+          </a>
+        </div>
+      </aside>
+    </div>
+
+    <section
+      id="kontakt"
+      class="od-contact"
+      aria-labelledby="od-h-contact"
+      data-offer-contact
+    >
+      <img
+        class="od-contact-bg"
+        src={ctaImage.src}
+        width={ctaImage.width}
+        height={ctaImage.height}
+        alt=""
+        loading="lazy"
+        decoding="async"
+      />
+      <div class="od-contact-in">
+        <div class="od-contact-col">
+          <div class="od-contact-head">
+            <p class="od-eyebrow od-eyebrow--line">{DETAIL.contactEyebrow}</p>
+            <h2 id="od-h-contact" class="od-h2 od-h2--light">
+              {DETAIL.contactHeading}
+            </h2>
+          </div>
+          <div class="od-agent">
+            <span class="od-avatar" aria-hidden="true">{AGENT.initials}</span>
+            <div class="od-agent-txt">
+              <p class="od-agent-name">{AGENT.name}</p>
+              <p class="od-agent-role">
+                {`${AGENT.role} · lic. ${AGENT.licenseNo}`}
+              </p>
+            </div>
+          </div>
+          <div class="od-contact-rows">
+            <a class="od-contact-row" data-tel href={CONTACT_PATH} hidden>
+              <span data-slot></span>
+              <span class="od-contact-tag">{DETAIL.call}</span>
+            </a>
+            <a
+              class="od-contact-row"
+              data-mail={AGENT.mailSlot}
+              href={CONTACT_PATH}
+              hidden
+            >
+              <span data-slot class="od-ellipsis"></span>
+              <span class="od-contact-tag">{DETAIL.email}</span>
+            </a>
+          </div>
+          <a class="od-back" href={kindPath}>
+            <Icon name="chevronLeft" />
+            {DETAIL.backToList}
+          </a>
+        </div>
+        {/* miejsce na formularz zapytania (5B) — pusty kontener */}
+        <div class="od-inquiry" data-offer-inquiry></div>
+      </div>
+    </section>
+
+    <div class="od-bar-host">
+      <div class="od-bar" data-offer-bar>
+        <a
+          class="od-btn od-btn--navy"
+          data-tel
+          data-fill="href"
+          href={CONTACT_PATH}>{DETAIL.call}</a
+        >
+        <a class="od-btn od-btn--copper" href="#kontakt">{DETAIL.write}</a>
+      </div>
+    </div>
+  </main>
+  <Footer />
+</BaseLayout>
+
+<script>
+  import "@/scripts/offer-detail";
+</script>

@@ -249,6 +249,86 @@ mount)` w `useLayoutEffect` przy każdym renderze, `render(null)`
 - axe przy otwartym sheecie: skan `.include(#ol-sheet-…)` po wjeździe
   (`SHEET_IN_MS`), bo treść pod scrimem liczy kontrast przez nakładkę.
 
+## Detal oferty — stan po Etapie 4.3 (a) (`docs/analiza-oferta.md`)
+
+- **Czysty Astro + TS, bez Preact:** `src/components/offers/OfferDetailPage.astro`
+  (+ `offer-detail.css`, klasy `od-*`) i `src/scripts/offer-detail.ts`
+  (moduł strony, ładowany zawsze). Ikony dla `.astro` przez
+  `Icon.astro` (`ALL_ICONS` z `icons-detail.ts` = `ICONS` listy + ikony
+  detalu). **Nie dopisuj ikon detalu do `icons.ts`:** wyspa listy trzyma
+  cały obiekt `ICONS` (dostęp `ICONS[name]`), więc każda ścieżka tam to
+  bajty na `/oferty/` (pierwszy build: +655 B). Analogicznie: żadnych
+  efektów ubocznych na poziomie modułu w `format.ts`/`offers-ui.ts`
+  (np. `new Intl.DateTimeFormat`) — bundler ich nie wytnie.
+- **Nagłówek na mobile leży NAD dolną częścią hero** (`.od-head`
+  absolutnie, pudełko o wysokości `--od-hero-h` — wspólna zmienna z
+  `.od-hero`; `.od-top` jest kontekstem, a miniatury są JEGO częścią,
+  więc `bottom: 0` celowałoby pod hero). Desktop: nagłówek statycznie nad
+  siatką hero + 2×2 kafle.
+- **Hero = tor `scroll-snap`** ze WSZYSTKIMI zdjęciami (`hero` wariant,
+  pierwsze `eager` + `fetchpriority` + `<link rel=preload>`, reszta
+  `lazy`); ‹ ›, klawiatura ←/→ przy fokusie toru, miniatury/kafle/„Rzuty"
+  przewijają hero przez `data-gal-open` (w (b) ten sam atrybut otwiera
+  lightbox). **Miniatury spoza pierwszych `OFFER_THUMBS_EAGER` mają
+  `data-src`** (JS dogrywa je IO z `root` = pasek): natywne
+  `loading="lazy"` w POZIOMYM pasku ładuje wszystkie obrazy (Chrome:
+  22/22), a LHCI na fixture tego nie widzi (kopie 400 px). Pion i rzuty: `object-fit: contain` (pion na rozmytym tle
+  `card` tej samej fotografii). Licznik czyta `scrollLeft / clientWidth`.
+- **„Dane szczegółowe" wyłącznie z `src/lib/offers/details-rows.ts`**
+  (jedna deklaratywna lista: etykieta + `value(offer, ctx)`; `null` =
+  wiersz ukryty). Nowy wiersz = jedna pozycja w `DETAIL_ROWS` + wpis
+  w `DETAIL_ROW_IDS` + test. Desktop 2 kolumny: `--od-rows` (liczba
+  wierszy na kolumnę) liczona w Astro.
+- **Opis = JEDYNE `set:html` w projekcie** (`descriptionHtml`
+  sanityzowany w syncu; klasy `ta-center`, `ta-justify`, `u` mają CSS
+  w `offer-detail.css`). Zwijanie: JS mierzy `scrollHeight` i dopiero
+  wtedy dokłada `data-collapsed` + przycisk (próg
+  `OFFER_DESCRIPTION_COLLAPSE_PX` mobile/desktop); bez JS pełny tekst.
+  Zwinięte pudełko ma `overflow: hidden`, nie `clip` — axe uznaje treść
+  za obciętą tylko przy `hidden` (przy `clip` tekst spod maski liczył
+  kontrast na tle ciemnego kafla filmu → naruszenie).
+- **Film i spacer: iframe DOPIERO po kliknięciu** (D32) — kafel to `<a>`
+  do YouTube / spaceru (działa bez JS), JS podmienia go na `iframe`
+  (`youtube-nocookie.com/embed`, `allow` bez `microphone`). Miniatura =
+  pierwsze zdjęcie oferty z R2, nigdy z serwerów YouTube.
+- **Mapa** = `maps[coordKey(lat, lon)]` (bez `goneSince`) jako `<img>`
+  w NATURALNYCH proporcjach manifestu (pasek atrybucji nietykalny — bez
+  `object-fit: cover`); prod `mediaUrl()`, fixture kopia lokalna.
+  Brak wpisu → sekcja i kotwica znikają. `INTERACTIVE_MAP` nie ma UI.
+- **Kotwice**: `nav[data-offer-anchors]` sticky pod paskiem
+  (`top: var(--hdr-h)`, wysokość `--od-anchors-h` 48/52); pozycje
+  warunkowe (opis/film/spacer/mapa); sekcje mają `scroll-margin-top:
+calc(var(--hdr-h) + var(--od-anchors-h) + 8px)` — także `.od-contact`
+  (spoza `.od-sec`). Podświetlenie przez IntersectionObserver.
+- **Sloty kontaktowe**: panel, pasek dolny i sekcja kontaktu używają
+  `a[data-tel]` / `a[data-mail="joanna"]` (+ `data-fill="href"` na
+  przyciskach, bez JS → `/kontakt/`); puste kotwice slotów MUSZĄ mieć
+  dziecko `<span data-slot>` (lint `anchor-has-content`). Kontrakt na
+  surowym HTML wycina blok `.od-desc` (opis z CRM poza kontraktem).
+  Avatar „JH" = `--ink` na miedzi (biel z designu 3,1:1 nie trzyma AA).
+- **Pasek dolny (< 1025)**: `position: sticky; bottom: 0; height: 0` na
+  końcu `main` (znika razem z `main` na stopce), przyciski absolutnie;
+  ≥ 1025 ukryty JEST I HOST, I PASEK (kontrakt `expectBreakpointFlip`
+  czyta `display` samego paska). Panel boczny (`aside[data-offer-panel]`)
+  tylko ≥ 1025, `top: calc(var(--hdr-h) + var(--od-anchors-h) + 16px)`.
+- **Udostępnij**: trzy linki do sharerów (Facebook, WhatsApp, X)
+  z absolutnym adresem + „Skopiuj link"; gdy `navigator.share` istnieje,
+  JS pokazuje jeden przycisk natywny i chowa linki. Zero żądań do
+  podmiotów trzecich przy wejściu — linki, nie skrypty.
+- **Meta**: `<title>`/`description` z `detail-meta.ts` (opis cięty na
+  granicy zdania ≤ 160), `og:image` = `imgAt(first, "og")` przez prop
+  `ogImage` w `BaseLayout`, JSON-LD `realEstateListing()` z `jsonld.ts`
+  (adres do ulicy, bez `geo`, cena pominięta przy `null`) przez
+  `JsonLd.astro` w slocie head. `data-build-now` na `main` (jak lista).
+- **Żadnego `scrollIntoView` w skryptach widoku** do dosuwania elementu
+  w POZIOMYM pasku (miniatury, kotwice): `block: "nearest"` przewija też
+  przodków, czyli stronę w pionie — rusza sticky i wywraca zrzuty pełnej
+  strony na linuksowym Chromium („two consecutive stable screenshots",
+  bieg 37113992326). Używaj `revealInStrip()` (sam `scrollLeft` paska).
+- `tests/e2e/oferta.spec.ts` korzysta z lokalnego `imgAt()` zbudowanego
+  z `IMG_VARIANTS` + `MEDIA_BASE` — prawdziwy `imgAt` czyta
+  `import.meta.env`, którego Node Playwrighta nie ma.
+
 ## Dane kontaktowe (antyscraping)
 
 - Telefon i e-maile: sloty `a[data-tel]`, `a[data-mail="biuro|joanna"]`

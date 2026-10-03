@@ -162,6 +162,34 @@ export function formatYear(year: number): string {
   return `${year}${NBSP}r.`;
 }
 
+// Formatter tworzony LENIWIE: `new Intl.DateTimeFormat` na poziomie
+// modułu jest efektem ubocznym, którego bundler nie wytnie — trafiałby do
+// wyspy wyszukiwarki (import `format.ts`), choć lista daty nie formatuje.
+let dateShort: Intl.DateTimeFormat | undefined;
+
+/** „28 sie 2026" — „Dodano", „Dostępne od" (detal 4.3). Przyjmuje ISO
+ *  z offsetem albo samą datę; spacje niełamliwe. */
+export function formatDateShort(iso: string): string {
+  dateShort ??= new Intl.DateTimeFormat("pl-PL", {
+    timeZone: "Europe/Warsaw",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  return dateShort.format(new Date(iso)).replace(/\s+/g, NBSP);
+}
+
+/** Liczebnik z rzeczownikiem, przy `1` SAM rzeczownik („balkon",
+ *  „2 balkony", „5 balkonów") — wiersze przynależności w detalu. */
+export function countNoun(
+  n: number,
+  one: string,
+  few: string,
+  many: string,
+): string {
+  return n === 1 ? one : countLabel(n, one, few, many);
+}
+
 /** „Dom (bliźniak) na sprzedaż". */
 export function formatKind(
   mainType: MainType,

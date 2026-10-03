@@ -16,6 +16,12 @@
 //
 // Firma nie prowadzi profili w mediach społecznościowych — węzły nie mają
 // `sameAs`.
+//
+// Węzeł per oferta (4.3): `realEstateListing()` — adres do ULICY (bez
+// numeru; pól numeru budynku/lokalu nie ma w danych), bez `geo`, cena
+// pominięta przy „Zapytaj o cenę"; obrazy i opis podaje wołający (moduł
+// nie zna hosta mediów ani parsera HTML).
+import type { Offer } from "./offers/schema";
 
 /** Dane firmy — wspólne dla wszystkich węzłów. Adres (`street`…) = biuro,
  *  w którym firma przyjmuje klientów; `seat*` = siedziba wg rejestru
@@ -122,4 +128,59 @@ export function webSite(site: string | URL): Record<string, unknown> {
       },
     ],
   };
+}
+
+export interface ListingExtras {
+  /** opis bez HTML, ucięty na granicy zdania (`detail-meta.ts`) */
+  description: string;
+  /** absolutne adresy zdjęć w wariancie `hero` (kilka pierwszych) */
+  images: readonly string[];
+}
+
+/** Detal oferty: `RealEstateListing` z `Offer` jako ofertą handlową.
+ *  `provider` to referencja `@id` węzła firmy (bez duplikatu danych). */
+export function realEstateListing(
+  site: string | URL,
+  offer: Offer,
+  path: string,
+  extras: ListingExtras,
+): Record<string, unknown> {
+  const url = abs(site, path);
+  const loc = offer.location;
+  const node: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "RealEstateListing",
+    "@id": `${url}#oferta`,
+    name: offer.title.trim() || offer.typeName,
+    url,
+    description: extras.description,
+    datePosted: offer.addedAt,
+    identifier: offer.number,
+    address: {
+      "@type": "PostalAddress",
+      ...(loc.street
+        ? { streetAddress: `${loc.streetType ?? "ul."} ${loc.street}` }
+        : {}),
+      addressLocality: loc.city,
+      addressRegion: loc.province,
+      addressCountry: "PL",
+    },
+    floorSize: {
+      "@type": "QuantitativeValue",
+      value: offer.area,
+      unitCode: "MTK",
+    },
+    provider: { "@id": abs(site, "/#firma") },
+  };
+  if (extras.images.length) node.image = [...extras.images];
+  if (offer.rooms) node.numberOfRooms = offer.rooms;
+  if (offer.price !== null) {
+    node.offers = {
+      "@type": "Offer",
+      price: offer.price,
+      priceCurrency: offer.currency,
+      url,
+    };
+  }
+  return node;
 }

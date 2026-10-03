@@ -2,6 +2,9 @@
 // `viewBox 0 0 24 24`, obrys `currentColor` 1,75, zaokrąglone końce;
 // rozmiar steruje `font-size` rodzica (`width/height="1em"`). Jedna
 // tablica ścieżek dla karty (Preact) i komponentów `.astro`.
+// Ikony DETALU (kopiuj, drukuj, sharery…) żyją w `icons-detail.ts` —
+// `ICONS` trafia do bundla wyspy w całości (dostęp dynamiczny
+// `ICONS[name]`), więc każda ścieżka tutaj kosztuje bajty na liście.
 export const ICON_VIEWBOX = "0 0 24 24";
 
 export const ICONS = {

@@ -1,17 +1,13 @@
 ---
-// Trasy ofert: listy typ × transakcja [× lokalizacja] w widoku 4.2 (a)
-// (`OffersListPage`) oraz detal w WERSJI SZKIELETOWEJ (2.8) — podmienia go
-// Etap 4.3. Adresy powstają z danych (`data.ts` → `offerRoutes()`) —
-// wyłącznie kombinacje z ≥ 1 ofertą (D30). Selektor `main h1` = kontrakt
-// smoke; `data-offer-detail/-number/-price` = kontrakt szkieletu detalu.
+// Trasy ofert: listy typ × transakcja [× lokalizacja] w widoku 4.2
+// (`OffersListPage`) oraz detal w widoku 4.3 (`OfferDetailPage`). Adresy
+// powstają z danych (`data.ts` → `offerRoutes()`) — wyłącznie kombinacje
+// z ≥ 1 ofertą (D30). Kontrakty: `main h1` (smoke), `data-offer-detail/
+// -number/-price` (detal; szkielet S2c niósł je jako pierwsze).
+import OfferDetailPage from "@/components/offers/OfferDetailPage.astro";
 import OffersListPage from "@/components/offers/OffersListPage.astro";
-import SkeletonPage from "@/components/SkeletonPage.astro";
-import { imgAt, mediaUrl } from "@/lib/img";
 import { loadOffersData } from "@/lib/offers/data";
 import { parsePath } from "@/lib/offers/filters";
-import { formatLocation, formatPrice } from "@/lib/offers/format";
-import { coordKey } from "@/lib/offers/map-key";
-import type { Offer } from "@/lib/offers/schema";
 import {
   offerStaticPaths,
   type OfferRouteProps,
@@ -23,19 +19,6 @@ export function getStaticPaths() {
 }
 
 const props = Astro.props as OfferRouteProps;
-const { maps } = loadOffersData();
-
-function photoUrl(offer: Offer): string | undefined {
-  const first = offer.photos[0];
-  return first ? imgAt(first.r2Key, "card") : undefined;
-}
-function mapUrl(offer: Offer): string | undefined {
-  const entry = maps[coordKey(offer.location.lat, offer.location.lon)];
-  if (!entry || entry.goneSince) return undefined;
-  return import.meta.env.MEDIA_SOURCE === "fixture"
-    ? imgAt(entry.r2Key, "card")
-    : mediaUrl(entry.r2Key);
-}
 
 // Kontekst listy ze ścieżki (typ, transakcja, segment lokalizacji);
 // etykieta lokalizacji z pierwszej oferty (wszystkie mają ten sam slug).
@@ -54,52 +37,12 @@ const listContext =
         };
       })()
     : undefined;
-
-const detailTitle =
-  props.kind === "detail"
-    ? `${props.offer.title || props.offer.number} — Oferta ${props.offer.number}`
-    : "";
 ---
 
 {
   props.kind === "list" ? (
     <OffersListPage offers={props.offers} context={listContext!} />
   ) : (
-    <SkeletonPage
-      title={detailTitle}
-      heading={props.offer.title || props.offer.number}
-    >
-      <article data-offer-detail={props.offer.number}>
-        <p data-offer-number>{props.offer.number}</p>
-        <p data-offer-price>
-          {formatPrice(
-            props.offer.price,
-            props.offer.transaction,
-            props.offer.currency,
-          )}
-        </p>
-        <p>{formatLocation(props.offer.location)}</p>
-        {photoUrl(props.offer) && (
-          <img
-            src={photoUrl(props.offer)}
-            alt={props.offer.photos[0].alt}
-            width={props.offer.photos[0].width}
-            height={props.offer.photos[0].height}
-            loading="lazy"
-            decoding="async"
-            data-offer-photo
-          />
-        )}
-        {mapUrl(props.offer) && (
-          <img
-            src={mapUrl(props.offer)}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            data-offer-map
-          />
-        )}
-      </article>
-    </SkeletonPage>
+    <OfferDetailPage offer={props.offer} />
   )
 }
