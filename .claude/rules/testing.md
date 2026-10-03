@@ -4,6 +4,62 @@ Harness odziedziczony z szablonu projektu (konfiguracja
 Playwright/Vitest/axe/LHCI, 6 profili, helpery); liczby szablonu NIE
 obowiązują — baseline'y i budżety powstają od nowa w Etapie 3.
 
+STAN po Etapie 4.4 (strona główna): unit `home-offers`
+(`pickHomeOffers`: tylko `aktywna`, od najnowszej, bez dopełniania, zero
+i limit; fixture ze skipem). E2E `home` (treść na `chromium-1920`;
+układ, hero i ruch także na `chromium-pixel-5` i `webkit-iphone-14`;
+`useMediaStub`; teksty z `home-copy.ts`): hero — `main h1` =
+`HOME_COPY.hero.heading`, wysokość hero = `innerHeight` (sub-pikselowo),
+`[data-hero-photo]` z `eager`, `fetchpriority`, wymiarami, `opacity 1` i
+BEZ przodka `[data-rv]`; surowy HTML: dwa `link[rel=preload][as=image]`
+z `media` (kadr pionowy poniżej `HOME_POSTER_TALL_BELOW_PX`), `<video>`
+z `muted`, `playsinline`, `preload="none"`, `data-state="idle"`, bez
+`autoplay` i `poster`, `<source>` MP4 → WebM, bramka `js-motion` w
+`<head>`; desktop: `video[data-state]` → `playing` (Chromium Playwrighta
+gra WebM — nie ma H.264), po `dispatchEvent(new Event("ended"))` →
+`photo` i `opacity 0`; zwężenie okna poniżej 1025 w trakcie filmu →
+`photo`; mobile: zero żądań `/video/`, stan `idle`, `currentSrc` = kadr
+pionowy; **PUNKTOWA emulacja `reducedMotion: "reduce"` z komentarzem**
+(drugi dozwolony wyjątek obok liter paska): brak `js-motion`, brak żądań
+wideo, bloki spod zgięcia `opacity 1`, `[data-px]` i `[data-hero-zoom]`
+z `transform: none`; bez JS: to samo, a do tego sloty ukryte i przycisk
+do `/kontakt/`. Sekcje: `h2` = tytuł i akcent z `home-copy`, eyebrow,
+CTA `a.sx-btn` → trasa, `aria-labelledby`; 3 kafle usług z `href` z
+`home-copy`, 4 kroki; każdy link wewnętrzny < 400 (kotwice usług — liczy
+się trasa). Kafle: `[data-home-offer]` w kolejności
+`sortEntries(pickOffers({status:"aktywna"}).map(toIndexEntry),"newest")`
+obciętej do `HOME_OFFERS_MAX`, `data-count`, treść z `format.ts` i
+`offers-ui.ts`, `img.ht-img` = wariant `card` z wymiarami i `lazy`,
+„Nowość" ⇔ `isNewOffer` względem `[data-home="oferty"][data-build-now]`,
+`<source>` z `hero 2x` TYLKO na dużym kaflu pełnej trójki; zero
+aktywnych = wariant bez `[data-home-offers]` (bez skipa); mobile:
+karuzela (`overflow-x: auto`, `scroll-snap-stop: always`, brak
+przewijania strony w bok; skip poniżej 2 kafli). Sloty: surowy `<main>`
+bez telefonu, maila, `tel:` i `mailto:`; dwie kotwice `hidden` z
+`<span data-slot>`; po JS `tel:` i `mailto:`. Progi:
+`expectBreakpointFlip(1025)` na 9–10 elementach oraz kadr plakatu przy
+767/768. Ruch: `html.js-motion` i `data-motion`, blok spod zgięcia
+`opacity 0` → `.is-in`; **sonda parallaxu** — dla każdego `[data-px]`
+zapas (połowa różnicy wysokości obrazu i kadru) ≥ `PX_AMT_*` × wysokość
+kadru, a w sześciu pozycjach scrolla obraz zakrywa cały kadr; zoom:
+`scale > 1,1` po pół ekranu, `h1` gaśnie, powrót = 1; scroll natywny
+(`scrollTo` synchroniczne, bez blokady dokumentu); zero hostów trzecich
+po `revealSweep`; axe PO `revealSweep` (reveale chowają treść spod
+zgięcia — bez przejazdu axe by ją pominął; `a11y.spec` skanuje „/" bez
+przejazdu, więc ten test jest właściwą bramką strony głównej). Visual
+`home` (fixture, `useVisualFixtureGuard`): `home-top` (okno startowe) i
+`home-full` (fullPage po `revealSweep`, próg 0,001) × 6 profili = 12 PNG
+na platformę; **film hero odcinany przez `blockHeroVideo(page)`
+(`tests/helpers/visual.ts`, `page.route` z przerwaniem żądań do katalogu `/video/`) zamiast
+maski** — film leży pod treścią hero i maska zakryłaby cały pierwszy
+ekran; odcięcie daje stan „zdjęcie" (spec asertuje, że `data-state` nie
+jest `playing`). To samo w `chrome.spec` dla `chrome-home-top` i
+`chrome-home-solid` (zrzuty paska niosą hero — zregenerowane w 4.4; z
+`chrome-home-solid` zeszło dosztukowanie `main`). `revealSweep` zna
+selektor `html.js-motion [data-rv]:not(.is-in)` (W PARZE z
+`content-motion.ts`). `navigation` i `smoke` dostały `useMediaStub()`
+(„/" niesie kafle ofert z hosta mediów).
+
 STAN po Etapie 4.3 (b) (lightbox, druk, 404 świadoma ofert): e2e
 `oferta` z blokiem „lightbox i druk" (chromium-1920; dane produkcyjne,
 `pickOffer` z `where` po liczbie zdjęć `photo` i `test.skip`): przed
@@ -308,6 +364,7 @@ spec otwierający trasy ofert), `useChromium1920Only`, `collectPageIssues`.
 | `src/lib/offers/{filters,index-entry,location-path,locations-ui,offers-ui,text,enums}.ts`, `src/components/offers/**` (w tym wyspa `SearchIsland.tsx`, sheety `sheets.tsx`), `src/pages/oferty/**`                            | `pnpm test:unit && pnpm build && pnpm test:dist && pnpm test:e2e` (+ warstwa wizualna przy zmianie wyglądu; po zmianie wyspy także pomiar budżetu — `docs/analiza-oferty.md` §12.5; sheety = profile mobilne `oferty-mobile`)                                                                                                                     |
 | `src/lib/offers/{details-rows,detail-meta}.ts`, `src/lib/jsonld.ts`, `src/components/offers/{OfferDetailPage,LightboxShell}.astro`, `offer-detail.css`, `src/scripts/{offer-detail,offer-lightbox}.ts`, `src/pages/404.astro` | `pnpm test:unit && pnpm build && pnpm test:e2e tests/e2e/oferta.spec.ts tests/e2e/not-found.spec.ts tests/e2e/a11y.spec.ts tests/e2e/seo.spec.ts` (+ `build:visual && test:visual tests/visual/oferta.spec.ts tests/visual/not-found.spec.ts` przy zmianie wyglądu; budżet `script` detalu i chunk lightboxa — `docs/analiza-oferta.md` §5 i §11) |
 | `tests/helpers/**`, `lighthouserc*.cjs`, `.github/workflows/*.yml`                                                                                                                                                            | `pnpm test:unit` (helpery) + warstwa, której spec używa helpera; workflow NIE uruchamiać w sesji                                                                                                                                                                                                                                                  |
+| `src/pages/index.astro`, `src/components/sections/**` (sekcje strony głównej, moduły ruchu, `content.css`), `src/lib/offers/home-offers.ts`, `public/video/**`                                                                | `pnpm test:unit && pnpm build && pnpm test:e2e tests/e2e/home.spec.ts tests/e2e/navigation.spec.ts tests/e2e/a11y.spec.ts` (+ `build:visual && test:visual tests/visual/home.spec.ts tests/visual/chrome.spec.ts` przy zmianie wyglądu; wideo → `total` desktop w LHCI, szkło i kolory hero → pomiar kontrastu: `docs/analiza-home.md` §6, §10.2) |
 | Każda zmiana wyglądu                                                                                                                                                                                                          | `pnpm build:visual && pnpm test:visual`                                                                                                                                                                                                                                                                                                           |
 | Przed release                                                                                                                                                                                                                 | pełne `pnpm test` + `/release-check`                                                                                                                                                                                                                                                                                                              |
 
@@ -382,10 +439,13 @@ spec otwierający trasy ofert), `useChromium1920Only`, `collectPageIssues`.
   w settings.json). Nigdy nie „naprawiaj" rozjazdu darwin↔linux globalnym
   progiem — od tego jest `{platform}` w ścieżce snapshotów.
 - Wideo na zrzutach zawsze przez maskę (klatka wideo to loteria);
-  odtwarzanie testuj funkcjonalnie w e2e.
-- NIE emuluj `prefers-reduced-motion: reduce` (bramka w BaseLayout = testy
+  odtwarzanie testuj funkcjonalnie w e2e. Wyjątek uzgodniony w 4.4:
+  film hero strony głównej (pod treścią, widoczny tylko w trakcie
+  odtwarzania) odcina się `blockHeroVideo()` — maska zakryłaby `h1`.
+- NIE emuluj `prefers-reduced-motion: reduce` (bramka ruchu = testy
   „przechodzą" na martwej stronie); świadome, punktowe wyjątki per test
-  weryfikujące ścieżkę reduce są dozwolone — oznaczaj je komentarzem.
+  weryfikujące ścieżkę reduce są dozwolone — oznaczaj je komentarzem
+  (dziś dwa: litery paska w `navigation`, hero i reveale w `home`).
 - a11y (axe): allowlista znanych naruszeń w `tests/e2e/a11y.spec.ts` to
   RATCHET — startujemy od PUSTEJ; wpis wolno usunąć po realnej poprawie;
   nowych nie dopisuj bez decyzji Mateusza.

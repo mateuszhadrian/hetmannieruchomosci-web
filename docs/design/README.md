@@ -87,7 +87,7 @@ Pochodne generuje `node scripts/optimize-images.mjs <src> <out.webp>
 
 | Źródło (eksport)          | Wymiary   | Pochodne w `src/assets/img/`       | Szerokości  |
 | ------------------------- | --------- | ---------------------------------- | ----------- |
-| `hero-poster.png`         | 1456×816  | `hero-poster{,-m}.webp`            | 1456 / 1024 |
+| `hero-poster.png`         | 1456×816  | `hero-poster{,-tall}.webp`         | 1456 / 720 (kadr pionowy 720×816 — niżej) |
 | `onas-hero-v2.png`        | 1456×816  | `onas-hero{,-m}.webp`              | 1456 / 1024 |
 | `onas-dokumentacja.png`   | 1456×816  | `onas-dokumentacja{,-m}.webp`      | 1456 / 1024 |
 | `onas-umowa.png`          | 1456×816  | `onas-umowa{,-m}.webp`             | 1456 / 1024 |
@@ -111,6 +111,20 @@ Pochodne generuje `node scripts/optimize-images.mjs <src> <out.webp>
 | `logo-silver.png`         | 1500×344  | `src/assets/logo/logo-silver.webp` | 600 (q 90)  |
 
 Razem 20 kadrów → 40 plików WebP, 1,7 MB (źródła: 22 MB).
+
+**Kadr pionowy plakatu hero (Etap 4.4).** Wariant `hero-poster-m.webp`
+(1024×574) został zastąpiony przez `hero-poster-tall.webp` — wycinek
+720×816 o PEŁNEJ wysokości źródła, podawany telefonom (< 768 px), gdzie
+hero to wysokie pole z `object-fit: cover` i pozycją `89% 50%`:
+
+```bash
+node scripts/optimize-images.mjs docs/design/export/assets/img/hero-poster.png \
+  src/assets/img/hero-poster-tall.webp 720 78 655,0,720,816
+```
+
+Lewa krawędź wycinka = (1456 − 720) × 0,89 = 655 px — przy tej wartości
+`object-position: 89%` daje na wycinku dokładnie ten sam kadr co na pełnym
+źródle, dla każdej proporcji okna.
 
 **Szerokości są punktem wyjścia, nie decyzją ostateczną.** Widok, który
 osadza kadr, dobiera wariant do realnego pola (`sizes`) i w razie potrzeby
@@ -141,18 +155,27 @@ w `<picture>` przy 600 px (`CONTACT_MAP_MIN_PX`).
 
 | Plik                    | Kodek          | Wymiary | Waga   |
 | ----------------------- | -------------- | ------- | ------ |
-| `public/video/hero.webm` | VP9 (z eksportu, bez zmian) | 832×464 | 2,0 MB |
-| `public/video/hero.mp4`  | H.264 High, yuv420p, bez dźwięku, `faststart` | 832×464 | 0,9 MB |
+| `public/video/hero.mp4`  | H.264 High, yuv420p, bez dźwięku, `faststart`, CRF 28 | 832×464 | 443 KB |
+| `public/video/hero.webm` | VP9, CRF 42, bez dźwięku | 832×464 | 461 KB |
 
-Wariant MP4 jest dla przeglądarek, które nie odtworzą WebM. Komenda:
+Oba pliki przekodowane w Etapie 4.4 ze źródła `assets/video/hero.webm`
+eksportu (VP9, 2,0 MB — poza repo). MP4 jest PIERWSZYM `<source>` (H.264
+gra w każdej przeglądarce z kodekami systemowymi), WebM — dla pozostałych
+(m.in. Chromium bez kodeków własnościowych). Rozmiar MP4 wchodzi do
+budżetu `total` desktop w Lighthouse — uzasadnienie i pomiary:
+`docs/analiza-home.md` §6. Komendy:
 
 ```bash
 ffmpeg -i hero.webm -an -c:v libx264 -profile:v high -level 4.0 \
-  -pix_fmt yuv420p -crf 23 -preset slow -movflags +faststart hero.mp4
+  -pix_fmt yuv420p -crf 28 -preset slow -movflags +faststart hero.mp4
+ffmpeg -i hero.webm -an -c:v libvpx-vp9 -b:v 0 -crf 42 -row-mt 1 \
+  -deadline good -cpu-used 1 -pix_fmt yuv420p hero-out.webm
 ```
 
-Osadzenie, kolejność `<source>`, plakat i zachowanie w trybie
-oszczędzania energii — Etap 4.4.
+Osadzenie: `src/components/sections/home/HomeHero.astro` (bez `autoplay`,
+`preload="none"`), start i przejście w zdjęcie: `home-hero.ts` — film gra
+wyłącznie od 1025 px i tylko przy dozwolonym ruchu; każda inna ścieżka
+(tryb oszczędzania energii, błąd, oszczędzanie danych) zostawia zdjęcie.
 
 ### Ikony i og-image
 
