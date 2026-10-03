@@ -1,0 +1,163 @@
+---
+// 01 O nas (4.4, docs/analiza-home.md §1.2): nagłówek, zdjęcie z planszą
+// liczb, akapit, wejście na /o-nas/. Jeden markup w kolejności telefonu
+// (nagłówek → zdjęcie → akapit → przycisk); desktop rozkłada go siatką
+// (zdjęcie z lewej, tekst z prawej). Liczby i teksty = PLACEHOLDER (H15).
+import imgM from "@/assets/img/home-o-nas-m.webp";
+import img from "@/assets/img/home-o-nas.webp";
+import SectionHead from "../SectionHead.astro";
+import { HOME_COPY } from "./home-copy";
+
+const t = HOME_COPY.about;
+---
+
+<section class="sx-sec ha" data-home="o-nas" aria-labelledby="home-o-nas-h">
+  <div class="sx-in ha-in">
+    <div class="ha-head" data-rv>
+      <SectionHead
+        id="home-o-nas-h"
+        eyebrow={t.eyebrow}
+        title={t.title}
+        accent={t.accent}
+      />
+    </div>
+    <div class="ha-media" data-rv="soft">
+      <div class="px-frame ha-frame">
+        <img
+          data-px
+          src={img.src}
+          srcset={`${imgM.src} ${imgM.width}w, ${img.src} ${img.width}w`}
+          sizes="(min-width: 1025px) 36vw, (min-width: 640px) 540px, 82vw"
+          width={img.width}
+          height={img.height}
+          alt={t.imageAlt}
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+      <div class="ha-stats">
+        {
+          t.stats.map((s) => (
+            <p class="ha-stat">
+              <strong>{s.value}</strong>
+              <span>{s.label}</span>
+            </p>
+          ))
+        }
+      </div>
+    </div>
+    <p class="sx-text ha-text" data-rv style="--rvd: 0.07s">{t.text}</p>
+    <div class="ha-act" data-rv style="--rvd: 0.14s">
+      <a class="sx-btn" href={t.href}>{t.cta}</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .ha {
+    background: var(--bg-card);
+  }
+  .ha-in {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(24px, 7vw, 40px);
+  }
+  .ha-media {
+    position: relative;
+    margin-left: clamp(40px, 12vw, 64px);
+    padding-bottom: clamp(40px, 11vw, 56px);
+  }
+  .ha-frame {
+    aspect-ratio: 4 / 5;
+    background: var(--bg-photo);
+    border-radius: 0 0 0 clamp(48px, 14vw, 72px);
+  }
+  .ha-stats {
+    position: absolute;
+    left: calc(-1 * clamp(40px, 12vw, 64px));
+    bottom: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(16px, 4.6vw, 24px);
+    box-sizing: border-box;
+    width: min(78%, 300px);
+    padding: clamp(16px, 4.6vw, 22px) clamp(18px, 5vw, 24px);
+    background: var(--navy);
+  }
+  .ha-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+  }
+  .ha-stat strong {
+    font-size: clamp(36px, 11vw, 56px);
+    line-height: 1;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    color: #fff;
+  }
+  .ha-stat span {
+    font-family: var(--font-label);
+    font-size: clamp(11px, 3vw, 13px);
+    line-height: 1.4;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--copper-light);
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .ha-in {
+      display: grid;
+      grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+      /* wiersze skrajne 1fr centrują trójkę tekstową względem zdjęcia */
+      grid-template-rows: 1fr auto auto auto 1fr;
+      column-gap: clamp(48px, 6vw, 120px);
+      row-gap: clamp(20px, 2vw, 32px);
+    }
+    .ha-media {
+      grid-column: 1;
+      grid-row: 1 / -1;
+      margin-left: 0;
+      padding: 0 clamp(40px, 4vw, 64px) clamp(40px, 4vw, 64px) 0;
+    }
+    .ha-frame {
+      border-radius: 0 0 0 clamp(48px, 4.5vw, 72px);
+    }
+    .ha-stats {
+      left: auto;
+      right: 0;
+      gap: clamp(20px, 2vw, 32px);
+      width: min(74%, 380px);
+      padding: clamp(22px, 2vw, 30px) clamp(24px, 2.2vw, 32px);
+    }
+    .ha-stat {
+      gap: 8px;
+    }
+    .ha-stat strong {
+      font-size: clamp(44px, 3.6vw, 60px);
+    }
+    .ha-stat span {
+      font-size: clamp(11px, 0.85vw, 13px);
+    }
+    .ha-head,
+    .ha-text,
+    .ha-act {
+      grid-column: 2;
+    }
+    .ha-head {
+      grid-row: 2;
+    }
+    .ha-head :global(.sx-h2) {
+      max-width: 18ch;
+    }
+    .ha-text {
+      grid-row: 3;
+      max-width: 44ch;
+    }
+    .ha-act {
+      grid-row: 4;
+    }
+  }
+</style>

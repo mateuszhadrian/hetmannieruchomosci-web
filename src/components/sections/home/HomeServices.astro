@@ -1,0 +1,286 @@
+---
+// 03 Usługi (4.4, docs/analiza-home.md §1.2): ciemna sekcja pełnoekranowa
+// ze zdjęciem tła (parallax), nagłówek z akapitem i trzy kafle-linki do
+// /uslugi/ (kotwice `#sprzedaje`, `#kupuje`, `#pomoc-prawna` powstaną
+// z widokiem usług w 4.6). Numery kafli to dekoracja — licznik CSS
+// (nie tekst w DOM). Kafle leżą na szkle (`backdrop-filter`), więc reveal
+// dostają tylko na desktopie (`data-rv="d"`).
+import imgM from "@/assets/img/uslugi-doradcy-m.webp";
+import img from "@/assets/img/uslugi-doradcy.webp";
+import SectionHead from "../SectionHead.astro";
+import { HOME_COPY } from "./home-copy";
+
+const t = HOME_COPY.services;
+---
+
+<section
+  class="sx-sec sx-sec--dark hsv"
+  data-home="uslugi"
+  aria-labelledby="home-uslugi-h"
+>
+  <div class="px-frame hsv-bg">
+    <img
+      data-px
+      src={img.src}
+      srcset={`${imgM.src} ${imgM.width}w, ${img.src} ${img.width}w`}
+      sizes="100vw"
+      width={img.width}
+      height={img.height}
+      alt={t.imageAlt}
+      loading="lazy"
+      decoding="async"
+    />
+  </div>
+  <span class="hsv-shade" aria-hidden="true"></span>
+  <div class="sx-in hsv-in">
+    <div class="hsv-copy">
+      <div data-rv>
+        <SectionHead
+          id="home-uslugi-h"
+          eyebrow={t.eyebrow}
+          title={t.title}
+          accent={t.accent}
+        />
+      </div>
+      <p class="sx-text hsv-text" data-rv style="--rvd: 0.07s">{t.text}</p>
+    </div>
+    <ul class="hsv-list">
+      {
+        t.items.map((item, i) => (
+          <li data-rv="d" style={`--rvd: ${(i * 0.07).toFixed(2)}s`}>
+            <a class="hsv-tile" href={item.href}>
+              <span class="hsv-num" aria-hidden="true" />
+              <span class="hsv-body">
+                <span class="hsv-t">{item.title}</span>
+                <span class="hsv-d">{item.text}</span>
+              </span>
+              <span class="hsv-more">
+                <span class="hsv-more-t">{t.more}</span>
+                <svg
+                  viewBox="0 0 24 24"
+                  width="1em"
+                  height="1em"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M5 12h14 M12 5l7 7-7 7" />
+                </svg>
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .hsv {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: var(--svh, 100svh);
+  }
+  .hsv-bg,
+  .hsv-shade {
+    position: absolute;
+    inset: 0;
+  }
+  .hsv-bg img {
+    object-position: 50% 40%;
+  }
+  .hsv-shade {
+    background: linear-gradient(
+      180deg,
+      rgba(14, 32, 60, 0.9) 0%,
+      rgba(14, 32, 60, 0.74) 42%,
+      rgba(14, 32, 60, 0.96) 100%
+    );
+  }
+  .hsv-in {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(24px, 7vw, 40px);
+    width: 100%;
+  }
+  .hsv-copy {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(24px, 7vw, 40px);
+  }
+  .hsv-list {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(12px, 3.4vw, 16px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: usluga;
+  }
+  .hsv-tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(10px, 3vw, 12px);
+    padding: clamp(18px, 5vw, 22px);
+    overflow: clip;
+    text-decoration: none;
+    background: rgba(221, 221, 221, 0.14);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border-top: 2px solid var(--copper-light);
+    border-radius: 0 0 0 clamp(18px, 5vw, 24px);
+    counter-increment: usluga;
+  }
+  .hsv-num {
+    position: absolute;
+    top: clamp(6px, 2vw, 10px);
+    right: clamp(12px, 3.4vw, 16px);
+    font-family: var(--font-label);
+    font-size: clamp(44px, 13vw, 60px);
+    line-height: 1;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.16);
+  }
+  .hsv-num::before {
+    content: counter(usluga, decimal-leading-zero);
+  }
+  .hsv-body {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(10px, 3vw, 12px);
+  }
+  .hsv-t {
+    max-width: 20ch;
+    font-size: clamp(20px, 5.6vw, 25px);
+    line-height: 1.25;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: #fff;
+    text-wrap: pretty;
+  }
+  .hsv-d {
+    max-width: 34ch;
+    font-size: 15px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.82);
+    text-wrap: pretty;
+  }
+  .hsv-more {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--copper-light);
+  }
+  .hsv-more svg {
+    flex: none;
+    font-size: 17px;
+  }
+  .hsv-tile:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .hsv-bg img {
+      object-position: 70% 45%;
+    }
+    .hsv-shade {
+      background: linear-gradient(
+        100deg,
+        rgba(14, 32, 60, 0.96) 0%,
+        rgba(14, 32, 60, 0.84) 46%,
+        rgba(14, 32, 60, 0.62) 100%
+      );
+    }
+    .hsv-in {
+      display: grid;
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      gap: clamp(48px, 5vw, 104px);
+      align-items: center;
+    }
+    .hsv-copy {
+      gap: clamp(16px, 1.5vw, 24px);
+    }
+    .hsv-copy :global(.sx-h2) {
+      max-width: 20ch;
+    }
+    .hsv-text {
+      max-width: 40ch;
+    }
+    .hsv-list {
+      gap: clamp(16px, 1.6vw, 24px);
+    }
+    .hsv-tile {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: clamp(20px, 2vw, 36px);
+      padding: clamp(24px, 2.2vw, 34px) clamp(26px, 2.4vw, 40px);
+      border-top: 0;
+      border-left: 2px solid var(--copper-light);
+      border-radius: 0 0 0 clamp(20px, 2vw, 30px);
+      transition:
+        transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+        background 0.35s ease;
+    }
+    .hsv-tile:hover {
+      background: rgba(221, 221, 221, 0.2);
+    }
+    .hsv-num {
+      position: static;
+      font-size: clamp(38px, 3.4vw, 54px);
+      color: rgba(224, 168, 106, 0.55);
+    }
+    .hsv-body {
+      gap: clamp(6px, 0.6vw, 10px);
+    }
+    .hsv-t {
+      max-width: none;
+      font-size: clamp(21px, 1.7vw, 28px);
+      line-height: 1.22;
+      letter-spacing: -0.015em;
+    }
+    .hsv-d {
+      max-width: 46ch;
+      font-size: clamp(15px, 1.05vw, 17px);
+      line-height: 1.55;
+    }
+    /* desktop: sama strzałka w kółku (nazwę linku niosą tytuł i opis) */
+    .hsv-more {
+      justify-content: center;
+      width: clamp(48px, 3.6vw, 56px);
+      height: clamp(48px, 3.6vw, 56px);
+      min-height: 0;
+      border: 1px solid rgba(224, 168, 106, 0.6);
+      border-radius: 999px;
+    }
+    .hsv-more-t {
+      display: none;
+    }
+    .hsv-more svg {
+      font-size: clamp(18px, 1.4vw, 22px);
+    }
+  }
+
+  @media (min-width: 1025px) and (prefers-reduced-motion: no-preference) {
+    .hsv-tile:hover {
+      transform: translateX(8px);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hsv-tile {
+      transition: none;
+    }
+  }
+</style>

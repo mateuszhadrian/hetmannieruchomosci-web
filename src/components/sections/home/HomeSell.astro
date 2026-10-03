@@ -1,0 +1,255 @@
+---
+// 04 Sprzedaj z nami (4.4, docs/analiza-home.md §1.2): nagłówek, zdjęcie
+// z podpisem, akapit, cztery kroki, wejście na /sprzedaj-z-nami/. Jeden
+// markup w kolejności telefonu (nagłówek → zdjęcie → akapit → kroki →
+// przycisk); desktop rozkłada go siatką 12 kolumn (nagłówek | akapit
+// + przycisk, pod spodem zdjęcie | karty kroków 2×2). Numery kroków to
+// licznik CSS (dekoracja; kolejność niesie <ol>).
+import img from "@/assets/img/sprzedaj-doradca.webp";
+import SectionHead from "../SectionHead.astro";
+import { HOME_COPY } from "./home-copy";
+
+const t = HOME_COPY.sell;
+---
+
+<section
+  class="sx-sec hsl"
+  data-home="sprzedaj"
+  aria-labelledby="home-sprzedaj-h"
+>
+  <div class="sx-in hsl-in">
+    <div class="hsl-head" data-rv>
+      <SectionHead
+        id="home-sprzedaj-h"
+        eyebrow={t.eyebrow}
+        title={t.title}
+        accent={t.accent}
+      />
+    </div>
+    <div class="hsl-media" data-rv="soft">
+      <div class="px-frame hsl-frame">
+        <img
+          data-px
+          src={img.src}
+          width={img.width}
+          height={img.height}
+          alt={t.imageAlt}
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+      <p class="hsl-cap">{t.caption}</p>
+    </div>
+    <p class="sx-text hsl-text" data-rv style="--rvd: 0.07s">{t.text}</p>
+    <ol class="hsl-steps" data-rv style="--rvd: 0.07s">
+      {
+        t.steps.map((step) => (
+          <li class="hsl-step">
+            <h3>{step.title}</h3>
+            <p>{step.text}</p>
+          </li>
+        ))
+      }
+    </ol>
+    <div class="hsl-act" data-rv style="--rvd: 0.14s">
+      <a class="sx-btn" href={t.href}>{t.cta}</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hsl {
+    min-height: var(--svh, 100svh);
+    background: var(--bg);
+  }
+  .hsl-in {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(24px, 7vw, 40px);
+  }
+  .hsl-media {
+    position: relative;
+    margin-left: clamp(40px, 12vw, 64px);
+  }
+  .hsl-frame {
+    aspect-ratio: 4 / 5;
+    background: var(--bg-photo);
+    border-radius: 0 0 0 clamp(48px, 14vw, 72px);
+  }
+  .hsl-frame img {
+    object-position: 55% 45%;
+  }
+  .hsl-cap {
+    position: absolute;
+    left: calc(-1 * clamp(40px, 12vw, 64px));
+    bottom: clamp(20px, 6vw, 28px);
+    box-sizing: border-box;
+    max-width: 78%;
+    margin: 0;
+    padding: clamp(14px, 4vw, 18px) clamp(16px, 4.6vw, 22px);
+    background: var(--navy);
+    color: #fff;
+    font-size: clamp(15px, 4.103vw, 18px);
+    line-height: 1.45;
+    text-wrap: pretty;
+  }
+  /* telefon: oś z kwadratami numerów */
+  .hsl-steps {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(20px, 5.6vw, 26px);
+    margin: 0 0 0 clamp(13px, 3.6vw, 16px);
+    padding: 0 0 0 clamp(34px, 9.5vw, 44px);
+    list-style: none;
+    border-left: 2px solid var(--line);
+    counter-reset: krok;
+  }
+  .hsl-step {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    counter-increment: krok;
+  }
+  .hsl-step::before {
+    content: counter(krok, decimal-leading-zero);
+    position: absolute;
+    left: calc(-1 * clamp(34px, 9.5vw, 44px) - 15px);
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: var(--navy);
+    color: #fff;
+    font-family: var(--font-label);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .hsl-step:last-child::before {
+    background: var(--copper);
+    color: var(--ink);
+  }
+  .hsl-step h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(17px, 4.8vw, 20px);
+    line-height: 1.3;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--navy);
+    text-wrap: pretty;
+  }
+  .hsl-step p {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--slate);
+    text-wrap: pretty;
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .hsl {
+      min-height: 0;
+    }
+    .hsl-in {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      column-gap: clamp(20px, 2vw, 32px);
+      row-gap: clamp(20px, 2vw, 30px);
+    }
+    .hsl-head {
+      grid-column: 1 / 8;
+      grid-row: 1 / span 2;
+      align-self: end;
+    }
+    .hsl-head :global(.sx-h2) {
+      max-width: 26ch;
+    }
+    .hsl-text {
+      grid-column: 8 / -1;
+      grid-row: 1;
+      align-self: end;
+      max-width: 46ch;
+    }
+    .hsl-act {
+      grid-column: 8 / -1;
+      grid-row: 2;
+    }
+    .hsl-media,
+    .hsl-steps {
+      grid-row: 3;
+      margin-top: clamp(16px, 1.6vw, 34px);
+    }
+    .hsl-media {
+      grid-column: 1 / 5;
+      margin-left: 0;
+    }
+    .hsl-frame {
+      aspect-ratio: auto;
+      height: 100%;
+      min-height: clamp(400px, 38vw, 560px);
+      border-radius: 0 0 0 clamp(40px, 4vw, 64px);
+    }
+    .hsl-cap {
+      left: 0;
+      right: clamp(24px, 2.4vw, 40px);
+      bottom: clamp(24px, 2.4vw, 40px);
+      max-width: none;
+      padding: clamp(18px, 1.7vw, 26px) clamp(20px, 1.9vw, 28px);
+      font-size: clamp(15px, 1.1vw, 18px);
+    }
+    /* karty kroków 2×2 */
+    .hsl-steps {
+      grid-column: 5 / -1;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: clamp(20px, 2vw, 32px);
+      margin-left: 0;
+      padding: 0;
+      border-left: 0;
+    }
+    .hsl-step {
+      gap: clamp(10px, 1vw, 16px);
+      box-sizing: border-box;
+      padding: clamp(24px, 2.4vw, 40px);
+      background: var(--bg-card);
+      border-top: 2px solid var(--navy);
+      border-radius: 0 0 0 clamp(20px, 2vw, 30px);
+    }
+    .hsl-step::before {
+      position: static;
+      justify-content: flex-start;
+      width: auto;
+      height: auto;
+      background: none;
+      color: var(--navy);
+      font-size: clamp(30px, 2.6vw, 44px);
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    .hsl-step h3 {
+      font-size: clamp(19px, 1.5vw, 24px);
+      line-height: 1.26;
+    }
+    .hsl-step p {
+      font-size: clamp(15px, 1.05vw, 17px);
+    }
+    .hsl-step:last-child {
+      background: var(--navy);
+      border-top-color: var(--copper);
+    }
+    .hsl-step:last-child::before {
+      background: none;
+      color: var(--copper-light);
+    }
+    .hsl-step:last-child h3 {
+      color: #fff;
+    }
+    .hsl-step:last-child p {
+      color: rgba(255, 255, 255, 0.86);
+    }
+  }
+</style>

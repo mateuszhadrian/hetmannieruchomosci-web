@@ -1,0 +1,227 @@
+/* Wspólne prymitywy stron treściowych (strona główna od 4.4; kolejne
+   widoki treściowe dochodzą w 4.5–4.6): eyebrow, nagłówek dwukolorowy,
+   akapit, przycisk miedziany, stany startowe reveali i kadr parallaxu.
+   Klasy `sx-*` są globalne (arkusz importuje strona). Wygląd z designu
+   (docs/design/export/index.html); kolory poniżej AA zastąpione tokenami
+   (docs/analiza-home.md H13). Próg 1025 px W PARZE z DESKTOP_MIN_PX. */
+
+/* ── sekcja: pełna szerokość, treść w kolumnie projektu ── */
+.sx-sec {
+  position: relative;
+  box-sizing: border-box;
+  padding: clamp(48px, 13vw, 80px) max(var(--pad), calc((100% - 600px) / 2));
+}
+.sx-sec--dark {
+  overflow: clip;
+  color: #fff;
+  background: var(--navy-deep);
+}
+.sx-in {
+  position: relative;
+  max-width: var(--col);
+  margin-inline: auto;
+}
+
+/* ── nagłówek sekcji ── */
+.sx-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(12px, 3.4vw, 16px);
+}
+.sx-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: clamp(12px, 3.3vw, 14px);
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  /* design: --copper (3,1:1 na jasnym tle — poniżej AA) */
+  color: var(--copper-text);
+}
+.sx-eyebrow::before {
+  content: "";
+  flex: none;
+  width: 18px;
+  height: 2px;
+  background: var(--copper);
+}
+.sx-h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(24px, 7.2vw, 42px);
+  line-height: 1.18;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--navy);
+  text-wrap: pretty;
+}
+/* druga fraza w miedzi; --copper z designu ma na --bg 2,8:1 (poniżej
+   progu dużego tekstu 3:1) — odcień ciemniejszy trzyma 3,4:1 */
+.sx-h2 span {
+  color: var(--copper-dark);
+}
+.sx-text {
+  margin: 0;
+  max-width: 36ch;
+  font-size: clamp(15px, 4.103vw, 20px);
+  line-height: 1.55;
+  color: var(--slate);
+  text-wrap: pretty;
+}
+
+.sx-sec--dark .sx-eyebrow,
+.sx-sec--dark .sx-h2 span {
+  color: var(--copper-light);
+}
+.sx-sec--dark .sx-h2 {
+  color: #fff;
+}
+.sx-sec--dark .sx-text {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+/* ── przycisk miedziany (tekst --ink: biały z designu daje 3,1:1) ── */
+.sx-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 52px;
+  padding: 0 clamp(24px, 6.5vw, 32px);
+  background: var(--copper);
+  color: var(--ink);
+  font-size: clamp(15px, 4.103vw, 18px);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  border-radius: 0 0 0 clamp(12px, 3.5vw, 16px);
+  transition: background 0.3s ease;
+}
+.sx-btn:hover {
+  background: var(--copper-hover);
+}
+.sx-btn:focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: 3px;
+}
+.sx-sec--dark .sx-btn:focus-visible {
+  outline-color: #fff;
+}
+
+/* ── kadr parallaxu: obraz [data-px] wypełnia kadr; pod bramką ruchu
+   dostaje zapas równy amplitudzie (--px-a W PARZE z PX_AMT_* w
+   content-config.ts) — zapas ≥ ruch, bez prześwitu tła na krańcach.
+   `max-width: none`: preflight Tailwinda ma img { max-width: 100% }. ── */
+.px-frame {
+  --px-a: 0.08;
+  position: relative;
+  overflow: clip;
+}
+.px-frame > [data-px],
+.px-frame > picture > [data-px] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+}
+/* <picture> jest przezroczysty dla układu — kadrem zostaje .px-frame */
+.px-frame > picture {
+  display: contents;
+}
+html.js-motion .px-frame > [data-px],
+html.js-motion .px-frame > picture > [data-px] {
+  top: calc(var(--px-a) * -100%);
+  height: calc(100% + var(--px-a) * 200%);
+  will-change: transform;
+}
+
+/* ── reveale [data-rv] — WYŁĄCZNIE pod html.js-motion (bez JS / przy
+   reduce bramka nie nadaje klasy: treść widoczna od razu).
+   Mobile: 22 px wjazdu, bez opóźnień (kaskada bierze się z tego, że
+   każdy blok przecina próg na innej wysokości). ── */
+html.js-motion [data-rv] {
+  transition:
+    opacity 0.7s ease,
+    transform 0.8s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+html.js-motion [data-rv]:not(.is-in) {
+  opacity: 0;
+  transform: translate3d(0, 22px, 0);
+}
+/* duże bloki obrazowe — sam fade */
+html.js-motion [data-rv="soft"]:not(.is-in) {
+  transform: none;
+}
+
+@media (max-width: 1024.98px) {
+  /* bloki na szkle (backdrop-filter) NIE animują się na mobile: przy
+     zmianie krycia rozmycie przelicza się skokowo i tło mruga */
+  html.js-motion [data-rv="d"]:not(.is-in) {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+@media (min-width: 1025px) {
+  .sx-sec {
+    padding: clamp(56px, 5vw, 110px) var(--pad);
+  }
+  .sx-head {
+    gap: clamp(16px, 1.5vw, 24px);
+  }
+  .sx-eyebrow {
+    gap: 12px;
+    font-family: var(--font-label);
+    font-size: clamp(11px, 0.9vw, 13px);
+    letter-spacing: 0.16em;
+    font-weight: 500;
+  }
+  .sx-eyebrow::before {
+    width: 26px;
+  }
+  .sx-h2 {
+    font-size: clamp(30px, 2.9vw, 52px);
+    line-height: 1.12;
+  }
+  .sx-text {
+    max-width: 46ch;
+    font-size: clamp(16px, 1.15vw, 20px);
+  }
+  .sx-btn {
+    min-height: clamp(48px, 3.5vw, 60px);
+    padding: 0 clamp(24px, 2.2vw, 36px);
+    font-size: clamp(15px, 1.2vw, 18px);
+    border-radius: 0 0 0 clamp(12px, 1.2vw, 16px);
+  }
+  .px-frame {
+    --px-a: 0.1;
+  }
+  /* dłuższy dojazd, większy dystans, delikatne dociągnięcie skalą;
+     kaskada przez --rvd (inline na bloku) */
+  html.js-motion [data-rv] {
+    transition:
+      opacity 0.95s cubic-bezier(0.16, 1, 0.3, 1) var(--rvd, 0s),
+      transform 1.05s cubic-bezier(0.16, 1, 0.3, 1) var(--rvd, 0s);
+  }
+  html.js-motion [data-rv]:not(.is-in) {
+    transform: translate3d(0, 44px, 0) scale(0.984);
+  }
+  html.js-motion [data-rv="soft"]:not(.is-in) {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sx-btn {
+    transition: none;
+  }
+}
