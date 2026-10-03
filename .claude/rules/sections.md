@@ -438,7 +438,10 @@ true)`). **Akcja wymagająca przewinięcia strony („Napisz" → `#kontakt`)
   wymaga ponownego pomiaru (metoda w analizie §10.2).
 - **Film → zdjęcie (`home-hero.ts`):** w HTML `muted`, `playsinline`,
   `preload="none"`, bez `autoplay` i bez `poster`; `<source>` MP4 →
-  WebM. Start z JS wyłącznie od 1025 px, po wczytaniu plakatu; stan na
+  WebM z adresami w `data-src`, NIE w `src` (WebKit na Linuksie pobiera
+  pierwsze źródło mimo `preload="none"`) — JS wpisuje `src` i woła
+  `load()` dopiero przy starcie. Start wyłącznie od 1025 px, po
+  wczytaniu plakatu; stan na
   `video[data-state]`: `idle` → `playing` (dopiero zdarzenie `playing`
   pokazuje film) → `photo` (koniec materiału, odrzucone `play()`, błąd,
   zejście poniżej progu; `saveData` w ogóle nie startuje). Zoom: JEDNA

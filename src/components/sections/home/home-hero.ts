@@ -72,10 +72,15 @@ function initVideo(hero: HTMLElement): void {
     video!.addEventListener("ended", toPhoto);
     // błąd pobrania zgłasza OSTATNIE <source>, błąd dekodowania — <video>
     video!.addEventListener("error", toPhoto);
-    video!
-      .querySelector("source:last-of-type")
-      ?.addEventListener("error", toPhoto);
+    const sources = Array.from(video!.querySelectorAll("source"));
+    sources.at(-1)?.addEventListener("error", toPhoto);
+    // adresy źródeł stoją w `data-src` — dopiero tu film staje się
+    // pobieralny (poniżej progu desktopu nie dochodzi do tego nigdy)
+    for (const source of sources) {
+      if (source.dataset.src) source.src = source.dataset.src;
+    }
     video!.preload = "auto";
+    video!.load();
     video!.playbackRate = 1;
     video!.play().then(
       () => {

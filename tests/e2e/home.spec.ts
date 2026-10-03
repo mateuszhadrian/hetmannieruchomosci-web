@@ -161,10 +161,18 @@ test.describe("hero", () => {
     expect(video).toContain('data-state="idle"');
     expect(video).not.toContain("autoplay");
     expect(video).not.toContain("poster=");
-    const sources = [
-      ...html.matchAll(/<source[^>]+src="(\/video\/[^"]+)"[^>]*>/g),
-    ].map((m) => m[1]);
-    expect(sources).toEqual(["/video/hero.mp4", "/video/hero.webm"]);
+    // adresy filmu w `data-src` — bez `src` przeglądarka nie ma czego
+    // pobrać, dopóki JS nie zdecyduje o starcie (WebKit na Linuksie
+    // pobierał pierwsze źródło mimo `preload="none"`)
+    const block = html.match(/<video[^>]*data-hero-video[\s\S]*?<\/video>/);
+    const sources = [...(block?.[0] ?? "").matchAll(/<source[^>]*>/g)].map(
+      (m) => m[0],
+    );
+    expect(sources.map((s) => s.match(/data-src="([^"]+)"/)?.[1])).toEqual([
+      "/video/hero.mp4",
+      "/video/hero.webm",
+    ]);
+    for (const s of sources) expect(s).not.toMatch(/\ssrc=/);
     // bramka ruchu stoi w <head>, przed malowaniem
     expect(head).toContain("js-motion");
   });

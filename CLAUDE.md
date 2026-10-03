@@ -870,7 +870,10 @@ offer-lightbox.ts` (chunk z dynamicznego `import()` w `offer-detail.ts`,
   (pełnoekranowe `var(--svh, 100svh)`, znacznik `data-home-hero`; `<img>`
   w `<picture>` jako obraz priorytetowy — kadr pionowy
   `hero-poster-tall.webp` 720×816 poniżej 768 px; `<video>` z `muted`,
-  `playsinline`, `preload="none"`, bez `autoplay`, `<source>` MP4 → WebM;
+  `playsinline`, `preload="none"`, bez `autoplay`, `<source>` MP4 → WebM
+  z adresami w `data-src` (JS wpisuje `src` dopiero przy starcie — H26:
+  WebKit na Linuksie pobierał źródło mimo `preload="none"`, czerwony
+  `e2e` na PR #24);
   elementy tylko-mobile `.hero-m` / tylko-desktop `.hero-d`),
   `HomeAbout`, `HomeOffers` + `HomeOfferTile` (kafel z designu na logice
   karty: wpis indeksu, `cardKicker`/`cardBadges`/`formatPrice`;

@@ -14,7 +14,9 @@ układ, hero i ruch także na `chromium-pixel-5` i `webkit-iphone-14`;
 BEZ przodka `[data-rv]`; surowy HTML: dwa `link[rel=preload][as=image]`
 z `media` (kadr pionowy poniżej `HOME_POSTER_TALL_BELOW_PX`), `<video>`
 z `muted`, `playsinline`, `preload="none"`, `data-state="idle"`, bez
-`autoplay` i `poster`, `<source>` MP4 → WebM, bramka `js-motion` w
+`autoplay` i `poster`, `<source>` MP4 → WebM z adresami w `data-src`
+i BEZ `src` (WebKit na Linuksie pobierał źródło mimo `preload="none"` —
+czerwony `e2e` na PR #24, lokalnie na macOS zielony), bramka `js-motion` w
 `<head>`; desktop: `video[data-state]` → `playing` (Chromium Playwrighta
 gra WebM — nie ma H.264), po `dispatchEvent(new Event("ended"))` →
 `photo` i `opacity 0`; zwężenie okna poniżej 1025 w trakcie filmu →

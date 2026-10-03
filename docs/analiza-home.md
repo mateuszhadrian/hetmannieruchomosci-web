@@ -400,6 +400,17 @@ głównej, kafel z designu na logice karty, dobór = najnowsze `aktywna`
 | H24 | `navigation.spec`, `smoke.spec` | dostały `useMediaStub()` — „/" niesie teraz obrazy ofert z hosta mediów, a testy nie wykonują żądań do sieci. Poza tym `navigation` zmienił tylko brak dosztukowania wysokości w teście wariantu „/"; `seo` i `a11y` bez zmian |
 | H25 | Zrzuty `chrome-home-solid` | zmierzone progiem 0: `chromium-1920`, `firefox-desktop`, `chromium-pixel-5` identyczne co do piksela (0 różnic), pozostałe trzy profile czerwone → workflow linux w trybie `changed` wystarcza |
 
+**H26 — po czerwonym jobie `e2e` na PR #24 (bieg 37143336701):** test
+„mobile: film nie jest pobierany" padł wyłącznie na `webkit-iphone-14`
+w CI — WebKit na Linuksie pobiera pierwsze `<source>` mimo
+`preload="none"` (lokalnie, na macOS, tego nie robi). Poprawka w kodzie,
+nie w teście: adresy filmu stoją w `data-src`, a `home-hero.ts` wpisuje
+je do `src` i woła `load()` dopiero przy starcie (czyli wyłącznie od
+1025 px, przy dozwolonym ruchu). Bez `src` żadna przeglądarka nie ma
+czego pobrać — telefon i tablet nie ściągają filmu nigdy, bez JS filmu
+nie ma w ogóle. Zrzuty bez zmian (film i tak jest niewidoczny poza
+odtwarzaniem).
+
 ### 10.3 Budżet (pomiar jak §12.5 analizy 4.2, `pnpm build:visual`)
 
 | Plik | Rola | brutto | gzip -9 |
