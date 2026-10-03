@@ -5,10 +5,14 @@
 // (rezerwacja, „Zapytaj o cenę", parter). Determinizm: freeze.css +
 // settleImages (prepareSweep); zdjęcia i mapa lokalne z dist/media.
 // Opis zwinięty (stan po JS), kotwice z pierwszą aktywną.
+// (b): `oferta-lightbox` (zrzut okna po otwarciu od 2. kadru — sheet na
+// profilach mobilnych, modal na desktopie) i `oferta-druk` (arkusz druku
+// na szerokości kartki A4, tylko chromium-1920).
 import { expect, test } from "@playwright/test";
 import { offerDetailPath } from "../../src/lib/routes";
 import { useVisualFixtureGuard } from "../helpers/guards";
-import { prepareSweep } from "../helpers/visual";
+import { settle } from "../helpers/scroll";
+import { prepareSweep, settleImages } from "../helpers/visual";
 
 useVisualFixtureGuard();
 
@@ -53,3 +57,39 @@ for (const v of VARIANTS) {
     });
   });
 }
+
+test("oferta: lightbox otwarty od 2. kadru vs baseline", async ({ page }) => {
+  await prepareSweep(page, VARIANTS[0].path);
+  // klik z JS — bez przewijania strony do miniatury (pod scrimem sheetu
+  // widać stronę, więc pozycja scrolla jest częścią zrzutu)
+  await page
+    .locator('[data-gal-thumb="1"]')
+    .evaluate((el) => (el as HTMLElement).click());
+  await expect(page.locator("#of-lightbox")).toHaveClass(/is-open/);
+  await expect(page.locator("[data-lb-count]")).toHaveText(/^2 \/ /);
+  await settleImages(page);
+  await settle(page, 300);
+  await expect(page).toHaveScreenshot("oferta-lightbox.png");
+});
+
+/** Szerokość kartki A4 w px CSS (210 mm przy 96 dpi) — zrzut druku ma
+ *  pokazywać układ z papieru, nie z szerokiego okna. */
+const PRINT_VIEWPORT = { width: 794, height: 1123 };
+
+test("oferta: arkusz druku vs baseline", async ({ page }, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "chromium-1920",
+    "arkusz druku niezależny od profilu — jeden projekt wystarczy",
+  );
+  await prepareSweep(page, VARIANTS[0].path);
+  await page.setViewportSize(PRINT_VIEWPORT);
+  await page.emulateMedia({ media: "print" });
+  // obrazy siatki druku są `lazy` — settleImages przełącza je na eager
+  // i czeka na dekodowanie (jak `beforeprint` w skrypcie widoku)
+  await settleImages(page);
+  await settle(page, 300);
+  await expect(page).toHaveScreenshot("oferta-druk.png", {
+    fullPage: true,
+    maxDiffPixelRatio: FULLPAGE_MAX_DIFF_RATIO,
+  });
+});
