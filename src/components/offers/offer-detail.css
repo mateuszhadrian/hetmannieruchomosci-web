@@ -1602,3 +1602,716 @@
     opacity: 0.9;
   }
 }
+
+/* ════ LIGHTBOX (4.3 b) — powłoka `#of-lightbox` klonowana do <body>
+   przez `offer-lightbox.ts`, mechanika `overlay.ts`. Poniżej 1025 sheet
+   od dołu (`kind="sheet"`: swipe-down, uchwyt w nagłówku), od 1025 modal
+   na cały ekran (`kind="modal"`). Kadry w NATURALNYCH proporcjach:
+   `contain` w polu między nagłówkiem a stopką (R11). Powłoka leży POZA
+   `.od`, więc nie dziedziczy jej zmiennych. ════ */
+.lb-ov {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(8, 16, 30, 0.4);
+  opacity: 0;
+  transition: opacity 0.34s ease;
+}
+.lb-ov[hidden] {
+  display: none;
+}
+.lb-ov.is-open {
+  opacity: 1;
+}
+.lb {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 94vh;
+  height: calc(100svh - env(safe-area-inset-top, 0px) - 20px);
+  background: var(--navy-deep);
+  color: #fff;
+  font-family: var(--font-body);
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -18px 44px rgba(0, 0, 0, 0.4);
+  overflow: clip;
+  transform: translateY(101%);
+  transition: transform 0.42s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.lb-ov.is-open .lb {
+  transform: none;
+}
+.lb:focus {
+  outline: none;
+}
+.lb svg {
+  display: block;
+}
+.lb-head {
+  flex: none;
+  padding: 10px 0 0;
+  touch-action: none;
+  cursor: grab;
+}
+.lb-head:active {
+  cursor: grabbing;
+}
+.lb-grab {
+  display: block;
+  width: 40px;
+  height: 4px;
+  margin: 0 auto;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.3);
+}
+.lb-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  padding: 6px var(--pad) 0;
+}
+.lb-title {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.lb-h {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--copper-light);
+}
+.lb-count {
+  font-size: 15px;
+  line-height: 1.2;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.lb-x {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-right: -8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+}
+.lb-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  padding-top: 12px;
+}
+.lb-track {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.lb-track::-webkit-scrollbar {
+  display: none;
+}
+.lb-slide {
+  flex: none;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  padding: 0 var(--pad);
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+.lb-slide img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.lb-slide[data-plan] img {
+  background: #fff;
+}
+.lb-nav {
+  display: none;
+}
+.lb-foot {
+  position: relative;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+  padding: clamp(18px, 5vw, 24px) var(--pad)
+    calc(clamp(22px, 6vw, 30px) + env(safe-area-inset-bottom, 0px));
+  overflow: clip;
+  background: var(--navy-deep);
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+.lb-foot-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.lb-foot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(14, 32, 60, 0.86),
+    rgba(14, 32, 60, 0.95)
+  );
+}
+.lb-cta {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: clamp(17px, 4.9vw, 20px);
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-wrap: pretty;
+}
+.lb-cta2 {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.lb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 600;
+}
+.lb-btn--white {
+  background: #fff;
+  color: var(--navy);
+  border-radius: 0 0 0 12px;
+}
+/* tekst `--ink` na miedzi (biel z designu nie trzyma AA — jak „Napisz"
+   w panelu i pasku dolnym) */
+.lb-btn--copper {
+  background: var(--copper);
+  color: var(--ink);
+}
+.lb-x:focus-visible,
+.lb-nav:focus-visible,
+.lb-btn:focus-visible {
+  outline: 2px solid var(--copper-light);
+  outline-offset: 2px;
+}
+.lb-track:focus-visible {
+  outline: 2px solid var(--copper-light);
+  outline-offset: -2px;
+}
+
+/* modal od progu projektu — W PARZE z `DESKTOP_MIN_PX` (offer-lightbox.ts
+   ustawia `data-overlay-kind` tym samym progiem) */
+@media (min-width: 1025px) {
+  .lb-ov {
+    align-items: stretch;
+    background: var(--navy-deep);
+  }
+  .lb {
+    height: auto;
+    border-radius: 0;
+    box-shadow: none;
+    transform: translateY(24px);
+  }
+  .lb-head {
+    padding: 14px 0 0;
+    touch-action: auto;
+    cursor: auto;
+  }
+  .lb-head:active {
+    cursor: auto;
+  }
+  .lb-grab {
+    display: none;
+  }
+  .lb-title {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 14px;
+  }
+  .lb-count {
+    font-size: 16px;
+  }
+  .lb-x {
+    width: 48px;
+    height: 48px;
+    margin-right: -10px;
+    font-size: 26px;
+  }
+  .lb-stage {
+    padding-top: 16px;
+  }
+  /* pole kadru zostawia miejsce na ‹ › */
+  .lb-slide {
+    padding: 0 clamp(92px, 7vw, 140px);
+  }
+  .lb-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--navy);
+    font-size: 24px;
+    cursor: pointer;
+  }
+  .lb-nav--prev {
+    left: clamp(16px, 1.6vw, 24px);
+  }
+  .lb-nav--next {
+    right: clamp(16px, 1.6vw, 24px);
+  }
+  .lb-nav:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+  .lb-foot {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-top: 16px;
+    padding: 20px var(--pad) 24px;
+  }
+  .lb-cta {
+    font-size: 20px;
+  }
+  .lb-cta2 {
+    width: 360px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lb-ov,
+  .lb {
+    transition: none;
+  }
+}
+
+/* ════ DRUK (4.3 b) — „Drukuj / PDF" = druk przeglądarki (plan B);
+   arkusz projektowany pod późniejszą trasę druku (docs/analiza-oferta.md
+   §3.5). Kartka A4 ma ok. 690 px szerokości, więc bazą jest układ
+   mobilny — reguły niżej nadpisują OBA układy (emulacja `print` na
+   szerokim oknie dostaje reguły desktopowe). Tła nie są drukowane,
+   więc tekst ciemnych sekcji dostaje ciemny kolor. ════ */
+.od-print-only,
+.od-print-photos {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 14mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+  }
+  .hdr,
+  #nav-sheet,
+  .ft,
+  .lb-ov,
+  .od noscript,
+  .od-crumbs,
+  .od-anchors,
+  .od-gal-nav,
+  .od-pill,
+  .od-blur,
+  .od-tiles,
+  .od-thumbs,
+  .od-copy,
+  .od-copied,
+  .od-share,
+  .od-more,
+  .od-embeds,
+  .od-panel,
+  .od-bar-host,
+  .od-back,
+  .od-inquiry,
+  .od-avatar,
+  .od-contact-bg,
+  .od-contact-tag,
+  .od-contact .od-h2,
+  .od-map-foot .od-link {
+    display: none !important;
+  }
+  .od {
+    padding-top: 0;
+    background: #fff;
+    color: #000;
+  }
+  .od a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* nagłówek: statyczny, ciemny tekst (na ekranie mobilnym leży na hero) */
+  .od-top {
+    padding: 0;
+    background: none;
+  }
+  .od-head {
+    position: static;
+    height: auto;
+    max-width: none;
+    margin: 0 0 10pt;
+    padding: 0;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16pt;
+    color: #000;
+    pointer-events: auto;
+  }
+  .od-head-main {
+    max-width: none;
+    gap: 5pt;
+  }
+  .od-kicker {
+    color: #444;
+  }
+  .od-title {
+    font-size: 20pt;
+    line-height: 1.15;
+    color: #000;
+  }
+  .od-loc,
+  .od-loc .od-ico {
+    font-size: 11pt;
+    color: #222;
+  }
+  .od-head-price {
+    flex: none;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3pt;
+    margin: 0;
+  }
+  .od-head .od-price {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3pt;
+  }
+  .od-head .od-amount {
+    font-size: 20pt;
+    line-height: 1;
+    color: #000;
+  }
+  .od-head .od-ppm,
+  .od-head .od-prev {
+    font-size: 10pt;
+    color: #444;
+  }
+  .od-head .od-tag {
+    border-color: #444;
+    color: #444;
+  }
+
+  /* galeria: pierwsze zdjęcie w naturalnych proporcjach + siatka kolejnych */
+  .od-gal {
+    display: block;
+    max-width: none;
+    margin: 0;
+  }
+  .od-hero {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    background: none;
+    border-radius: 0;
+    overflow: visible;
+  }
+  .od-hero::after {
+    display: none;
+  }
+  /* plakietka statusu nad zdjęciem (bez tła — obrys) */
+  .od-hero-top {
+    position: static;
+    order: -1;
+    margin: 0 0 6pt;
+  }
+  .od-hero-top:not(:has(.od-badge)) {
+    display: none;
+  }
+  .od-badge,
+  .od-badge[data-badge] {
+    height: auto;
+    padding: 2pt 6pt;
+    border: 1px solid #000;
+    background: none;
+    color: #000;
+  }
+  .od-track {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+  .od-slide {
+    display: none;
+  }
+  .od-slide:first-child {
+    display: block;
+    height: auto;
+    background: none;
+    overflow: visible;
+  }
+  .od-slide:first-child .od-img {
+    width: 100%;
+    height: auto;
+    max-height: 130mm;
+    object-fit: contain;
+  }
+  .od-print-photos {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 3mm;
+    margin-top: 3mm;
+  }
+  .od-print-photos img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .od-meta {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6pt 0 0;
+    background: none;
+  }
+  .od-meta > * {
+    max-width: none;
+  }
+  .od-meta-left {
+    min-height: 0;
+  }
+  .od-num,
+  .od-added {
+    margin: 0;
+    font-size: 9.5pt;
+    color: #444;
+  }
+
+  /* treść: jedna kolumna, bez panelu */
+  .od-body {
+    display: block;
+    max-width: none;
+    padding: 0;
+  }
+  .od-main {
+    display: block;
+    padding: 0;
+  }
+  .od-main > * {
+    margin-top: 14pt;
+  }
+  .od-h2 {
+    margin: 0 0 6pt;
+    font-size: 14pt;
+    color: #000;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  .od-facts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 3mm;
+  }
+  .od-fact {
+    flex-wrap: nowrap;
+    gap: 6pt;
+    padding: 6pt 8pt;
+    border: 1px solid #bbb;
+    background: none;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .od-fact .od-ico {
+    font-size: 14pt;
+    color: #000;
+  }
+  .od-fact-val {
+    font-size: 10.5pt;
+    color: #000;
+  }
+  .od-fact-lbl {
+    font-size: 8.5pt;
+    color: #444;
+  }
+  .od-rows {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(var(--od-rows, 10), auto);
+    grid-auto-flow: column;
+    column-gap: 10mm;
+  }
+  .od-row {
+    padding: 4pt 0;
+    border-bottom-color: #ccc;
+    font-size: 10pt;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .od-row dt,
+  .od-row-prev,
+  .od-row-note {
+    color: #444;
+  }
+  .od-row dd {
+    color: #000;
+  }
+  /* pełny opis — zwijanie zdjęte */
+  .od-desc-wrap,
+  .od-desc-wrap[data-collapsed] {
+    max-width: none;
+    max-height: none;
+    overflow: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .od-desc {
+    font-size: 10.5pt;
+    line-height: 1.5;
+    color: #111;
+  }
+  .od-desc strong {
+    color: #000;
+  }
+  .od-plans {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 3mm;
+  }
+  .od-plan {
+    border-color: #bbb;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .od-print-only {
+    display: block;
+  }
+  .od-print-links p {
+    margin: 0 0 2pt;
+    font-size: 9.5pt;
+    color: #222;
+    overflow-wrap: anywhere;
+  }
+  #mapa {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .od-map {
+    max-width: 120mm;
+    border-color: #bbb;
+    border-radius: 0;
+    background: none;
+  }
+  .od-map-foot {
+    margin-top: 4pt;
+  }
+  .od-loc--map,
+  .od-loc--map .od-ico {
+    color: #222;
+  }
+
+  /* karta agenta: bez tła i zdjęcia, ciemny tekst */
+  .od-contact {
+    margin: 14pt 0 0;
+    padding: 10pt 0 0;
+    border-top: 1px solid #999;
+    background: none;
+    color: #000;
+    overflow: visible;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .od-contact::after {
+    display: none;
+  }
+  .od-contact-in {
+    display: block;
+    max-width: none;
+  }
+  .od-contact-col {
+    gap: 6pt;
+  }
+  .od-eyebrow--line {
+    color: #444;
+  }
+  .od-eyebrow--line::before {
+    background: #444;
+  }
+  .od-contact .od-agent-name {
+    font-size: 12pt;
+    color: #000;
+  }
+  .od-contact .od-agent-role {
+    font-size: 9.5pt;
+    color: #444;
+  }
+  .od-contact-rows {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 2pt 18pt;
+    max-width: none;
+    border: 0;
+  }
+  .od-contact-row,
+  .od-contact-row[data-mail] {
+    min-height: 0;
+    border: 0;
+    color: #000;
+    font-size: 11pt;
+    font-weight: 600;
+  }
+  .od-print-foot {
+    margin: 12pt 0 0;
+    padding-top: 6pt;
+    border-top: 1px solid #999;
+    font-size: 9pt;
+    letter-spacing: 0.04em;
+    color: #444;
+  }
+}

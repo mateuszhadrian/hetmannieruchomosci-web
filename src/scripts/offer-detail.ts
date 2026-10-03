@@ -1,10 +1,14 @@
 // Detal oferty (4.3) — skrypt widoku, czysty TS (bez Preact):
 //  • galeria hero: licznik i aktywna miniatura nadążają za przewijaniem
-//    toru (scroll-snap natywny), ‹ › i klawiatura ←/→ przewijają o kadr,
-//    miniatury/kafle przewijają hero (w (a); w (b) otwierają lightbox);
+//    toru (scroll-snap natywny), ‹ › i klawiatura ←/→ przewijają o kadr;
+//  • lightbox (b): kadr hero, kafle, miniatury, „Wszystkie zdjęcia"
+//    i rzuty (`data-gal-open`) otwierają `offer-lightbox.ts` — chunk
+//    z dynamicznego `import()`, pobierany po pierwszym dotknięciu galerii;
+//    po zamknięciu hero staje na kadrze oglądanym w lightboxie;
 //  • kopiowanie numeru i linku (`navigator.clipboard`) z komunikatem;
 //  • natywne udostępnianie (`navigator.share`) zamiast trzech ikon, gdy
-//    API jest dostępne; „Drukuj / PDF" = `window.print()`;
+//    API jest dostępne; „Drukuj / PDF" = `window.print()` po doczekaniu
+//    obrazów arkusza druku (na ekranie są `lazy` i niewidoczne);
 //  • pasek kotwic: podświetlenie sekcji w kadrze (IntersectionObserver);
 //  • film i spacer: iframe powstaje DOPIERO po kliknięciu (D32) — do tego
 //    czasu kafel jest zwykłym linkiem;
@@ -17,6 +21,8 @@ import {
 } from "@/lib/site-config";
 
 const DETAIL_COPIED_MS = 2000;
+/** Najdłuższe czekanie na obrazy arkusza druku przed `window.print()`. */
+const PRINT_IMAGES_WAIT_MS = 2500;
 const desktopMQ = matchMedia(`(min-width: ${DESKTOP_MIN_PX}px)`);
 const reduceMQ = matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -100,14 +106,36 @@ if (track && slides.length) {
     e.preventDefault();
     goTo(current + (e.key === "ArrowRight" ? 1 : -1));
   });
-  // miniatury, kafle 2×2, „Wszystkie zdjęcia", rzuty: przewiń hero do kadru
-  // (lightbox dochodzi w (b) — ten sam atrybut `data-gal-open`)
+  // kadr hero, kafle 2×2, miniatury, „Wszystkie zdjęcia", rzuty: lightbox
+  // od wskazanego kadru. Chunk pobiera się po pierwszym dotknięciu galerii
+  // (nie w idle); gdy się nie pobierze albo powłoki nie da się zbudować,
+  // zostaje zachowanie z (a) — hero przewija się do kadru.
+  let lightbox: Promise<typeof import("./offer-lightbox")> | null = null;
+  const loadLightbox = () => (lightbox ??= import("./offer-lightbox"));
+  const prefetch = () => {
+    loadLightbox().catch(() => {
+      lightbox = null;
+    });
+  };
+  const gallery = q<HTMLElement>("[data-offer-gallery]");
+  for (const type of ["pointerdown", "touchstart"] as const) {
+    gallery?.addEventListener(type, prefetch, { once: true, passive: true });
+  }
   for (const el of qa<HTMLElement>("[data-gal-open]")) {
     el.addEventListener("click", () => {
       const i = Number(el.dataset.galOpen) || 0;
-      goTo(i);
-      if (!desktopMQ.matches || el.closest("[data-gal-track]")) return;
-      track.focus({ preventScroll: true });
+      // kafle 2×2 leżą w kontenerze `aria-hidden` — fokus (do którego
+      // `overlay.ts` wraca po zamknięciu) przenosimy na tor galerii
+      if (el.closest("[aria-hidden]")) track.focus({ preventScroll: true });
+      loadLightbox().then(
+        (m) => {
+          if (!m.openLightbox(i, (last) => goTo(last, true))) goTo(i);
+        },
+        () => {
+          lightbox = null;
+          goTo(i);
+        },
+      );
     });
   }
   // orientacja/rozmiar: dociągnij tor do bieżącego kadru (snap zostaje,
@@ -201,7 +229,35 @@ if (nativeShare && typeof navigator.share === "function") {
   });
 }
 
-q("[data-offer-print]")?.addEventListener("click", () => window.print());
+/* ── druk: obrazy arkusza są na ekranie `lazy` (siatka zdjęć w ogóle
+   niewidoczna) — przed drukiem przełączamy je na `eager` i czekamy ───── */
+
+function armPrintImages(): Promise<void> {
+  const imgs = qa<HTMLImageElement>("img[data-print-img]");
+  for (const img of imgs) img.loading = "eager";
+  const pending = imgs.filter((img) => !img.complete);
+  if (!pending.length) return Promise.resolve();
+  return new Promise((resolve) => {
+    let left = pending.length;
+    const done = () => {
+      left -= 1;
+      if (left <= 0) resolve();
+    };
+    for (const img of pending) {
+      img.addEventListener("load", done, { once: true });
+      img.addEventListener("error", done, { once: true });
+    }
+    window.setTimeout(resolve, PRINT_IMAGES_WAIT_MS);
+  });
+}
+
+q("[data-offer-print]")?.addEventListener("click", () => {
+  void armPrintImages().then(() => window.print());
+});
+// druk z menu przeglądarki (Ctrl/Cmd+P): bez czekania, ale z `eager`
+window.addEventListener("beforeprint", () => {
+  void armPrintImages();
+});
 
 /* ── kotwice: podświetlenie sekcji w kadrze ────────────────────────── */
 

@@ -15,23 +15,47 @@
 // — linki ABSOLUTNE od „/" — ta sama treść odpowiada pod adresami
 //   dowolnej głębokości (/a/b/c/), więc ścieżki względne by się rozjechały
 //   (Astro i tak emituje assety absolutnie);
-// — zero JS widoku i zero nowych assetów.
+// — zero modułów JS widoku (jedyne moduły strony to chrome) i zero nowych
+//   assetów.
 //
-// STAN Etapu 0: układ odziedziczony z szablonu, kolory i kroje z tokenów
-// Hetman. Wersja świadoma ofert (wygasły adres oferty → podpowiedź listy)
-// powstaje w Etapie 4.3.
+// WARIANT ŚWIADOMY OFERT (4.3 b, docs/analiza-oferta.md §3.6 i §11): ten
+// sam plik odpowiada pod KAŻDYM błędnym adresem, więc wygasły adres oferty
+// (`/oferty/…` albo krótki `/SW…`) rozpoznaje dopiero przeglądarka —
+// skryptem INLINE, przed pierwszym malowaniem. Blok ofertowy (komunikat
+// + do 3 najnowszych aktywnych ofert, renderowanych statycznie) siedzi
+// w `<template>`: skrypt podmienia nim blok generyczny, więc w DOM jest
+// zawsze dokładnie jeden `h1`, a zdjęcia kart nie pobierają się na
+// zwykłej 404. Bez JS zostaje komunikat generyczny.
+import "@/components/offers/offers.css";
 import Footer from "@/components/Footer.astro";
 import Navbar from "@/components/navbar/Navbar.astro";
+import { OfferCard } from "@/components/offers/OfferCard";
 import { ui } from "@/i18n/ui";
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import { BUILD_NOW, loadOffersData } from "@/lib/offers/data";
+import { sortEntries } from "@/lib/offers/filters";
+import { toIndexEntry } from "@/lib/offers/index-entry";
+import { DETAIL } from "@/lib/offers/offers-ui";
+import { OFFERS_PATH } from "@/lib/offers/urls";
 import { HOME_PATH } from "@/lib/routes";
+
+/** Liczba kart w wariancie ofertowym (przy mniejszej liczbie aktywnych —
+ *  tyle, ile jest; przy zerze sam komunikat). */
+const NF_LATEST = 3;
+const { offers } = loadOffersData();
+// „najnowsze" jak na liście: `sortEntries` czyta `SORT_NEWEST_BY`
+const latest = sortEntries(
+  offers.filter((o) => o.status === "aktywna").map(toIndexEntry),
+  "newest",
+).slice(0, NF_LATEST);
+const nowIso = BUILD_NOW.toISOString();
 ---
 
 <BaseLayout title={ui.pl["notFoundPage.title"]} noindex>
   <Navbar />
 
   <main class="nf">
-    <div class="nf-in">
+    <div class="nf-in" data-nf-generic>
       <h1 class="nf-code">
         <span class="sr-only">Błąd </span>404<span class="sr-only">
           — nie znaleziono strony</span
@@ -52,6 +76,60 @@ import { HOME_PATH } from "@/lib/routes";
         <span>Powrót na stronę główną</span>
       </a>
     </div>
+
+    <template data-nf-tpl data-title={DETAIL.nfHeading}>
+      <div class="nf-offer" data-nf-offer>
+        <div class="nf-offer-head">
+          <h1 class="nf-h">{DETAIL.nfHeading}</h1>
+          <span class="nf-rule" aria-hidden="true"></span>
+          <p class="nf-txt nf-txt--offer">
+            {latest.length > 0 ? DETAIL.nfText : DETAIL.nfTextEmpty}
+          </p>
+          <a class="nf-btn" href={OFFERS_PATH} data-nf-link>
+            <span>{DETAIL.nfLink}</span>
+            <svg width="16" height="12" viewBox="0 0 16 12" aria-hidden="true"
+              ><path
+                d="M1 6h13M9.5 1.5L14 6l-4.5 4.5"
+                stroke="currentColor"
+                stroke-width="1.4"
+                fill="none"></path></svg
+            >
+          </a>
+        </div>
+        {
+          latest.length > 0 && (
+            <section class="nf-latest" aria-labelledby="nf-latest-h">
+              <h2 class="nf-h2" id="nf-latest-h">
+                {DETAIL.nfLatest}
+              </h2>
+              <ul class="ol-grid" data-nf-cards>
+                {latest.map((entry) => (
+                  <li>
+                    <OfferCard entry={entry} nowIso={nowIso} priority="lazy" />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )
+        }
+      </div>
+    </template>
+    <script is:inline>
+      // wygasły adres oferty → wariant ofertowy (podmiana przed malowaniem)
+      (() => {
+        const p = location.pathname;
+        if (!p.startsWith("/oferty/") && !/^\/sw\d+\/?$/i.test(p)) return;
+        const tpl = document.querySelector("template[data-nf-tpl]");
+        const generic = document.querySelector("[data-nf-generic]");
+        if (!tpl || !generic) return;
+        generic.replaceWith(tpl.content);
+        document.querySelector(".nf").setAttribute("data-nf-variant", "offer");
+        document.title = document.title.replace(
+          /^[^—]+/,
+          tpl.dataset.title + " ",
+        );
+      })();
+    </script>
   </main>
 
   <Footer />
@@ -133,6 +211,56 @@ import { HOME_PATH } from "@/lib/routes";
     flex: none;
   }
 
+  /* ── wariant ofertowy: komunikat od góry + siatka kart z `offers.css` ── */
+  .nf[data-nf-variant="offer"] {
+    display: block;
+    /* `place-items: center` układu generycznego działa też w układzie
+       blokowym (justify-self) — kolumna kurczyłaby się do treści */
+    place-items: normal;
+    min-height: 0;
+    padding-bottom: clamp(48px, 12vw, 72px);
+  }
+  .nf-offer {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(36px, 9vw, 56px);
+    box-sizing: border-box;
+    width: 100%;
+    max-width: var(--col);
+    margin-inline: auto;
+  }
+  .nf-offer-head {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .nf-h {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(28px, 7.8vw, 40px);
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+    color: var(--navy);
+    text-wrap: balance;
+  }
+  .nf-txt--offer {
+    max-width: 52ch;
+    text-wrap: pretty;
+  }
+  .nf-h2 {
+    margin: 0 0 clamp(14px, 4vw, 20px);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(22px, 6.2vw, 28px);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--navy);
+  }
+  .nf-latest .ol-grid {
+    margin-top: 0;
+  }
+
   /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
   @media (min-width: 1025px) {
     .nf {
@@ -149,6 +277,15 @@ import { HOME_PATH } from "@/lib/routes";
     }
     .nf-btn {
       margin-top: clamp(32px, 2.8vw, 44px);
+    }
+    .nf[data-nf-variant="offer"] {
+      padding-bottom: 96px;
+    }
+    .nf-h {
+      font-size: clamp(36px, 3.2vw, 48px);
+    }
+    .nf-h2 {
+      font-size: clamp(26px, 2vw, 30px);
     }
   }
 

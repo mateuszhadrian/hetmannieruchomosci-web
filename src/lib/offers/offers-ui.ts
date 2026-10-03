@@ -352,6 +352,9 @@ export const DETAIL = {
   // PLACEHOLDER (U9)
   nfText:
     "Oferta została sprzedana, wynajęta albo wycofana. Zobacz wszystkie aktualne oferty albo wybierz jedną z najnowszych poniżej.",
+  // PLACEHOLDER (U9): wariant bez aktywnych ofert (sam komunikat)
+  nfTextEmpty:
+    "Oferta została sprzedana, wynajęta albo wycofana. Zobacz wszystkie aktualne oferty.",
   nfLink: "Wszystkie oferty",
   // PLACEHOLDER (U9)
   nfLatest: "Najnowsze oferty",
