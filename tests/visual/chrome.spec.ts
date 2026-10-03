@@ -6,12 +6,16 @@
 // i stopka. Determinizm: freeze.css (prepareSweep) zeruje przejścia,
 // więc sheet otwiera się od razu w stanie końcowym; przemalowanie paska
 // liczy pętla rAF ze scrolla (deterministyczne przy ustalonej pozycji).
-// Baseline'y: Etap 3 (szkielet), Etap 4.1 (wygląd docelowy chrome'u).
+// Zrzut paska na „/" niesie TREŚĆ pod przezroczystym paskiem — od 4.4
+// to hero strony głównej, więc film hero jest odcięty (`blockHeroVideo`:
+// zostaje zdjęcie; klatka filmu to loteria).
+// Baseline'y: Etap 3 (szkielet), Etap 4.1 (wygląd docelowy chrome'u),
+// Etap 4.4 (`chrome-home-*` nad docelowym hero).
 import { expect, test } from "@playwright/test";
 import { CONTACT_PATH, HOME_PATH } from "../../src/lib/routes";
 import { usePreviewGuard } from "../helpers/guards";
 import { scrollPageTo, settle } from "../helpers/scroll";
-import { prepareSweep } from "../helpers/visual";
+import { blockHeroVideo, prepareSweep } from "../helpers/visual";
 
 usePreviewGuard();
 
@@ -38,6 +42,7 @@ test("chrome: otwarty bottom sheet menu vs baseline", async ({
 test("chrome: pasek na „/” nad hero (przezroczysty) vs baseline", async ({
   page,
 }) => {
+  await blockHeroVideo(page);
   await prepareSweep(page, HOME_PATH);
   await expect(page.locator("[data-nav]")).toHaveScreenshot(
     "chrome-home-top.png",
@@ -47,10 +52,8 @@ test("chrome: pasek na „/” nad hero (przezroczysty) vs baseline", async ({
 test("chrome: pasek na „/” po przewinięciu (pełny) vs baseline", async ({
   page,
 }) => {
+  await blockHeroVideo(page);
   await prepareSweep(page, HOME_PATH);
-  // Szkielet „/” jest krótszy niż wysokość okna + stopka — dosztukowanie
-  // dokumentu, żeby próg przemalowania (h − pasek) był osiągalny.
-  await page.addStyleTag({ content: "main { min-height: 300vh !important }" });
   const vh = await page.evaluate(() => window.innerHeight);
   await scrollPageTo(page, vh);
   await settle(page, 400);
