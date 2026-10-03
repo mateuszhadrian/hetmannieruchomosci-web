@@ -496,21 +496,93 @@ true)`). **Akcja wymagająca przewinięcia strony („Napisz" → `#kontakt`)
 - `src/lib/jsonld.ts` nie zna telefonu ani e-maili i nie importuje
   `contact-details`.
 
-## Formularze — mechanika odziedziczona, pola w Etapie 5
+## Formularze — stan po Etapie 5A (`docs/analiza-formularze-a.md`)
 
-- Mechanika w `sections/contact/contact-ui.ts` (ładowana ZAWSZE — to
-  funkcja, nie dekoracja); logika i szablon maila w
-  `src/lib/contact-form.ts`; endpoint `functions/api/kontakt.ts`.
-  **Zestaw pól w kodzie jest dziś odziedziczony i NIE jest docelowy.**
-- Komunikaty walidacji siedzą w SSR i pokazuje je CSS przy klasie
-  `.err`; skrypt zapala tylko klasę — zero tekstów w JS.
-- Honeypot jest `readonly` (autofill Chrome'a nie wypełnia readonly;
-  focus zdejmuje atrybut) — nie usuwaj atrybutu.
-- Turnstile ładowany leniwie (pierwszy `focusin` w formularzu) — nie
-  przenoś do eager loadu.
-- Pułapki klienckie mają serwerowy odpowiednik w endpointcie (honeypot,
-  czas wypełnienia, weryfikacja Turnstile) — zmiany po jednej stronie
-  kontraktu wymagają przeglądu drugiej.
-- Zgoda wymuszona jest nieważna: żaden checkbox zgody nie może być
-  warunkiem wysłania formularza. Zestaw pól i zgód deklaruje polityka
+- **Jeden endpoint, jedno źródło reguł.** `functions/api/kontakt.ts`
+  przyjmuje wszystkie formularze (pole `form`: `kontakt`, `sprzedaj`;
+  `oferta` i `praca` dochodzą w 5B). Reguły w `src/lib/contact-form.ts`
+  (czysty TS): `validateForm(kind, raw)` zwraca dane albo LISTĘ błędnych
+  pól — tę samą funkcję woła moduł kliencki i funkcja, a odpowiedź 400
+  z `fields` zapala te same opakowania co walidacja kliencka. Zmiana
+  reguły = zmiana tam + test unit; nigdy osobno po jednej stronie.
+- **Dwa osobne pola kontaktowe, wymagane co najmniej jedno**
+  (`FormContactPair.astro`): opakowanie `data-f="contact"` niesie błąd
+  „nie podano żadnego", pola `email` / `phone` — własne błędy formatu.
+  Pole wypełnione błędnie jest błędem także przy poprawnym drugim.
+  Kolejność E-mail → Telefon jest jedna dla wszystkich formularzy.
+- **Markup:** `src/components/forms/` — `FormFrame.astro` (formularz,
+  blok końcowy zgoda → nota → przycisk jako elementy kolumny flex,
+  pułapka, kontener Turnstile, błąd wysyłki, ekran potwierdzenia
+  w miejscu formularza), `FormField.astro` (prawdziwy `<label>`, dopisek
+  przy polach OPCJONALNYCH, komunikat w HTML), `forms.css` (klasy
+  `fm-*`, globalne), `forms-copy.ts` (teksty — importują je też testy),
+  `form-config.ts` (endpoint, klucz Turnstile), `form-ui.ts` (mechanika,
+  ładowana ZAWSZE — to funkcja, nie dekoracja; strona woła `initForms()`).
+- **Zero tekstów w JS.** Komunikaty walidacji siedzą w SSR i pokazuje je
+  CSS przy klasie `.err` na BEZPOŚREDNIM opakowaniu (`.err > .fm-msg`);
+  skrypt zapala tylko klasę. Etykieta przycisku w trakcie wysyłki
+  przychodzi z `data-sending`.
+- **`aria-describedby` składa skrypt:** stałe opisy (podpowiedzi) stoją
+  w `data-desc`, komunikat błędu jest dopinany DOPIERO przy aktywnym
+  błędzie — element ukryty przez CSS, ale wskazany w `aria-describedby`,
+  i tak byłby czytany jako opis pola.
+- Skrypt nadaje formularzowi `novalidate`; atrybuty `required` zostają
+  w HTML (semantyka + natywna walidacja bez JS). Bez JS formularz jest
+  kompletny (`method`/`action`), ale wysyłka wymaga JS (token Turnstile)
+  — mówi to `<noscript>`, a funkcja odsyła POST bez nagłówka
+  `Accept: application/json` przekierowaniem 303 na stronę formularza
+  (`#formularz`). Moduł kliencki ZAWSZE wysyła ten nagłówek.
+- Honeypot `firma` jest `readonly` (autofill nie wypełnia pól readonly;
+  focus zdejmuje atrybut), ma `tabindex="-1"` i jest ukryty wizualnie —
+  nie `display:none`. Nie usuwaj atrybutu.
+- **Turnstile:** element `<script>` powstaje dopiero przy pierwszym
+  `focusin` w formularzu (wcześniej go nie ma w DOM — konstrukcja, nie
+  podpowiedź dla przeglądarki); widget renderowany jawnie, token pobierany
+  przy wysyłce. Pusty klucz albo niewstający skrypt = pusty token =
+  odmowa serwera = komunikat błędu wysyłki (zawodzi głośno).
+- Pułapki klienckie (honeypot, minimalny czas → udawany sukces bez
+  żądania) mają serwerowy odpowiednik w endpointcie — zmiany po jednej
+  stronie kontraktu wymagają przeglądu drugiej. Kolejność kroków funkcji:
+  rozmiar po nagłówku → rodzaj → pułapka (200) → walidacja → sekrety →
+  Turnstile → limit dzienny (KV) → Resend.
+- **Maile** buduje `buildMail()` (temat stały per formularz — żadnych
+  danych klienta w temacie; etykiety słownika zamiast identyfikatorów;
+  mail zgłoszenia niesie powierzchnię i cenę; adres strony w stopce
+  z HOSTA ŻĄDANIA). `Reply-To` tylko przy podanym e-mailu. Adresata
+  nadpisuje opcjonalna zmienna środowiskowa `KONTAKT_TO` (podglądy PR-ów).
+- **Zgoda marketingowa** (`MARKETING_CONSENT` w `contact-form.ts` — jedno
+  brzmienie dla widoków i maili): opcjonalna, odznaczona, bez gwiazdki;
+  żaden checkbox zgody nie może być warunkiem wysłania. Nota informacyjna
+  to osobny element nad przyciskiem. Zestaw pól i zgód deklaruje polityka
   prywatności — zmiana pól wymaga przeglądu tamtego dokumentu.
+- Po wysyłce: `form[hidden]`, `[data-form-done]` widoczne, fokus na
+  nagłówku potwierdzenia, ramka dosuwana pod pasek (potwierdzenie jest
+  niższe od formularza). Telefon w potwierdzeniu i w komunikacie błędu
+  przez slot `a[data-tel]`. Klasy z własnym `display` mają regułę
+  `[hidden] { display: none }`.
+- Pola: `font-size` 16 px (podłoga iOS), `scroll-margin-top` pod stały
+  pasek (fokus pierwszego błędnego pola nie chowa się pod nim).
+
+## Kontakt — stan po Etapie 5A (`docs/analiza-formularze-a.md`)
+
+- `src/pages/kontakt.astro` + `sections/contact/`: `ContactIntro`
+  (eyebrow, `h1` dwukolorowy), `ContactInfo` (mapa + karta danych),
+  `ContactForm`; teksty w `contact-copy.ts` (PLACEHOLDER U9), stałe
+  w `contact-config.ts`. Widok NIE ma ruchu (bez bramki `js-motion`).
+- **Mapa stoi w NATURALNYCH proporcjach pliku** (`<picture>`, plik
+  desktopowy od `CONTACT_MAP_SWAP_PX` = 600 px; `aspect-ratio` w CSS
+  W PARZE z tym progiem). Napis atrybucji jest wypalony przy dolnej
+  krawędzi obrazu i zajmuje większość jej szerokości: żadnego
+  `object-fit: cover`, żadnego zaokrąglenia dolnych rogów mapy i żadnego
+  elementu nasuniętego na jej dół. **Karta danych stoi POD mapą** (design
+  nasuwał ją na mapę) i to ona niesie promień lewego dolnego rogu.
+  Kontrakt e2e mierzy proporcje i położenie karty na sześciu szerokościach.
+- Mapa jest na telefonie elementem LCP: ładowana od razu
+  (`fetchpriority="high"`, bez `lazy`).
+- Karta: sloty `a[data-tel]`, `a[data-mail="biuro"]`; wiersz ze slotem
+  ukrytym (bez JS) znika cały (`.ki-row:has(> a[hidden])`), `<noscript>`
+  to wyjaśnia. Jeden adres — biuro (z `BUSINESS`); siedziba zostaje
+  w stopce. Kolejność wierszy różni się między progami przez
+  `grid-template-areas` (DOM: telefon, e-mail, biuro, godziny).
+- Link „Otwórz w mapach" = `OFFICE_MAPS_URL` (zapytanie po adresie, ten
+  sam cel co w stopce), zwykła kotwica otwierana po kliknięciu.
