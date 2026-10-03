@@ -771,7 +771,10 @@ hidden` zamiast `clip`); `test:visual` 24 czerwone OCZEKIWANE (nowe
   `scrollIntoView` miniatury/kotwicy przewijał stronę w pionie i ruszał
   sticky w trakcie zrzutu; poprawka `revealInStrip()` (sam `scrollLeft`
   paska), odtworzona i potwierdzona w kontenerze Playwright 1.61.1-noble
-  (bez poprawki 5/8 niestabilne, z poprawką 8/8 zielone); zwijanie opisu własne (nie `CollapsibleText`
+  (bez poprawki 5/8 niestabilne, z poprawką 8/8 zielone); job `lighthouse`
+  na PR #21 padł na TBT mobile `/oferty/` 715 ms > 600 (zadanie
+  hydratacji wyspy 765 ms; kod listy nietknięty, detale 0–92 ms) —
+  wariancja runnera jak R27, ponowny bieg przez push docs; zwijanie opisu własne (nie `CollapsibleText`
   szablonu — ten zwija tylko mobile), `Icon.astro` zamiast inline SVG,
   puste kotwice slotów muszą mieć `<span data-slot>` (lint); miniatury
   spoza pierwszych 6 (`OFFER_THUMBS_EAGER`) dogrywane przez IO —

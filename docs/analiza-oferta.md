@@ -637,6 +637,16 @@ agenta (part3 §6.3), formaty (`format.ts`), „Zapytaj o cenę", plakietki.
   Po diagnozie `rm -rf .pnpm-store` (store pnpm z kontenera ląduje
   w repo i wywraca `format:check`) oraz `git clean -f tests/visual/__screenshots__`. Baseline'y linux nadal z workflow (kontener
   tylko do diagnozy; wygenerowane w nim PNG usunięte).
+- **Job `lighthouse` na PR #21 (bieg 37115724942) padł na TBT mobile
+  `/oferty/` = 715 ms > 600** — na LIŚCIE, nie na detalu. Raport mediany:
+  jedno zadanie hydratacji wyspy 765 ms (R27 z 4.2 b: to samo zadanie
+  w pomiarach 31–54 ms, odstające 456 i 1 238 ms), `script` listy
+  28 254 B — wyspa co do bajta jak po (c) (38 236 B; +31 B to chunk
+  `site-config` z nowymi stałymi), detale TBT 0–92 ms. Zmiana PR-a nie
+  dotyka kodu listy, więc to wariancja runnera, nie regresja. Ścieżka:
+  ponowny bieg CI (push commitu docs); czerwień ponownie = decyzja
+  o progu TBT (jak #18) albo o odchudzeniu hydratacji (mniej kart
+  w pierwszym renderze — zmiana architektury §12.2, osobna decyzja).
 - **Visual `not-found-full` na webkit-iphone-se** padł RAZ w łańcuchu
   końcowym (wysokość strony 1 447 px zamiast 1 361 — `100svh` pod
   obciążeniem), w izolacji i w pełnym `test:visual` wcześniej zielony;
