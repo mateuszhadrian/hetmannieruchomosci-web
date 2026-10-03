@@ -383,7 +383,12 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   na 02:15 UTC — bieg o 02:15 nie wystąpił, opóźnienie ok. 6 h, znana
   cecha harmonogramów GitHuba; harmonogram bez zmian, ewentualna korekta
   godziny to osobna decyzja — Z5), 71 s, „bez zmian", 46 ofert widocznych
-  (poprzednio 46), bez commita bota. Bieg 2026-10-03 — do dopisania.
+  (poprzednio 46), bez commita bota. Bieg 2026-10-03: start 08:03 UTC
+  (cron 02:15 UTC, opóźnienie ok. 6 h — jak poprzednio), 44 s, „bez
+  zmian”, 46 ofert widocznych (poprzednio 46), 136 w CRM, 609 zdjęć bez
+  zmian, ostrzeżenia W2 ×3, W3 ×1 (jak 2026-10-02), bez commita bota;
+  pierwszy bieg po 4.2 (b), (c) i progach LHCI (#18, #20) — sync
+  nietknięty. Bieg 2026-10-04 — do dopisania.
 - **Etap 3 (testy/CI na szkielecie) — WYKONANY** (2026-10-02, PR #11 +
   commit budżetów LHCI): `tests/helpers/offers.ts` w pełnej wersji (odczyt
   typowany `readOffersTyped(source)` po schemacie strict, buforowany;
@@ -435,8 +440,8 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   ciche podniesienie. UWAGI dla Etapu 4: (1) specy widoków biorą oferty
   przez `pickOffer` + `test.skip`; (2) adres stałej listy i detalu
   z fixture'u do `lighthouserc*.cjs` po 4.2/4.3 i ponowny pomiar
-  `lhci-measure.yml`; (3) wynik pierwszego crona syncu (2026-10-03, pkt 4
-  z 2.11) do dopisania pod wpisem S2c.
+  `lhci-measure.yml`; (3) wynik crona syncu 2026-10-03 (pkt 4 z 2.11) —
+  opisany we wpisie S2c.
 
 - **Etap 4 / 4.1 (chrome globalny) — WYKONANY** (2026-10-02, PR #13,
   gałąź `feat/chrome`, mini-analiza `docs/analiza-chrome.md` zaakceptowana):
@@ -476,7 +481,7 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   (z `dist` po `build:visual`): patrz raport sesji; progi nietknięte.
   Baseline'y linux (workflow) i darwin wgrane w PR #13; po merge'u
   `prod-smoke` zielony (bieg 2026-10-02 11:06 UTC na commicie #13).
-  Porządek po cronie: bieg 2026-10-03 — do dopisania (patrz wpis S2c).
+  Porządek po cronie: biegi opisane we wpisie S2c.
 
 - **Etap 4 / 4.2 (a) (`/oferty/`: trasy SSG + karta + lista bez wyspy) —
   WYKONANY** (2026-10-02, PR #14, gałąź `feat/oferty`, mini-analiza
@@ -544,7 +549,7 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   mobile — kolejne sesje 4.2 (prompt lokalny
   `docs/plan/prompt-etap-4-2b.md`); przed (b) decyzja o wpisach do
   `selection.json` (≥ 13 ofert, oferta z windą, lokal na wynajem).
-  Porządek po cronie: bieg 2026-10-03 — do dopisania.
+  Porządek po cronie: biegi opisane we wpisie S2c.
 
 - **Etap 4 / 4.2 (b) (`/oferty/`: wyspa wyszukiwarki) — WYKONANY**
   (2026-10-02, PR #16 zmergowany 18:32 UTC z gałęzi `feat/oferty-wyspa`,
@@ -641,8 +646,8 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   desktop 100 → 300 — PR #18 zmergowany 2026-10-02 20:21 UTC, `prod-smoke` zielony.
   (c) = sheety
   mobile, Filtruj/Sortuj, siatka/lista, stany brzegowe (prompt lokalny
-  `docs/plan/prompt-etap-4-2c.md`). Porządek po cronie: bieg 2026-10-03
-  — do dopisania (w chwili końca sesji (b) nie wystąpił).
+  `docs/plan/prompt-etap-4-2c.md`). Porządek po cronie: biegi opisane we
+  wpisie S2c.
 
 - **Etap 4 / 4.2 (c) (`/oferty/`: mobile, sheety, siatka/lista, stany
   brzegowe) — WYKONANY** (2026-10-02, PR #19 zmergowany 21:53 UTC
@@ -689,8 +694,8 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   (asercje czyste; TBT 41 ms, CLS 0, LCP mobile 2 350 ms) — kolejny
   skrypt widoku NIE zmieści się bez decyzji o progu (przed 4.3).
   Lekcja: komentarz frontmatteru `.astro` z `<` ze spacją psuje
-  `astro check` (sections.md). Porządek po cronie: bieg 2026-10-03 —
-  do dopisania (patrz wpis S2c; w chwili końca sesji nie wystąpił).
+  `astro check` (sections.md). Porządek po cronie: biegi opisane we
+  wpisie S2c.
   **Tym samym CAŁE 4.2 (a + b + c: trasy SSG, karta i lista, wyspa
   wyszukiwarki, mobile i stany brzegowe) jest WYKONANE** (PR #14–#19).
   PRÓG `script` LHCI po 4.2 (PR `chore/lhci-script`): pomiar
@@ -706,6 +711,68 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   zapasem, żeby lightbox 4.3 — ok. 4–6 KB gzip — i hero/ruch 4.4 — ok.
   2–3 KB — weszły bez kolejnej zmiany progu); zapas wyłącznie na widoki,
   pozostałe progi nietknięte.
+
+- **Etap 4 / 4.3 (a) (detal oferty: układ, galeria, dane, osadzenia,
+  mapa, kontakt, meta) — W TOKU** (2026-10-03, gałąź `feat/oferta`,
+  mini-analiza `docs/analiza-oferta.md` zaakceptowana w całości —
+  podział (a)/(b), 19 + 4 wiersze, 4 adresy LHCI, `navigator.share`,
+  lightbox jako sheet na mobile, Omnibus, nota o YouTube; kod i testy
+  gotowe lokalnie, ZOSTAŁO: workflow baseline'ów linux, baseline'y
+  darwin, PR, merge, `prod-smoke`; część (b) = lightbox, druk, 404
+  świadoma ofert na osobnej gałęzi): `src/components/offers/
+OfferDetailPage.astro` + `offer-detail.css` (klasy `od-*`, czysty
+  Astro — bez Preact) + `Icon.astro` (ikony z `icons-detail.ts` —
+  osobny moduł, żeby wyspa listy nie urosła),
+  `src/scripts/offer-detail.ts` (galeria: licznik, ‹ ›, klawiatura,
+  miniatury; kopiuj numer/link; `navigator.share`; `window.print`;
+  kotwice przez IntersectionObserver; iframe filmu/spaceru DOPIERO po
+  kliknięciu — `youtube-nocookie`, `allow` bez `microphone`; zwijanie
+  opisu po pomiarze `scrollHeight`), `src/lib/offers/details-rows.ts`
+  (JEDNA deklaratywna lista: 19 wierszy designu + powierzchnia działki
+  i liczba pięter domu + „Dostępne od" wg `showsAvailableFrom`; winda
+  `undefined` → brak wiersza, `0` → „nie"; obniżka + Omnibus; cena wg
+  `SHOW_PRICE_WHEN_SOLD`), `detail-meta.ts` (tytuł, description cięte
+  na granicy zdania ≤ 160), `jsonld.ts` + `realEstateListing()` (adres
+  do ulicy, bez `geo`, bez kontaktu, cena pominięta przy `null`),
+  `format.ts` + `formatDateShort`/`countNoun`, `offers-ui.ts` + `DETAIL`,
+  `site-config.ts` + `AGENT.role`/`licenseNo`,
+  `OFFER_DESCRIPTION_COLLAPSE_PX`; `BaseLayout` + propsy `ogImage`/
+  `ogImageAlt` (og:image = `imgAt(first, "og")`); gałąź detalu
+  w `[...path].astro`; hero = tor scroll-snap ze wszystkimi zdjęciami
+  (`hero`, pierwsze `eager` + preload), kafle 2×2 i miniatury `card`,
+  pion `contain` na rozmytym tle, „Rzuty" przy `kind=plan`; mapa
+  z `maps.json` w naturalnych proporcjach + „Otwórz w mapach"; sekcja
+  kontaktu z kartą agenta (sloty `data-tel`/`data-mail="joanna"`),
+  pusty `[data-offer-inquiry]` na 5B; panel boczny ≥ 1025, pasek dolny
+  < 1025 (sticky na końcu `main`); okruszki; `lighthouserc*.cjs` + 4
+  adresy detali z fixture'u. Testy: unit `offers-details-rows` (18),
+  `offers-detail-meta` (10), `jsonld` (+5), `offers-format` (+2) — 404
+  (+2 skip); e2e nowy `oferta.spec.ts` (26 testów: 24 na chromium-1920,
+  2 mobilne), `tests/helpers/offers.ts` + `readMapsTyped()`; visual
+  nowy `oferta.spec.ts` (4 warianty × 6 profili = 24 PNG na platformę).
+  Weryfikacja lokalna: format/lint/typecheck, unit, build 89 stron,
+  `test:dist` 6/6, e2e 355 zielone + 6 czerwonych z limitu czasu pod
+  obciążeniem (powtórzone na czysto — zielone), axe 0 naruszeń (po
+  poprawkach: avatar `--ink` na miedzi, zwinięty opis z `overflow:
+hidden` zamiast `clip`); `test:visual` 24 czerwone OCZEKIWANE (nowe
+  zrzuty bez baseline'u), `chrome`, `oferty` i `not-found` bez ruchu
+  (`not-found-full` webkit-SE padł raz pod obciążeniem — w izolacji
+  zielony).
+  BUDŻET (analiza §10): `script` na detalu 13 311 B brutto / 5 442 B
+  gzip (chrome 8 135 / 3 373 + `offer-detail` 5 176 / 2 069); wyspa
+  listy co do bajta jak po (c) (38 236 B); LHCI lokalnie (1 przebieg,
+  oba configi, asercje czyste): `script` na detalach 7 285 B = 18 %
+  bramki 40 000 B, lista 28 632 B = 72 %; desktop LCP detali 549–583 ms,
+  CLS 0,006, TBT 0; mobile `script` 7 415 B, `total` 296–475 KB, LCP
+  2 108–2 785 ms (działka: margines 415 ms do 3 200 — obserwacja),
+  TBT 0, CLS 0. ROZJAZDY
+  po implementacji: zwijanie opisu własne (nie `CollapsibleText`
+  szablonu — ten zwija tylko mobile), `Icon.astro` zamiast inline SVG,
+  puste kotwice slotów muszą mieć `<span data-slot>` (lint); miniatury
+  spoza pierwszych 6 (`OFFER_THUMBS_EAGER`) dogrywane przez IO —
+  natywne `lazy` w poziomym pasku ładowało wszystkie (22 × `card` ≈ 1 MB
+  na produkcji, niewidoczne w LHCI na fixture). Porządek po
+  cronie: bieg 2026-10-03 (08:03 UTC, bez zmian) opisany we wpisie S2c.
 
 ## Dokumentacja
 

@@ -4,6 +4,42 @@ Harness odziedziczony z szablonu projektu (konfiguracja
 Playwright/Vitest/axe/LHCI, 6 profili, helpery); liczby szablonu NIE
 obowiązują — baseline'y i budżety powstają od nowa w Etapie 3.
 
+STAN po Etapie 4.3 (a) (detal oferty): unit — `offers-details-rows`
+(19 wierszy designu + parytet domu + „Dostępne od"; parter, winda
+brak/0/2, czynsz 0, „Zapytaj o cenę", `showPrice=false`, obniżka +
+Omnibus, dom/działka, podtyp, fixture bez pustych wartości),
+`offers-detail-meta` (tytuł, `cutAtSentence`, tekst bez HTML, fallback,
+fixture ≤ 160), `jsonld` (+ `realEstateListing`: bez kontaktu/`geo`,
+adres do ulicy, cena pominięta przy `null`, `floorSize`, `image`),
+`offers-format` (+ `formatDateShort`, `countNoun`). E2E `oferta`
+(treść na `chromium-1920`; gesty i pasek dolny na `chromium-pixel-5`
+i `webkit-iphone-14`; dane produkcyjne, `pickOffer` + `test.skip`,
+`useMediaStub`, mapy przez `readMapsTyped()`): nagłówek (tytuł,
+kicker, lokalizacja → `listPath`, cena, kontrakty szkieletu), plakietki
+statusu, „Zapytaj o cenę", obniżka, galeria (wszystkie zdjęcia `hero`,
+`eager`/`lazy`, `width/height/alt`, licznik, ‹ ›, klawiatura, miniatura
+→ snap; pion `contain` + `.od-blur`), rzuty, kotwice (zestaw warunkowy,
+klik pod paski, `aria-current`), tabela = `detailRows()`, parter/winda,
+opis (bez `<script>`, surowy HTML bez `data-collapsed`, „Czytaj więcej"
+rozwija), film i spacer (0 `iframe` przed kliknięciem, link w `href`,
+po kliknięciu DOKŁADNIE jeden `iframe` bez `microphone`; host osadzenia
+zaślepiony `page.route`, nasłuch hostów), mapa (adres R2, wymiary,
+naturalne proporcje, link do map, brak przycisku interaktywnego),
+kontakt (surowy HTML bez kontaktów po wycięciu `.od-desc`, sloty po JS,
+`[data-offer-inquiry]` puste, powrót do listy), panel (sticky, slot,
+flip 1025: panel none/flex, pasek grid/none, kafle none/grid), meta
+(schowek przez `grantPermissions`, „Dodano", sharery z absolutnym
+adresem, `navigator.share` ↔ ikony), `window.print`, head (description,
+canonical, `og:image` 1200×630, JSON-LD jeden węzeł bez kontaktu),
+okruszki, zero podmiotów trzecich; mobile: nagłówek w obrębie hero,
+pasek dolny przy dolnej krawędzi i znika na stopce, snap o jeden kadr.
+Visual `oferta` (fixture): `oferta-mieszkanie` (SW486462), `oferta-dom`
+(SW349452), `oferta-dzialka` (SW184702), `oferta-lokal` (SW372150) —
+4 fullPage × 6 profili = 24 PNG na platformę; `chrome`, `oferty`
+i `not-found` bez ruchu. LHCI mierzy dodatkowo 4 adresy detali
+z fixture'u. `a11y` i `seo` na pierwszym detalu z `data/` — bez zmian
+speców (allowlista PUSTA).
+
 STAN po Etapie 4.2 (c) (mobile, sheety, siatka/lista, stany brzegowe):
 e2e `oferty-mobile` (profile `chromium-pixel-5` i `webkit-iphone-14`,
 tablet przez `setViewportSize(900)`; dane produkcyjne, oczekiwania
@@ -203,19 +239,20 @@ spec otwierający trasy ofert), `useChromium1920Only`, `collectPageIssues`.
 
 ## Co zmieniasz → co uruchamiasz
 
-| Zmiana                                                                                                                                                                                             | Warstwa (komenda)                                                                                                                                                                                                             |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scripts/sync/**`, `src/lib/offers/**` (allow-lista, schemat, parser)                                                                                                                              | `pnpm test:unit` (kontrakt danych)                                                                                                                                                                                            |
-| `src/lib/img.ts`, `MEDIA_BASE`, `IMG_VARIANTS`                                                                                                                                                     | `pnpm test:unit` (`img`, `media-r2`)                                                                                                                                                                                          |
-| `src/lib/offers/data.ts`, `redirects.ts`, integracje, `[...path].astro`                                                                                                                            | `pnpm test:unit && pnpm build && pnpm test:dist`                                                                                                                                                                              |
-| `scripts/sync/pipeline.ts`, `index.ts`, `fixtures.ts`, `sync.yml`                                                                                                                                  | `pnpm test:unit` (`sync-index`, `sync-fixtures`); workflow NIE uruchamiać w sesji                                                                                                                                             |
-| `src/i18n/**`, `src/lib/*.ts` (img, routes, contact-form, jsonld, …)                                                                                                                               | `pnpm test:unit`                                                                                                                                                                                                              |
-| `scripts/subset-fonts.mjs`, `src/styles/fonts.css`                                                                                                                                                 | `pnpm test:unit` (kontrakt subsetów)                                                                                                                                                                                          |
-| `src/scripts/**`, navbar, stopka, wyszukiwarka, galeria, formularze                                                                                                                                | `pnpm build && pnpm test:e2e`                                                                                                                                                                                                 |
-| `src/lib/offers/{filters,index-entry,location-path,locations-ui,offers-ui,text,enums}.ts`, `src/components/offers/**` (w tym wyspa `SearchIsland.tsx`, sheety `sheets.tsx`), `src/pages/oferty/**` | `pnpm test:unit && pnpm build && pnpm test:dist && pnpm test:e2e` (+ warstwa wizualna przy zmianie wyglądu; po zmianie wyspy także pomiar budżetu — `docs/analiza-oferty.md` §12.5; sheety = profile mobilne `oferty-mobile`) |
-| `tests/helpers/**`, `lighthouserc*.cjs`, `.github/workflows/*.yml`                                                                                                                                 | `pnpm test:unit` (helpery) + warstwa, której spec używa helpera; workflow NIE uruchamiać w sesji                                                                                                                              |
-| Każda zmiana wyglądu                                                                                                                                                                               | `pnpm build:visual && pnpm test:visual`                                                                                                                                                                                       |
-| Przed release                                                                                                                                                                                      | pełne `pnpm test` + `/release-check`                                                                                                                                                                                          |
+| Zmiana                                                                                                                                                                                             | Warstwa (komenda)                                                                                                                                                                                                                                              |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/sync/**`, `src/lib/offers/**` (allow-lista, schemat, parser)                                                                                                                              | `pnpm test:unit` (kontrakt danych)                                                                                                                                                                                                                             |
+| `src/lib/img.ts`, `MEDIA_BASE`, `IMG_VARIANTS`                                                                                                                                                     | `pnpm test:unit` (`img`, `media-r2`)                                                                                                                                                                                                                           |
+| `src/lib/offers/data.ts`, `redirects.ts`, integracje, `[...path].astro`                                                                                                                            | `pnpm test:unit && pnpm build && pnpm test:dist`                                                                                                                                                                                                               |
+| `scripts/sync/pipeline.ts`, `index.ts`, `fixtures.ts`, `sync.yml`                                                                                                                                  | `pnpm test:unit` (`sync-index`, `sync-fixtures`); workflow NIE uruchamiać w sesji                                                                                                                                                                              |
+| `src/i18n/**`, `src/lib/*.ts` (img, routes, contact-form, jsonld, …)                                                                                                                               | `pnpm test:unit`                                                                                                                                                                                                                                               |
+| `scripts/subset-fonts.mjs`, `src/styles/fonts.css`                                                                                                                                                 | `pnpm test:unit` (kontrakt subsetów)                                                                                                                                                                                                                           |
+| `src/scripts/**`, navbar, stopka, wyszukiwarka, galeria, formularze                                                                                                                                | `pnpm build && pnpm test:e2e`                                                                                                                                                                                                                                  |
+| `src/lib/offers/{filters,index-entry,location-path,locations-ui,offers-ui,text,enums}.ts`, `src/components/offers/**` (w tym wyspa `SearchIsland.tsx`, sheety `sheets.tsx`), `src/pages/oferty/**` | `pnpm test:unit && pnpm build && pnpm test:dist && pnpm test:e2e` (+ warstwa wizualna przy zmianie wyglądu; po zmianie wyspy także pomiar budżetu — `docs/analiza-oferty.md` §12.5; sheety = profile mobilne `oferty-mobile`)                                  |
+| `src/lib/offers/{details-rows,detail-meta}.ts`, `src/lib/jsonld.ts`, `src/components/offers/OfferDetailPage.astro`, `offer-detail.css`, `src/scripts/offer-detail.ts`                              | `pnpm test:unit && pnpm build && pnpm test:e2e tests/e2e/oferta.spec.ts tests/e2e/a11y.spec.ts tests/e2e/seo.spec.ts` (+ `build:visual && test:visual tests/visual/oferta.spec.ts` przy zmianie wyglądu; budżet `script` detalu — `docs/analiza-oferta.md` §5) |
+| `tests/helpers/**`, `lighthouserc*.cjs`, `.github/workflows/*.yml`                                                                                                                                 | `pnpm test:unit` (helpery) + warstwa, której spec używa helpera; workflow NIE uruchamiać w sesji                                                                                                                                                               |
+| Każda zmiana wyglądu                                                                                                                                                                               | `pnpm build:visual && pnpm test:visual`                                                                                                                                                                                                                        |
+| Przed release                                                                                                                                                                                      | pełne `pnpm test` + `/release-check`                                                                                                                                                                                                                           |
 
 ## Zasady twarde
 
