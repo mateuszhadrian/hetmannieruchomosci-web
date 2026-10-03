@@ -14,6 +14,11 @@ module.exports = {
         "/polityka-prywatnosci/",
         "/oferty/",
         "/oferty/mieszkanie-na-sprzedaz/",
+        // detale z fixture'u (4.3) — jak w lighthouserc.cjs
+        "/oferty/mieszkanie-na-sprzedaz/poznan-winogrady/sw486462/",
+        "/oferty/dom-na-sprzedaz/poznan-szczepankowo/sw349452/",
+        "/oferty/dzialka-na-sprzedaz/kornik-bnin/sw184702/",
+        "/oferty/lokal-komercyjny-na-sprzedaz/poznan-wilda/sw372150/",
       ],
       numberOfRuns: 5,
       settings: { preset: "desktop" },

@@ -272,3 +272,87 @@ export const FURNISHED_LABEL: Record<
   moze: "Może",
   czesciowo: "Częściowo",
 };
+
+// ── Detal oferty (4.3) ──────────────────────────────────────────────────
+
+/** Etykiety detalu: sekcje, kotwice, przyciski. Nagłówki sekcji i teksty
+ *  przycisków = brzmienie z designu (PLACEHOLDER U9 tam, gdzie oznaczono);
+ *  teksty nowe (nota o YouTube, 404) = PLACEHOLDER. */
+export const DETAIL = {
+  crumbsLabel: "Okruszki",
+  crumbsRoot: "Oferty",
+  gallery: "Zdjęcia",
+  photoOf: "Zdjęcie",
+  of: "z",
+  prevPhoto: "Poprzednie zdjęcie",
+  nextPhoto: "Następne zdjęcie",
+  // PLACEHOLDER (U9)
+  allPhotos: "Wszystkie zdjęcia",
+  zoom: "Powiększ zdjęcie",
+  plans: "Rzuty",
+  copyNumber: "Kopiuj numer oferty",
+  // PLACEHOLDER (U9)
+  copied: "Skopiowano",
+  added: "Dodano",
+  share: "Udostępnij",
+  shareFacebook: "Udostępnij na Facebooku",
+  shareWhatsApp: "Udostępnij przez WhatsApp",
+  shareX: "Udostępnij na X",
+  // PLACEHOLDER (U9)
+  copyLink: "Skopiuj link",
+  copyLinkTitle: "Skopiuj link do oferty",
+  // PLACEHOLDER (U9)
+  print: "Drukuj / PDF",
+  printTitle: "Drukuj lub zapisz jako PDF",
+  anchors: "Sekcje oferty",
+  anchorDetails: "Szczegóły",
+  anchorDescription: "Opis",
+  anchorVideo: "Film",
+  anchorTour: "Spacer 360",
+  anchorMap: "Mapa",
+  anchorContact: "Kontakt",
+  details: "Dane szczegółowe",
+  description: "Opis",
+  // PLACEHOLDER (U9)
+  readMore: "Czytaj więcej",
+  // PLACEHOLDER (U9)
+  readLess: "Zwiń",
+  video: "Film",
+  // PLACEHOLDER (U9)
+  playVideo: "Odtwórz film",
+  videoSource: "YouTube",
+  videoTitle: "Film o nieruchomości",
+  // PLACEHOLDER (U9): nota o odtwarzaczu podmiotu trzeciego
+  videoNote: "Po kliknięciu załaduje się odtwarzacz YouTube.",
+  tour: "Spacer 360°",
+  // PLACEHOLDER (U9)
+  startTour: "Rozpocznij spacer",
+  tourTitle: "Wirtualny spacer",
+  map: "Mapa",
+  // PLACEHOLDER (U9)
+  openMaps: "Otwórz w mapach",
+  mapAlt: "Mapa",
+  // PLACEHOLDER (U9): sekcja kontaktu
+  contactEyebrow: "Kontakt w sprawie oferty",
+  // PLACEHOLDER (U9)
+  contactHeading: "Zapytaj o tę ofertę",
+  call: "Zadzwoń",
+  write: "Napisz",
+  email: "E-mail",
+  // PLACEHOLDER (U9)
+  backToList: "Wróć do listy ofert",
+  price: "Cena",
+  priceAndContact: "Cena i kontakt",
+  // PLACEHOLDER (U9): stopka lightboxa
+  lightboxCta: "Zainteresowała Cię ta oferta?",
+  galleryTitle: "Galeria",
+  closeGallery: "Zamknij galerię",
+  // PLACEHOLDER (U9): strona 404 świadoma ofert
+  nfHeading: "Ta oferta jest już niedostępna",
+  // PLACEHOLDER (U9)
+  nfText:
+    "Oferta została sprzedana, wynajęta albo wycofana. Zobacz wszystkie aktualne oferty albo wybierz jedną z najnowszych poniżej.",
+  nfLink: "Wszystkie oferty",
+  // PLACEHOLDER (U9)
+  nfLatest: "Najnowsze oferty",
+} as const;

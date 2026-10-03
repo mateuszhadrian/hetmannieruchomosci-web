@@ -50,7 +50,22 @@ export const AGENT = {
   name: "Joanna Hetman",
   initials: "JH",
   mailSlot: "joanna",
+  /** rola i numer licencji — karta agenta detalu (4.3); stałe, jak reszta */
+  role: "Pośrednik w obrocie nieruchomościami",
+  licenseNo: "24178",
 } as const;
+
+// ── Detal oferty (4.3) ──────────────────────────────────────────────────
+/** Próg zwijania opisu („Czytaj więcej"): opis krótszy niż ta wysokość
+ *  nie dostaje przycisku. Mobile / desktop (W PARZE z `DESKTOP_MIN_PX`). */
+export const OFFER_DESCRIPTION_COLLAPSE_PX = { mobile: 380, desktop: 420 };
+/** Ile miniatur galerii ma `src` od razu; reszta dostaje `data-src`
+ *  i dogrywa się, gdy wjeżdża w pasek (natywne `lazy` w poziomym pasku
+ *  ładowało wszystkie). */
+export const OFFER_THUMBS_EAGER = 6;
+/** Ile zdjęć (poza pierwszym) trafia na wydruk / do JSON-LD `image`. */
+export const OFFER_PRINT_PHOTOS = 6;
+export const OFFER_JSONLD_IMAGES = 5;
 
 // ── Media ───────────────────────────────────────────────────────────────
 /** Host zdjęć ofert (R2 + transformacje obrazów), adres ABSOLUTNY bez

@@ -38,6 +38,13 @@ module.exports = {
         "/oferty/",
         // lista SSG z fixture'u (4.2 a): 2 karty, obniżka, plakietka Sprzedane
         "/oferty/mieszkanie-na-sprzedaz/",
+        // detale z fixture'u (4.3): mieszkanie (film + spacer, obniżka, 12
+        // zdjęć), dom (zdjęcia pionowe, 18), działka (22 zdjęcia, bez ulicy),
+        // lokal (rezerwacja, „Zapytaj o cenę") — te same co visual `oferta`
+        "/oferty/mieszkanie-na-sprzedaz/poznan-winogrady/sw486462/",
+        "/oferty/dom-na-sprzedaz/poznan-szczepankowo/sw349452/",
+        "/oferty/dzialka-na-sprzedaz/kornik-bnin/sw184702/",
+        "/oferty/lokal-komercyjny-na-sprzedaz/poznan-wilda/sw372150/",
       ],
       // Mediana z 5 znacznie rzadziej ląduje na wartości odstającej.
       numberOfRuns: 5,
