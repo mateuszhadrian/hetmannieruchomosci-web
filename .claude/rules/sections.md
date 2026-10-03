@@ -276,9 +276,9 @@ mount)` w `useLayoutEffect` przy każdym renderze, `render(null)`
   siatką hero + 2×2 kafle.
 - **Hero = tor `scroll-snap`** ze WSZYSTKIMI zdjęciami (`hero` wariant,
   pierwsze `eager` + `fetchpriority` + `<link rel=preload>`, reszta
-  `lazy`); ‹ ›, klawiatura ←/→ przy fokusie toru, miniatury/kafle/„Rzuty"
-  przewijają hero przez `data-gal-open` (w (b) ten sam atrybut otwiera
-  lightbox). **Miniatury spoza pierwszych `OFFER_THUMBS_EAGER` mają
+  `lazy`); ‹ ›, klawiatura ←/→ przy fokusie toru przewijają hero; kadr,
+  kafle, miniatury, „Wszystkie zdjęcia" i „Rzuty" (`data-gal-open`)
+  otwierają lightbox (sekcja niżej). **Miniatury spoza pierwszych `OFFER_THUMBS_EAGER` mają
   `data-src`** (JS dogrywa je IO z `root` = pasek): natywne
   `loading="lazy"` w POZIOMYM pasku ładuje wszystkie obrazy (Chrome:
   22/22), a LHCI na fixture tego nie widzi (kopie 400 px). Pion i rzuty: `object-fit: contain` (pion na rozmytym tle
@@ -337,6 +337,66 @@ calc(var(--hdr-h) + var(--od-anchors-h) + 8px)` — także `.od-contact`
 - `tests/e2e/oferta.spec.ts` korzysta z lokalnego `imgAt()` zbudowanego
   z `IMG_VARIANTS` + `MEDIA_BASE` — prawdziwy `imgAt` czyta
   `import.meta.env`, którego Node Playwrighta nie ma.
+
+## Lightbox, druk, 404 świadoma ofert — stan po 4.3 (b) (`docs/analiza-oferta.md` §11)
+
+- **Lightbox = `src/scripts/offer-lightbox.ts`**, chunk z dynamicznego
+  `import()` w `offer-detail.ts` (prefetch po pierwszym `pointerdown`/
+  `touchstart` na galerii — NIE w idle). Powłoka `#of-lightbox` to klon
+  szablonu `template[data-lb-tpl]` z `LightboxShell.astro`, wstawiany do
+  `<body>` przy PIERWSZYM otwarciu (przed otwarciem nie ma go w DOM);
+  tor wypełniają kadry czytane z galerii hero (atrybuty `src`, `width`,
+  `height`, `alt` — bez drugiej serializacji). Teksty i ikony zostają
+  w Astro; chunk NIE importuje `offers-ui.ts`.
+- **Szablon HTML (`<template>`) nie może stać w wyrażeniu `{warunek &&
+(…)}`** — kompilator Astro generuje wtedy zepsuty kod (build pada na
+  „Expected ")" but found "class""). Szablon siedzi na najwyższym poziomie
+  własnego komponentu, a warunek obejmuje KOMPONENT
+  (`{first && <LightboxShell />}`). Komentarz blokowy między `(`
+  a elementem w wyrażeniu też wywraca build — komentarz wkładaj do
+  elementu jako `{/* … */}`.
+- **Mechanika wyłącznie z `overlay.ts`** (Esc, X, scrim, focus-trap,
+  blokada scrolla, swipe-down). Moduł trzyma tylko `data-overlay-kind`:
+  `sheet` poniżej 1025, `modal` od 1025 (`matchMedia`, W PARZE z `@media`
+  sekcji `lb-*` w `offer-detail.css`); zmiana progu przy otwartym
+  lightboxie ZAMYKA go. Nagłówek sheetu niesie `data-overlay-drag`
+  (uchwyt jak w sheetach listy); ‹ › tylko od 1025.
+- Tor = natywny scroll-snap (`scroll-snap-stop: always`), kadr = 100 %
+  szerokości toru, obraz `contain` (naturalne proporcje, R11). ‹ › i ←/→
+  bez zapętlenia; licznik liczy `scrollLeft / clientWidth`, a w trakcie
+  płynnego dojazdu ignoruje kadry pośrednie (`target`). **Przycisk, który
+  dostaje `disabled`, mając fokus, oddaje go drugiej strzałce albo
+  panelowi** — inaczej Tab uciekłby z dialogu. Bieżący kadr i sąsiedzi
+  `eager`, reszta `lazy`.
+- Po zamknięciu `onClose` stawia hero na oglądanym kadrze (`goTo(i,
+true)`). **Akcja wymagająca przewinięcia strony („Napisz" → `#kontakt`)
+  wykonuje się w `onClose`, PO odblokowaniu scrolla** — przy
+  `body{position:fixed}` skok kotwicy nic nie robi, a `overlay.ts` i tak
+  przywraca zapamiętaną pozycję.
+- Atrybuty obrazów kopiuj przez `getAttribute` — własność `img.width`
+  zwraca rozmiar NA EKRANIE, a `img.src` adres rozwinięty.
+- **Druk** (`@media print` na końcu `offer-detail.css`): kartka A4 ma ok.
+  690 px, więc bazą jest układ MOBILNY, a emulacja `print` na szerokim
+  oknie dostaje reguły desktopowe — arkusz nadpisuje OBA układy. Tła nie
+  są drukowane: tekst ciemnych sekcji (nagłówek na hero, kontakt) dostaje
+  ciemny kolor. Elementy tylko do druku: `.od-print-photos` (siatka
+  zdjęć `card`), `.od-print-links` (adresy filmu i spaceru),
+  `.od-print-foot` — na ekranie `display:none`.
+- **Obrazy arkusza druku mają `data-print-img`** (siatka, rzuty, mapa):
+  na ekranie są `lazy` (siatka w ogóle niewidoczna → niepobierana),
+  „Drukuj / PDF" przełącza je na `eager` i czeka na wczytanie (limit
+  `PRINT_IMAGES_WAIT_MS`) przed `window.print()`; `beforeprint` robi to
+  samo bez czekania. Nowy obraz widoczny w druku = ten atrybut.
+- **404 (`src/pages/404.astro`)**: ten sam plik odpowiada pod każdym
+  adresem, więc wariant ofertowy rozpoznaje skrypt `is:inline` (ścieżka
+  `/oferty/…` albo `/sw\d+`). Blok ofertowy siedzi w `template[data-nf-tpl]`
+  i ZASTĘPUJE blok generyczny (`[data-nf-generic]`) — w DOM jest zawsze
+  jeden `h1`, a zdjęcia kart nie pobierają się na zwykłej 404. Karty =
+  `OfferCard` bez `client:*` (zero modułów widoku; kontrakt „jedyne
+  moduły to chrome" zostaje), dobór `sortEntries(…, "newest")` z ofert
+  `aktywna`. Układ generyczny centruje przez `place-items: center` —
+  działa to też w układzie blokowym (`justify-self`), więc wariant
+  ofertowy resetuje `place-items` i ma `width: 100%`.
 
 ## Dane kontaktowe (antyscraping)
 

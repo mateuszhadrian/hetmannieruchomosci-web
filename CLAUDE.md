@@ -388,7 +388,8 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   zmian”, 46 ofert widocznych (poprzednio 46), 136 w CRM, 609 zdjęć bez
   zmian, ostrzeżenia W2 ×3, W3 ×1 (jak 2026-10-02), bez commita bota;
   pierwszy bieg po 4.2 (b), (c) i progach LHCI (#18, #20) — sync
-  nietknięty. Bieg 2026-10-04 — do dopisania.
+  nietknięty. Od 2026-10-04 biegi planowe nie są już opisywane tutaj —
+  kontrola harmonogramu raz w miesiącu (docs/optional-todos.md).
 - **Etap 3 (testy/CI na szkielecie) — WYKONANY** (2026-10-02, PR #11 +
   commit budżetów LHCI): `tests/helpers/offers.ts` w pełnej wersji (odczyt
   typowany `readOffersTyped(source)` po schemacie strict, buforowany;
@@ -713,13 +714,15 @@ fixtures:build` uruchamia Mateusz (`ESTI_RAW_SNAPSHOT`,
   pozostałe progi nietknięte.
 
 - **Etap 4 / 4.3 (a) (detal oferty: układ, galeria, dane, osadzenia,
-  mapa, kontakt, meta) — W TOKU** (2026-10-03, gałąź `feat/oferta`,
+  mapa, kontakt, meta) — WYKONANY** (2026-10-03, PR #21 zmergowany
+  10:46 UTC, poprawka wyścigu „Ponów" PR #22 zmergowana 11:57 UTC;
+  `ci.yml` i `prod-smoke` na main zielone; baseline'y linux + darwin
+  w PR; gałąź `feat/oferta`,
   mini-analiza `docs/analiza-oferta.md` zaakceptowana w całości —
   podział (a)/(b), 19 + 4 wiersze, 4 adresy LHCI, `navigator.share`,
-  lightbox jako sheet na mobile, Omnibus, nota o YouTube; kod i testy
-  gotowe lokalnie, ZOSTAŁO: workflow baseline'ów linux, baseline'y
-  darwin, PR, merge, `prod-smoke`; część (b) = lightbox, druk, 404
-  świadoma ofert na osobnej gałęzi): `src/components/offers/
+  lightbox jako sheet na mobile, Omnibus, nota o YouTube; część (b) =
+  lightbox, druk, 404 świadoma ofert na osobnej gałęzi):
+  `src/components/offers/
 OfferDetailPage.astro` + `offer-detail.css` (klasy `od-*`, czysty
   Astro — bez Preact) + `Icon.astro` (ikony z `icons-detail.ts` —
   osobny moduł, żeby wyspa listy nie urosła),
@@ -794,6 +797,65 @@ hidden` zamiast `clip`); `test:visual` 24 czerwone OCZEKIWANE (nowe
   `prod-smoke` na main zielony. Wyspa po poprawce 38 611 B brutto /
   13 755 B gzip (+375 / +147); e2e listy 89/89 na 3 profilach, visual
   `oferty` i `chrome` bez ruchu. Bieg 2026-10-03 syncu bez zmian.
+
+- **Etap 4 / 4.3 (b) (detal oferty: lightbox, arkusz druku, 404 świadoma
+  ofert) — W TOKU** (2026-10-03, gałąź `feat/oferta-lightbox`, plan (b)
+  i rozstrzygnięcia R35–R42 zaakceptowane — `docs/analiza-oferta.md` §11;
+  kod i testy gotowe lokalnie, ZOSTAŁO: workflow baseline'ów linux,
+  baseline'y darwin, PR, merge, `prod-smoke`): `src/scripts/
+offer-lightbox.ts` (chunk z dynamicznego `import()` w `offer-detail.ts`,
+  prefetch po pierwszym dotknięciu galerii; powłoka `#of-lightbox` =
+  klon szablonu `template[data-lb-tpl]` z nowego `LightboxShell.astro`,
+  wstawiany do body przy pierwszym otwarciu; tor z kadrów hero czytanych
+  z galerii, `contain`, licznik `aria-live`, ‹ › i ←/→ bez zapętlenia,
+  `kind` sheet poniżej 1025 / modal od 1025 przez `matchMedia`, zmiana
+  progu zamyka; po zamknięciu hero staje na oglądanym kadrze; stopka CTA
+  ze slotem `data-tel`, „Napisz" przewija do `#kontakt` po odblokowaniu
+  scrolla; mechanika nakładki w całości z `overlay.ts`, bez zmian w nim);
+  `data-gal-open` (kadr hero, kafle, miniatury, „Wszystkie zdjęcia",
+  rzuty) otwiera lightbox — przewijanie hero miniaturą z (a) zniknęło;
+  `offer-detail.css` + sekcja `lb-*` i `@media print` (arkusz nadpisuje
+  oba układy: bez chrome'u, kotwic, przycisków, panelu, paska, filmu
+  i spaceru; pierwsze zdjęcie + siatka `OFFER_PRINT_PHOTOS` zdjęć `card`
+  w bloku tylko do druku, pełna tabela i opis, mapa, karta agenta, adresy
+  filmu i spaceru jako tekst, stopka „host · numer"); „Drukuj / PDF"
+  czeka na obrazy arkusza (`data-print-img`) przed `window.print()`;
+  `src/pages/404.astro`: wariant ofertowy w `template[data-nf-tpl]`
+  (komunikat, link do `/oferty/`, do 3 najnowszych aktywnych ofert jako
+  `OfferCard` bez `client:*`), skrypt `is:inline` podmienia nim blok
+  generyczny pod adresem `/oferty/…` albo `/sw…` — zawsze jeden `h1`,
+  moduły strony nadal tylko chrome; `offers-ui.ts` + `DETAIL.nfTextEmpty`
+  (PLACEHOLDER). Testy: e2e `oferta.spec.ts` + blok lightboxa i druku
+  (7 testów na chromium-1920) i 5 testów mobilnych, 2 testy z (a)
+  zaadaptowane (miniatura → lightbox, druk przez `expect.poll`);
+  `not-found.spec.ts` + 7 testów wariantu ofertowego (istniejące bez
+  zmian); visual + `oferta-lightbox` (6 profili), `oferta-druk`
+  (chromium-1920, viewport A4), `not-found-offer` (6 profili) = 13 PNG
+  na platformę, spec `not-found` na `useVisualFixtureGuard`. Weryfikacja
+  lokalna: format/lint/typecheck, unit 404 (+2 skip), build 89 stron,
+  `test:dist` 6/6, e2e 418 (+614 skip profili) na 6 profilach — zielone,
+  axe 0 naruszeń; `test:visual` 13 czerwonych OCZEKIWANYCH (nowe zrzuty
+  bez baseline'u), pozostałe 114 zielone; generyczne `not-found`
+  zmierzone progiem 0 — bez ruchu, bez regeneracji. BUDŻET (analiza
+  §11.3, `build:visual`, baza = main): skrypt detalu 6 203 B brutto /
+  2 586 B gzip (+926 / +399), chunk lightboxa 3 036 / 1 456 B poza
+  pierwszym ładowaniem; ROZJAZD z prognozą: helper `import()` Vite
+  (1 254 / 733 B) wydzielił się z chunku Preacta do wspólnego pliku
+  i ładuje się teraz także na detalu — razem `script` detalu 15 592 /
+  6 850 B (+2 180 / +1 132), lista +121 / +217 B i jedno żądanie więcej,
+  kod wyspy bez zmian (38 653 B = +42 B linii importu); CSS trasy
+  `[...path]` 31 626 / 6 560 B (+8 823 / +1 589 — lista rodzaju i detal
+  dzielą arkusze, stan sprzed (b)); 404 ładuje teraz `offers.css`
+  (23,6 / 5,1 KB). LHCI lokalnie (1 przebieg, oba configi, asercje
+  czyste): `script` detali 8 919 B = 22 % bramki 40 000 B, lista
+  28 958 B = 72 %; mobile LCP detali 2 044–2 795 ms (działka: margines
+  ok. 405 ms do 3 200 — obserwacja jak po (a)), TBT 0, CLS 0; desktop
+  LCP 476–639 ms. Lekcje: szablon HTML w wyrażeniu warunkowym `.astro`
+  wywraca build (sections.md); `place-items` działa w układzie blokowym.
+  DECYZJE po raporcie (2026-10-03, analiza §11.8, bez zmian w kodzie):
+  helper importu na detalu zaakceptowany; `offers.css` na 404 zostaje;
+  rozdzielenie arkuszy listy rodzaju i detalu oraz przycisk wstecz przy
+  otwartej nakładce odłożone (`docs/optional-todos.md`).
 
 ## Dokumentacja
 

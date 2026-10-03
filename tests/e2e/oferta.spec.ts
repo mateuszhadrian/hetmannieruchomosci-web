@@ -10,7 +10,12 @@
 // (desktop) / pasek dolny (mobile), okruszki, meta/OG/JSON-LD, zero
 // żądań do podmiotów trzecich. Treść na chromium-1920; gesty i pasek
 // dolny na profilach mobilnych.
-import { expect, test, type Page } from "@playwright/test";
+// (b): lightbox galerii na `overlay.ts` (powłoka `#of-lightbox` powstaje
+// przy pierwszym otwarciu; `kind` modal od 1025 / sheet poniżej; licznik,
+// ‹ ›, ←/→ bez zapętlenia; po zamknięciu hero stoi na oglądanym kadrze;
+// stopka CTA ze slotem), arkusz druku (`emulateMedia print`).
+import AxeBuilder from "@axe-core/playwright";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { buildPhoneHref, buildEmail } from "../../src/lib/contact-details";
 import { IMG_VARIANTS, mediaUrl, type ImgVariant } from "../../src/lib/img";
 import {
@@ -26,11 +31,13 @@ import {
   formatPrice,
 } from "../../src/lib/offers/format";
 import { coordKey } from "../../src/lib/offers/map-key";
+import { DETAIL } from "../../src/lib/offers/offers-ui";
 import { listPath, offerPath, OFFERS_PATH } from "../../src/lib/offers/urls";
 import {
   AGENT,
   DESKTOP_MIN_PX,
   MEDIA_BASE,
+  OFFER_PRINT_PHOTOS,
   SHOW_PRICE_WHEN_SOLD,
 } from "../../src/lib/site-config";
 import { expectBreakpointFlip } from "../helpers/breakpoint";
@@ -71,6 +78,36 @@ const allowedHosts = (page: Page) =>
     new URL(page.url()).host,
     ...(MEDIA_BASE ? [new URL(MEDIA_BASE).host] : []),
   ]);
+
+/* ── lightbox (b) ──────────────────────────────────────────────────── */
+const LB = "#of-lightbox";
+/** Wjazd lightboxa (przejście 0,42 s) z zapasem — gest i axe dopiero po nim. */
+const LB_IN_MS = 600;
+const photosOnly = (o: (typeof OFFERS)[number]) =>
+  o.photos.filter((p) => p.kind === "photo");
+/** Oferta z co najmniej `n` zdjęciami typu `photo` (miniatury i kafle). */
+const offerWithPhotos = (n: number) =>
+  pickOffer({ where: (o) => photosOnly(o).length >= n });
+
+async function openLightbox(page: Page, trigger: string): Promise<Locator> {
+  await page.locator(trigger).first().click();
+  const lb = page.locator(LB);
+  await expect(lb).toHaveClass(/is-open/);
+  return lb;
+}
+/** Indeks kadru z pozycji toru (hero albo lightbox). */
+const trackIndex = (page: Page, sel: string) =>
+  page.locator(sel).evaluate((t) => Math.round(t.scrollLeft / t.clientWidth));
+/** Naruszenia axe critical/serious w obrębie lightboxa (treść pod
+ *  nakładką liczyłaby kontrast przez scrim — jak przy sheetach listy). */
+async function lightboxViolations(page: Page): Promise<string[]> {
+  const res = await new AxeBuilder({ page }).include(LB).analyze();
+  return res.violations
+    .filter((v) => ["critical", "serious"].includes(v.impact ?? ""))
+    .map(
+      (v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`,
+    );
+}
 
 test.describe("detal oferty — treść (chromium-1920)", () => {
   // eslint-disable-next-line no-empty-pattern -- Playwright wymaga destrukturyzacji fixtures
@@ -205,15 +242,8 @@ test.describe("detal oferty — treść (chromium-1920)", () => {
     await expect(count).toHaveText(`2 / ${o!.photos.length}`);
     await page.keyboard.press("ArrowLeft");
     await expect(count).toHaveText(`1 / ${o!.photos.length}`);
-    // miniatura przewija hero do kadru
-    await page.locator('[data-gal-thumb="2"]').click();
-    await expect(count).toHaveText(`3 / ${o!.photos.length}`);
-    // tor przewinął się dokładnie o dwa kadry (snap; płynny dojazd)
-    await settle(page, 600);
-    const pos = await page
-      .locator("[data-gal-track]")
-      .evaluate((t) => Math.round(t.scrollLeft / t.clientWidth));
-    expect(pos).toBe(2);
+    // od (b) miniatura otwiera lightbox (blok „lightbox" niżej) — hero
+    // przewijają ‹ ›, klawiatura i gest
   });
 
   test("zdjęcie pionowe: kadr `contain` na rozmytym tle", async ({ page }) => {
@@ -608,12 +638,25 @@ test.describe("detal oferty — treść (chromium-1920)", () => {
         (window as unknown as { __printed: number }).__printed += 1;
       };
     });
+    // obrazy siatki druku są na ekranie niewidoczne i `lazy` — przeglądarka
+    // ich nie pobiera (`complete` = false; zaślepka mediów nie ma wymiarów,
+    // więc miarą jest stan żądania, nie `naturalWidth`)
+    const printImgs = page.locator("[data-offer-print-photos] img");
+    const loaded = () =>
+      printImgs.evaluateAll(
+        (els) => els.filter((el) => (el as HTMLImageElement).complete).length,
+      );
+    expect(await loaded()).toBe(0);
     await page.locator("[data-offer-print]").click();
-    expect(
-      await page.evaluate(
-        () => (window as unknown as { __printed: number }).__printed,
-      ),
-    ).toBe(1);
+    // druk rusza po doczekaniu obrazów arkusza (stąd poll, nie odczyt wprost)
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => (window as unknown as { __printed: number }).__printed,
+        ),
+      )
+      .toBe(1);
+    expect(await loaded()).toBe(await printImgs.count());
   });
 
   test("head: description, canonical, og:url, og:image = pierwsze zdjęcie 1200×630; JSON-LD RealEstateListing bez kontaktu", async ({
@@ -685,6 +728,313 @@ test.describe("detal oferty — treść (chromium-1920)", () => {
     await scrollPageTo(page, 2000);
     await settle(page, 300);
     expect([...hosts].filter((h) => !allowedHosts(page).has(h))).toEqual([]);
+  });
+});
+
+test.describe("detal oferty — lightbox i druk (chromium-1920)", () => {
+  // eslint-disable-next-line no-empty-pattern -- Playwright wymaga destrukturyzacji fixtures
+  test.beforeEach(async ({}, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "chromium-1920",
+      "mechanika niezależna od profilu — jeden projekt wystarczy",
+    );
+  });
+
+  test("lightbox: powłoki nie ma przed otwarciem; kafel otwiera od wskazanego kadru; licznik, ‹ ›, ←/→ bez zapętlenia; Esc zamyka, hero stoi na oglądanym kadrze", async ({
+    page,
+  }) => {
+    const o = offerWithPhotos(4);
+    test.skip(!o, "brak oferty z ≥ 4 zdjęciami w data/");
+    const total = o!.photos.length;
+    const hosts = watchHosts(page);
+    const chunks: string[] = [];
+    page.on("request", (r) => {
+      if (r.url().includes("offer-lightbox")) chunks.push(r.url());
+    });
+    await gotoReady(page, offerPath(o!));
+    // chunk lightboxa i powłoka dopiero po interakcji z galerią
+    await expect(page.locator(LB)).toHaveCount(0);
+    expect(chunks).toEqual([]);
+
+    const lb = await openLightbox(page, '.od-tile[data-gal-open="2"]');
+    expect(chunks.length).toBe(1);
+    await expect(lb).toHaveAttribute("role", "dialog");
+    await expect(lb).toHaveAttribute("aria-modal", "true");
+    await expect(lb).toHaveAttribute("data-overlay-kind", "modal");
+    await expect(lb).toHaveAccessibleName(DETAIL.galleryTitle);
+    const count = lb.locator("[data-lb-count]");
+    await expect(count).toHaveText(`3 / ${total}`);
+    expect(await trackIndex(page, "[data-lb-track]")).toBe(2);
+
+    // tor = te same kadry `hero` co galeria; bieżący i sąsiedzi `eager`,
+    // reszta `lazy`; kadr w naturalnych proporcjach (`contain`)
+    const imgs = await lb.locator("[data-lb-track] img").evaluateAll((els) =>
+      els.map((el) => ({
+        src: el.getAttribute("src"),
+        loading: el.getAttribute("loading"),
+        w: el.getAttribute("width"),
+        alt: el.getAttribute("alt"),
+        fit: getComputedStyle(el).objectFit,
+      })),
+    );
+    expect(imgs.map((i) => i.src)).toEqual(
+      o!.photos.map((p) => imgAt(p.r2Key, "hero")),
+    );
+    expect(imgs.map((i) => i.w)).toEqual(o!.photos.map((p) => String(p.width)));
+    expect(imgs.map((i) => i.alt)).toEqual(o!.photos.map((p) => p.alt));
+    expect(imgs.slice(1, 4).every((i) => i.loading === "eager")).toBe(true);
+    expect(imgs[0].loading).toBe("lazy");
+    expect(imgs.every((i) => i.fit === "contain")).toBe(true);
+    const stop = await lb
+      .locator(".lb-slide")
+      .first()
+      .evaluate((el) => getComputedStyle(el).scrollSnapStop);
+    expect(stop).toBe("always");
+
+    // klawiatura i ‹ ›
+    await page.keyboard.press("ArrowRight");
+    await expect(count).toHaveText(`4 / ${total}`);
+    await lb.locator("[data-lb-prev]").click();
+    await expect(count).toHaveText(`3 / ${total}`);
+    await page.keyboard.press("ArrowLeft");
+    await page.keyboard.press("ArrowLeft");
+    await expect(count).toHaveText(`1 / ${total}`);
+    await expect(lb.locator("[data-lb-prev]")).toBeDisabled();
+    // bez zapętlenia: ← na pierwszym kadrze nic nie zmienia
+    await page.keyboard.press("ArrowLeft");
+    await expect(count).toHaveText(`1 / ${total}`);
+    await page.keyboard.press("ArrowRight");
+    await expect(count).toHaveText(`2 / ${total}`);
+    await settle(page, 600);
+    expect(await trackIndex(page, "[data-lb-track]")).toBe(1);
+
+    // Esc (overlay.ts) zamyka; hero staje na kadrze oglądanym w lightboxie
+    await page.keyboard.press("Escape");
+    await expect(lb).toBeHidden();
+    await expect(page.locator("[data-gal-count]")).toHaveText(`2 / ${total}`);
+    expect(await trackIndex(page, "[data-gal-track]")).toBe(1);
+    await expect(page.locator('[data-gal-thumb="1"]')).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+    expect(await page.evaluate(() => document.body.style.position)).toBe("");
+    expect([...hosts].filter((h) => !allowedHosts(page).has(h))).toEqual([]);
+  });
+
+  test("lightbox: miniatura, „Wszystkie zdjęcia” i kadr hero otwierają od swojego kadru; X zamyka; ‹ › wyłączone na krańcach, fokus nie ucieka z dialogu", async ({
+    page,
+  }) => {
+    const o = offerWithPhotos(4);
+    test.skip(!o, "brak oferty z ≥ 4 zdjęciami w data/");
+    const total = o!.photos.length;
+    await gotoReady(page, offerPath(o!));
+
+    let lb = await openLightbox(page, '[data-gal-thumb="1"]');
+    const count = lb.locator("[data-lb-count]");
+    await expect(count).toHaveText(`2 / ${total}`);
+    await lb.locator("[data-overlay-close]").click();
+    await expect(lb).toBeHidden();
+
+    lb = await openLightbox(page, "[data-gal-all]");
+    await expect(count).toHaveText(`1 / ${total}`);
+    await expect(lb.locator("[data-lb-prev]")).toBeDisabled();
+    await expect(lb.locator("[data-lb-next]")).toBeEnabled();
+    // przedostatni kadr (pozycja toru, bez animacji) → › dojeżdża do końca
+    await lb.locator("[data-lb-track]").evaluate((t, i) => {
+      t.scrollTo({ left: i * t.clientWidth, behavior: "auto" });
+    }, total - 2);
+    await expect(count).toHaveText(`${total - 1} / ${total}`);
+    await lb.locator("[data-lb-next]").click();
+    await expect(count).toHaveText(`${total} / ${total}`);
+    await expect(lb.locator("[data-lb-next]")).toBeDisabled();
+    // wyłączony przycisk oddał fokus drugiej strzałce (Tab zostaje w dialogu)
+    expect(
+      await page.evaluate(() =>
+        document.activeElement?.hasAttribute("data-lb-prev"),
+      ),
+    ).toBe(true);
+    await page.keyboard.press("Escape");
+    await expect(lb).toBeHidden();
+
+    // hero stoi na ostatnim kadrze — klik w kadr otwiera lightbox od niego
+    await expect(page.locator("[data-gal-count]")).toHaveText(
+      `${total} / ${total}`,
+    );
+    await openLightbox(page, "[data-gal-track]");
+    await expect(count).toHaveText(`${total} / ${total}`);
+  });
+
+  test("lightbox: rzut otwiera galerię od kadru planu", async ({ page }) => {
+    const o = pickOffer({ withPlan: true });
+    test.skip(!o, "brak oferty z rzutem (kind=plan) w data/");
+    const firstPlan = o!.photos.findIndex((p) => p.kind === "plan");
+    await gotoReady(page, offerPath(o!));
+    const lb = await openLightbox(page, "[data-offer-plans] [data-gal-open]");
+    await expect(lb.locator("[data-lb-count]")).toHaveText(
+      `${firstPlan + 1} / ${o!.photos.length}`,
+    );
+    await expect(lb.locator(".lb-slide").nth(firstPlan)).toHaveAttribute(
+      "data-plan",
+      "",
+    );
+  });
+
+  test("lightbox: stopka CTA — „Zadzwoń” ze slotem telefonu, „Napisz” zamyka i przewija do sekcji kontaktu", async ({
+    page,
+  }) => {
+    const o = offerWithPhotos(2);
+    test.skip(!o, "brak oferty z ≥ 2 zdjęciami w data/");
+    await gotoReady(page, offerPath(o!));
+    const lb = await openLightbox(page, '[data-gal-thumb="1"]');
+    await expect(lb.locator(".lb-cta")).toHaveText(DETAIL.lightboxCta);
+    const call = lb.locator("a[data-tel]");
+    await expect(call).toHaveText(DETAIL.call);
+    await expect(call).toHaveAttribute("href", buildPhoneHref());
+    await lb.locator("[data-lb-write]").click();
+    await expect(lb).toBeHidden();
+    // przewinięcie następuje PO odblokowaniu scrolla strony
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const top = document
+            .getElementById("kontakt")!
+            .getBoundingClientRect().top;
+          return top >= 0 && top < window.innerHeight;
+        }),
+      )
+      .toBe(true);
+    expect(await page.evaluate(() => document.body.style.position)).toBe("");
+  });
+
+  test("lightbox: próg 1025 — modal ↔ sheet; zmiana progu przy otwartym lightboxie zamyka go", async ({
+    page,
+  }) => {
+    const o = offerWithPhotos(2);
+    test.skip(!o, "brak oferty z ≥ 2 zdjęciami w data/");
+    await gotoReady(page, offerPath(o!));
+    let lb = await openLightbox(page, '[data-gal-thumb="1"]');
+    await expect(lb).toHaveAttribute("data-overlay-kind", "modal");
+    await expect(lb.locator("[data-lb-next]")).toBeVisible();
+    await page.setViewportSize({ width: DESKTOP_MIN_PX - 1, height: 800 });
+    await expect(lb).toBeHidden();
+    await expect(lb).toHaveAttribute("data-overlay-kind", "sheet");
+    lb = await openLightbox(page, '[data-gal-thumb="1"]');
+    await expect(lb).toHaveAttribute("data-overlay-kind", "sheet");
+    // poniżej progu ‹ › nie ma — tor przewija gest
+    await expect(lb.locator("[data-lb-next]")).toBeHidden();
+    await page.setViewportSize({ width: DESKTOP_MIN_PX, height: 800 });
+    await expect(lb).toBeHidden();
+    await expect(lb).toHaveAttribute("data-overlay-kind", "modal");
+  });
+
+  test("lightbox: axe bez naruszeń critical/serious (dialog po wjeździe)", async ({
+    page,
+  }) => {
+    const o = offerWithPhotos(2);
+    test.skip(!o, "brak oferty z ≥ 2 zdjęciami w data/");
+    await gotoReady(page, offerPath(o!));
+    await openLightbox(page, '[data-gal-thumb="1"]');
+    await page.waitForTimeout(LB_IN_MS);
+    expect(await lightboxViolations(page)).toEqual([]);
+  });
+
+  test("druk: chrome, kotwice, panel, pasek i przyciski znikają; tabela, pełny opis, siatka zdjęć i stopka druku zostają", async ({
+    page,
+  }) => {
+    const o = pickOffer({ withTour: true }) ?? FIRST;
+    test.skip(!o, NO_OFFERS);
+    await gotoReady(page, offerPath(o!));
+    // na ekranie elementów druku nie widać
+    await expect(page.locator("[data-offer-print-foot]")).toBeHidden();
+    await expect(page.locator("[data-offer-print-photos]")).toBeHidden();
+
+    await page.emulateMedia({ media: "print" });
+    for (const sel of [
+      "header.hdr",
+      "footer.ft",
+      "[data-offer-crumbs]",
+      "[data-offer-anchors]",
+      "[data-offer-panel]",
+      "[data-offer-bar]",
+      "[data-offer-print]",
+      '[data-offer-copy="link"]',
+      '[data-offer-copy="number"]',
+      ".od-share",
+      ".od-thumbs",
+      "[data-offer-inquiry]",
+    ]) {
+      await expect(page.locator(sel).first(), sel).toBeHidden();
+    }
+    for (const sel of [
+      "[data-gal-prev]",
+      "[data-offer-video]",
+      "[data-offer-tour]",
+    ]) {
+      if ((await page.locator(sel).count()) > 0) {
+        await expect(page.locator(sel), sel).toBeHidden();
+      }
+    }
+    await expect(page.locator("[data-offer-rows]")).toBeVisible();
+    await expect(page.locator("[data-offer-number]")).toBeVisible();
+    // galeria: sam pierwszy kadr + siatka kolejnych zdjęć w wariancie `card`
+    const photos = photosOnly(o!);
+    if (o!.photos.length > 0) {
+      await expect(page.locator('[data-gal-slide="0"]')).toBeVisible();
+    }
+    if (o!.photos.length > 1) {
+      await expect(page.locator('[data-gal-slide="1"]')).toBeHidden();
+    }
+    if (photos.length > 1) {
+      const grid = page.locator("[data-offer-print-photos]");
+      await expect(grid).toBeVisible();
+      expect(
+        await grid
+          .locator("img")
+          .evaluateAll((els) => els.map((el) => el.getAttribute("src"))),
+      ).toEqual(
+        photos
+          .slice(1, 1 + OFFER_PRINT_PHOTOS)
+          .map((p) => imgAt(p.r2Key, "card")),
+      );
+    }
+    // pełny opis: zwijanie zdjęte, przycisk znika
+    if ((await page.locator("[data-offer-desc-wrap]").count()) > 0) {
+      const desc = await page
+        .locator("[data-offer-desc-wrap]")
+        .evaluate((el) => {
+          const cs = getComputedStyle(el);
+          return {
+            maxHeight: cs.maxHeight,
+            overflow: cs.overflowY,
+            full: el.getBoundingClientRect().height >= el.scrollHeight - 1,
+          };
+        });
+      expect(desc.maxHeight).toBe("none");
+      expect(desc.overflow).toBe("visible");
+      expect(desc.full).toBe(true);
+      await expect(page.locator("[data-offer-desc-btn]")).toBeHidden();
+    }
+    // adresy osadzeń jako tekst; stopka z numerem
+    if (o!.tourUrl) {
+      await expect(page.locator("[data-offer-print-links]")).toContainText(
+        o!.tourUrl,
+      );
+    }
+    if (o!.videoId) {
+      await expect(page.locator("[data-offer-print-links]")).toContainText(
+        `https://www.youtube.com/watch?v=${o!.videoId}`,
+      );
+    }
+    await expect(page.locator("[data-offer-print-foot]")).toHaveText(
+      `${new URL(SITE).host} · ${o!.number}`,
+    );
+    // karta agenta zostaje (nazwisko), kontakt ze slotów
+    await expect(page.locator("[data-offer-contact]")).toContainText(
+      AGENT.name,
+    );
+    await expect(
+      page.locator("[data-offer-contact] a[data-tel]"),
+    ).toBeVisible();
   });
 });
 
@@ -766,5 +1116,131 @@ test.describe("detal oferty — mobile (pixel-5, iphone-14)", () => {
       .first()
       .evaluate((el) => getComputedStyle(el).scrollSnapStop);
     expect(stop).toBe("always");
+  });
+
+  test("lightbox na mobile: sheet; blokada scrolla; swipe-down zamyka i pozycja strony wraca", async ({
+    page,
+  }) => {
+    const o = offerWithPhotos(3);
+    test.skip(!o, "brak oferty z ≥ 3 zdjęciami w data/");
+    await gotoReady(page, offerPath(o!));
+    // niewielkie przewinięcie: kadr hero zostaje w oknie (klik w element
+    // poza oknem przewinąłby stronę przed otwarciem)
+    await scrollPageTo(page, 60);
+    await expect(page.locator(LB)).toHaveCount(0);
+    // tap w kadr hero (górna część — dół przykrywa nagłówek oferty)
+    await page
+      .locator("[data-gal-track]")
+      .click({ position: { x: 150, y: 120 } });
+    const lb = page.locator(LB);
+    await expect(lb).toHaveClass(/is-open/);
+    await expect(lb).toHaveAttribute("data-overlay-kind", "sheet");
+    await expect(lb.locator("[data-lb-count]")).toHaveText(
+      `1 / ${o!.photos.length}`,
+    );
+    await expect(lb.locator("[data-lb-next]")).toBeHidden();
+    expect(await page.evaluate(() => document.body.style.position)).toBe(
+      "fixed",
+    );
+    expect(await page.evaluate(() => document.body.style.top)).toBe("-60px");
+
+    await page.waitForTimeout(LB_IN_MS);
+    const box = await lb.locator("[data-overlay-drag]").boundingBox();
+    expect(box).not.toBeNull();
+    const x = box!.x + box!.width / 2;
+    const y = box!.y + 8;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    for (let i = 1; i <= 10; i++) await page.mouse.move(x, y + i * 25);
+    await page.mouse.up();
+    await expect(lb).toBeHidden();
+    await settle(page, 200);
+    expect(await page.evaluate(() => document.body.style.position)).toBe("");
+    expect(await page.evaluate(() => window.scrollY)).toBe(60);
+  });
+
+  test("lightbox na mobile: licznik nadąża za przewijaniem toru; X, Esc i klik w scrim zamykają; hero wraca na oglądany kadr", async ({
+    page,
+  }) => {
+    const o = offerWithPhotos(3);
+    test.skip(!o, "brak oferty z ≥ 3 zdjęciami w data/");
+    const total = o!.photos.length;
+    await gotoReady(page, offerPath(o!));
+    let lb = await openLightbox(page, '[data-gal-thumb="0"]');
+    const track = lb.locator("[data-lb-track]");
+    // snap mierzony programowo (jak hero): 1,4 kadru ląduje na sąsiednim
+    await track.evaluate((t) => {
+      t.scrollBy({ left: t.clientWidth * 1.4, behavior: "auto" });
+    });
+    await settle(page, 500);
+    const idx = await trackIndex(page, "[data-lb-track]");
+    expect([1, 2]).toContain(idx);
+    await expect(lb.locator("[data-lb-count]")).toHaveText(
+      `${idx + 1} / ${total}`,
+    );
+    await lb.locator("[data-overlay-close]").click();
+    await expect(lb).toBeHidden();
+    await expect(page.locator("[data-gal-count]")).toHaveText(
+      `${idx + 1} / ${total}`,
+    );
+
+    lb = await openLightbox(page, '[data-gal-thumb="0"]');
+    await page.keyboard.press("Escape");
+    await expect(lb).toBeHidden();
+
+    lb = await openLightbox(page, '[data-gal-thumb="0"]');
+    await page.waitForTimeout(LB_IN_MS);
+    // scrim = pas nad sheetem
+    await lb.click({ position: { x: 10, y: 6 } });
+    await expect(lb).toBeHidden();
+  });
+
+  test("lightbox na mobile: focus-trap — Tab krąży wewnątrz dialogu", async ({
+    page,
+    browserName,
+  }) => {
+    // WebKit nie przenosi fokusu Tabem po przyciskach (jak w navigation.spec)
+    test.skip(browserName === "webkit", "WebKit: Tab pomija przyciski");
+    const o = offerWithPhotos(3);
+    test.skip(!o, "brak oferty z ≥ 3 zdjęciami w data/");
+    await gotoReady(page, offerPath(o!));
+    const lb = await openLightbox(page, '[data-gal-thumb="0"]');
+    await page.waitForTimeout(LB_IN_MS);
+    for (let i = 0; i < 6; i++) {
+      await page.keyboard.press("Tab");
+      const inside = await page.evaluate(
+        (id) => !!document.activeElement?.closest(id),
+        LB,
+      );
+      expect(inside, `Tab ×${i + 1}`).toBe(true);
+    }
+    await page.keyboard.press("Escape");
+    await expect(lb).toBeHidden();
+  });
+
+  test("lightbox na mobile: przejście na desktop domyka sheet i zdejmuje blokadę scrolla", async ({
+    page,
+  }) => {
+    const o = offerWithPhotos(3);
+    test.skip(!o, "brak oferty z ≥ 3 zdjęciami w data/");
+    await gotoReady(page, offerPath(o!));
+    const lb = await openLightbox(page, '[data-gal-thumb="0"]');
+    await page.setViewportSize({ width: DESKTOP_MIN_PX, height: 800 });
+    await expect(lb).toBeHidden();
+    await expect(lb).toHaveAttribute("data-overlay-kind", "modal");
+    expect(await page.evaluate(() => document.body.style.position)).toBe("");
+  });
+
+  test("lightbox na mobile: axe bez naruszeń critical/serious; zero żądań do podmiotów trzecich", async ({
+    page,
+  }) => {
+    const o = offerWithPhotos(3);
+    test.skip(!o, "brak oferty z ≥ 3 zdjęciami w data/");
+    const hosts = watchHosts(page);
+    await gotoReady(page, offerPath(o!));
+    await openLightbox(page, '[data-gal-thumb="0"]');
+    await page.waitForTimeout(LB_IN_MS);
+    expect(await lightboxViolations(page)).toEqual([]);
+    expect([...hosts].filter((h) => !allowedHosts(page).has(h))).toEqual([]);
   });
 });

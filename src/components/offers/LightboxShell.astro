@@ -1,0 +1,103 @@
+---
+// Powłoka lightboxa galerii (4.3 b) jako SZABLON: `offer-lightbox.ts`
+// klonuje go do body przy pierwszym otwarciu, więc przed otwarciem
+// `#of-lightbox` nie istnieje w DOM (zawartość szablonu jest bezwładna —
+// obraz tła stopki też się nie pobiera). Tor wypełnia skrypt kadrami
+// z galerii hero; `data-overlay-kind` synchronizuje matchMedia (sheet
+// poniżej 1025, modal od 1025); slot telefonu wypełnia
+// `fillContactSlots`. Mechanika nakładki: `scripts/overlay.ts`.
+// Osobny komponent, bo kompilator Astro gubi się na szablonie HTML
+// osadzonym w wyrażeniu warunkowym (błąd składni w wygenerowanym kodzie).
+// Style: sekcja `lb-*` w `offer-detail.css`.
+import ctaImage from "@/assets/img/onas-cta.webp";
+import { DETAIL } from "@/lib/offers/offers-ui";
+import { CONTACT_PATH } from "@/lib/routes";
+import Icon from "./Icon.astro";
+---
+
+<template data-lb-tpl>
+  <div
+    class="lb-ov"
+    id="of-lightbox"
+    data-overlay
+    data-overlay-kind="sheet"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="of-lightbox-h"
+    hidden
+  >
+    <div class="lb" data-overlay-panel tabindex="-1">
+      <div class="lb-head" data-overlay-drag>
+        <span class="lb-grab" aria-hidden="true"></span>
+        <div class="lb-bar">
+          <div class="lb-title">
+            <h2 class="lb-h" id="of-lightbox-h">
+              {DETAIL.galleryTitle}
+            </h2>
+            <span class="lb-count" data-lb-count aria-live="polite"></span>
+          </div>
+          <button
+            type="button"
+            class="lb-x"
+            data-overlay-close
+            aria-label={DETAIL.closeGallery}
+          >
+            <Icon name="close" />
+          </button>
+        </div>
+      </div>
+      <div class="lb-stage">
+        <div
+          class="lb-track"
+          data-lb-track
+          role="region"
+          aria-roledescription="karuzela"
+          aria-label={DETAIL.gallery}
+          tabindex="0"
+        >
+        </div>
+        <button
+          type="button"
+          class="lb-nav lb-nav--prev"
+          data-lb-prev
+          aria-label={DETAIL.prevPhoto}
+        >
+          <Icon name="chevronLeft" />
+        </button>
+        <button
+          type="button"
+          class="lb-nav lb-nav--next"
+          data-lb-next
+          aria-label={DETAIL.nextPhoto}
+        >
+          <Icon name="chevronRight" />
+        </button>
+      </div>
+      <div class="lb-foot">
+        <img
+          class="lb-foot-bg"
+          src={ctaImage.src}
+          width={ctaImage.width}
+          height={ctaImage.height}
+          alt=""
+          loading="lazy"
+          decoding="async"
+        />
+        <p class="lb-cta">{DETAIL.lightboxCta}</p>
+        <div class="lb-cta2">
+          <a
+            class="lb-btn lb-btn--white"
+            data-tel
+            data-fill="href"
+            href={CONTACT_PATH}
+          >
+            {DETAIL.call}
+          </a>
+          <a class="lb-btn lb-btn--copper" href="#kontakt" data-lb-write>
+            {DETAIL.write}
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

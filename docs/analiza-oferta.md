@@ -1,7 +1,8 @@
 # Mini-analiza 4.3 — detal oferty + strona 404 świadoma ofert
 
-> **Status:** ZAAKCEPTOWANA 2026-10-03 (wszystkie rekomendacje §0 i §6),
-> część (a) W REALIZACJI na gałęzi `feat/oferta`. Część 4.3 Etapu 4 wg instrukcji
+> **Status:** ZAAKCEPTOWANA 2026-10-03 (wszystkie rekomendacje §0 i §6);
+> część (a) ZMERGOWANA (PR #21, poprawka #22), część (b) — lightbox, druk,
+> 404 — zrealizowana na gałęzi `feat/oferta-lightbox` (§11). Część 4.3 Etapu 4 wg instrukcji
 > wykonawczej (dokument lokalny, `docs/plan/`) — tabela 4.3, „Kontrakty
 > poza widokiem", „Zasada rozjazdów"; prompt §4.3 z `etap-4-prompty.md`.
 > Referencja wyglądu: `docs/design/export/oferta.html` (gałęzie `.br-m`
@@ -660,4 +661,178 @@ agenta (part3 §6.3), formaty (`format.ts`), „Zapytaj o cenę", plakietki.
   lightbox na `overlay.ts` (§3.4; `data-gal-open` już czeka), arkusz
   druku (§3.5), 404 świadoma ofert (§3.6), visual `oferta-lightbox`,
   `oferta-druk`, `not-found-offer`.
+
+## 11. Uzupełnienia po implementacji (b)
+
+Plan (b) przedstawiony w sesji i zaakceptowany 2026-10-03 razem
+z rozstrzygnięciami R35–R39 (i adresem filmu na wydruku).
+
+### 11.1 Rozstrzygnięcia (ciąg dalszy §2)
+
+| # | Rozjazd | Rozstrzygnięcie |
+| --- | --- | --- |
+| R35 | §3.6: dwa bloki 404 w DOM, ofertowy `hidden` z własnym `h1` — a `not-found.spec` (bez JS) wymaga DOKŁADNIE jednego `h1` | blok ofertowy w `template[data-nf-tpl]`; skrypt inline ZASTĘPUJE nim blok generyczny (`[data-nf-generic]`). Zawsze jeden `h1`, istniejący kontrakt nietknięty, a zdjęcia kart nie pobierają się na zwykłej 404 (zawartość szablonu jest bezwładna) |
+| R36 | §3.4: powłoka lightboxa składana w chunku | powłoka jako szablon `template[data-lb-tpl]` w markupie detalu (`LightboxShell.astro`), chunk klonuje go do `<body>`: teksty z `DETAIL`, ikony z `Icon.astro`, tło stopki z assetów Astro — chunk nie wciąga `offers-ui.ts`. Kontrakt „przed otwarciem `#of-lightbox` nie istnieje w DOM" zostaje. Koszt: ok. 1,6 KB HTML na detal |
+| R37 | Test z (a) „miniatura przewija hero" | od (b) miniatura otwiera lightbox (§1.1) — fragment testu zastąpiony blokiem lightboxa; hero przewijają ‹ ›, klawiatura i gest |
+| R38 | Design mobile: pas kadrów 3:2 `cover` z podglądem następnego, bez ‹ › | sheet prawie na pełną wysokość (`100svh − 20 px`), kadr = 100 % szerokości toru, `contain` (R11); ‹ › tylko od 1025; nagłówek sheetu = `data-overlay-drag` z kreską-uchwytem (jak sheety listy) |
+| R39 | Siatka druku potrzebuje 6 zdjęć `card`, a miniatury od 7. mają tylko `data-src`; zrzut druku na 1920 px pokazałby układ, którego papier nie ma | osobny blok tylko do druku `[data-offer-print-photos]` (`card`, `lazy`, na ekranie `display:none` — nie pobiera się); „Drukuj / PDF" przełącza obrazy arkusza (`data-print-img`: siatka, rzuty, mapa) na `eager` i czeka na wczytanie (limit 2,5 s) przed `window.print()`, `beforeprint` robi to samo dla druku z menu; zrzut `oferta-druk` na viewporcie 794×1123 (A4) |
+| R40 | Test „Drukuj / PDF woła `window.print`" czytał licznik zaraz po kliknięciu | druk rusza po wczytaniu obrazów arkusza → `expect.poll`; test dodatkowo pilnuje, że obrazy siatki NIE są pobrane przed kliknięciem i SĄ wczytane w chwili druku |
+| R41 | Stopka lightboxa: „Napisz" biały na miedzi (design) | tekst `--ink` na miedzi (AA; jak „Napisz" w panelu i pasku dolnym); „Napisz" zamyka lightbox, a przewinięcie do `#kontakt` następuje w `onClose` — przy `body{position:fixed}` skok kotwicy nic nie robi |
+| R42 | 404 przy zerze aktywnych ofert: tekst „…wybierz jedną z najnowszych poniżej" byłby nieprawdziwy | osobny tekst `DETAIL.nfTextEmpty` (PLACEHOLDER) i brak sekcji „Najnowsze oferty" |
+
+### 11.2 Co powstało
+
+- **Lightbox:** `src/scripts/offer-lightbox.ts` (chunk z dynamicznego
+  `import()` w `offer-detail.ts`; prefetch po pierwszym `pointerdown`/
+  `touchstart` na `[data-offer-gallery]`), `LightboxShell.astro`
+  (szablon powłoki), sekcja `lb-*` w `offer-detail.css`. Mechanika
+  nakładki w całości z `overlay.ts` (bez zmian w nim): Esc, X, scrim,
+  focus-trap, blokada scrolla, swipe-down przy `kind="sheet"`. Moduł
+  dokłada: `kind` wg `matchMedia(1025)` (zmiana progu zamyka), tor
+  z kadrów hero (atrybuty `src`/`width`/`height`/`alt`), licznik
+  `aria-live`, ‹ › i ←/→ bez zapętlenia (wyłączana strzałka oddaje
+  fokus), `eager` dla bieżącego kadru i sąsiadów, powrót hero na
+  oglądany kadr w `onClose`. Gdy chunk się nie pobierze, `data-gal-open`
+  przewija hero jak w (a). Kafle 2×2 leżą w kontenerze `aria-hidden`,
+  więc przed otwarciem fokus przechodzi na tor galerii (`overlay.ts`
+  wraca do niego po zamknięciu — nie do ukrytego przycisku).
+- **Druk:** `@media print` na końcu `offer-detail.css` — nadpisuje OBA
+  układy (kartka A4 ≈ 690 px = układ mobilny; emulacja na szerokim oknie
+  = desktopowy): chrome, okruszki, kotwice, przyciski, miniatury, kafle,
+  panel, pasek, film/spacer, lightbox i miejsce na formularz znikają;
+  zostają nagłówek (statyczny, ciemny tekst), plakietka statusu jako
+  obrys, pierwsze zdjęcie w naturalnych proporcjach (maks. 130 mm),
+  siatka 3×2 kolejnych (`card`), numer i data, skróty, tabela w dwóch
+  kolumnach, pełny opis, rzuty, adresy filmu i spaceru jako tekst, mapa,
+  karta agenta (ciemny tekst, kontakt ze slotów), stopka „host · numer".
+  `page-break-inside: avoid` na wierszach, kaflach, mapie i kontakcie.
+- **404:** `src/pages/404.astro` — blok generyczny + szablon wariantu
+  ofertowego (`h1`, akapit, link „Wszystkie oferty", „Najnowsze oferty"
+  z maks. 3 kartami `OfferCard` bez `client:*`), skrypt `is:inline`
+  (ścieżka `/oferty/…` albo `/sw\d+`, bez rozróżniania wielkości liter)
+  podmienia blok przed malowaniem i ustawia tytuł karty. Status 404,
+  `noindex`, brak canonicala i JSON-LD, sitemapa — bez zmian.
+
+### 11.3 Budżet (pomiar jak §10, `pnpm build:visual`; baza = `main` po #22 zbudowany tą samą komendą)
+
+| Plik | Rola | brutto | gzip -9 | wobec main |
+| --- | --- | --- | --- | --- |
+| `OfferDetailPage.astro_…js` | skrypt detalu (+ otwarcie lightboxa, prefetch, obrazy druku) | 6 203 B | 2 586 B | +926 / +399 |
+| `preload-helper.*.js` | helper `import()` Vite — NOWY na detalu (na main siedział w chunku `preact.module`, czyli tylko na liście) | 1 254 B | 733 B | +1 254 / +733 |
+| chrome (Navbar, Footer, `contact-details`, `site-config`) | bez zmian | 8 135 B | 3 531 B | 0 |
+| **razem `script` na detalu (pierwsze ładowanie)** | | **15 592 B** | **6 850 B** | **+2 180 / +1 132** |
+| `offer-lightbox.*.js` | chunk lightboxa — dynamiczny `import()`, POZA pierwszym ładowaniem | 3 036 B | 1 456 B | nowy |
+| `SearchIsland.*.js` | wyspa listy — kod nietknięty; +42 B to linia importu wydzielonego helpera | 38 653 B | 13 680 B | +42 / +26 |
+| razem `script` na `/oferty/` | wyspa + runtime + chrome + helper | 63 001 B | 24 699 B | +121 / +217 |
+| CSS trasy `[...path]` (`offer-detail.css`) | + sekcja `lb-*` i arkusz druku | 31 626 B | 6 560 B | +8 823 / +1 589 |
+| HTML detalu (mieszkanie, 12 zdjęć) | + szablon lightboxa, blok druku | 49 905 B | 10 003 B | +3 215 / +482 |
+| `404.html` | + szablon z 3 kartami | 30 356 B | 5 966 B | +11 909 / +1 994 |
+| `offers.css` na 404 | arkusz kart — NOWE żądanie na każdej 404 (także generycznej) | 23 587 B | 5 060 B | nowy |
+
+- **Helper preloadu to rozjazd z prognozą** (plan zakładał ok. +0,4 KB
+  na skrypcie detalu): Vite opakowuje KAŻDY dynamiczny `import()`
+  własnym helperem. Na main helper istniał tylko dla sheetów listy
+  i był sklejony z chunkiem Preacta; drugi importer (detal) wydzielił go
+  do wspólnego pliku — detal płaci za niego 733 B gzip przy pierwszym
+  wejściu (plik wspólny z listą, więc przy przejściu lista → detal jest
+  już w cache), lista dostaje jedno żądanie więcej (+217 B gzip razem).
+- **CSS detalu ładuje się też na listach rodzaju** (i odwrotnie): lista
+  i detal to jedna trasa `[...path].astro`, więc Astro linkuje arkusze
+  obu widoków na obu. Stan sprzed (b), teraz +1,6 KB gzip. Rozdzielenie
+  tras to zmiana architektury — poza zakresem; do rozważenia przy
+  domknięciu Etapu 4.
+- LHCI lokalnie (1 przebieg, oba configi): patrz §11.5.
+
+### 11.4 Lekcje
+
+- **`<template>` w wyrażeniu `{warunek && (…)}` wywraca build Astro**
+  („Expected ")" but found "class"" w wygenerowanym kodzie; `astro check`
+  tego nie widzi). Szablon stoi na najwyższym poziomie własnego
+  komponentu, warunek obejmuje komponent. Tak samo komentarz blokowy
+  między `(` a elementem w wyrażeniu.
+- **`place-items: center` działa też w układzie blokowym**
+  (`justify-self` bloków): wariant ofertowy 404 po przełączeniu `.nf` na
+  `display: block` kurczył kolumnę do treści (623 px zamiast 1 344) —
+  reset `place-items: normal` + `width: 100%`.
+- **Własności `img.width` / `img.src` to nie atrybuty** (rozmiar na
+  ekranie, adres rozwinięty) — tor lightboxa kopiuje atrybuty przez
+  `getAttribute`.
+- **Zaślepka mediów w e2e nie ma wymiarów** (`naturalWidth === 0` także
+  po wczytaniu) — „obraz pobrany" mierzy się przez `img.complete`.
+- **Zrzut lightboxa a pozycja scrolla:** pod scrimem sheetu widać
+  stronę, więc otwarcie w teście wizualnym idzie kliknięciem z JS (bez
+  przewijania do miniatury).
+- Generyczne zrzuty `not-found` zmierzone progiem 0: `not-found-full`
+  identyczne na 6 profilach; `not-found-top` różni się o 877 px (1920)
+  i 828 px (firefox) — tyle samo co przed zmianą (stan z 4.1, pod
+  progiem). Bez regeneracji (§6 Q8).
+
+### 11.5 Weryfikacja lokalna
+
+- format, lint, typecheck — czyste; unit 404 (+2 skip); build 89 stron;
+  `test:dist` 6/6; pełne `pnpm test:e2e` na 6 profilach: 418 zielonych
+  (614 pominięć profili), 0 czerwonych; axe 0 naruszeń (lightbox na
+  desktopie i mobile, wariant ofertowy 404; allowlista PUSTA).
+- `test:visual`: 13 czerwonych OCZEKIWANYCH — same nowe zrzuty bez
+  baseline'u (`oferta-lightbox` ×6, `oferta-druk` ×1, `not-found-offer`
+  ×6); pozostałe 114 zielone (`chrome`, `oferty`, cztery detale
+  i generyczne `not-found` bez ruchu). Drugi przebieg na zapisanych
+  zrzutach: 13/13 stabilne.
+- LHCI lokalnie (1 przebieg, oba configi, asercje czyste): `script` na
+  czterech detalach **8 919 B = 22 % bramki 40 000 B** (po (a): 7 415 B;
+  +1 504 B = skrypt detalu + helper), listy 28 958 B (72 %; po (a)
+  28 632 B — różnica to poprawka R34 i wydzielony helper), „/"
+  i polityka 4 980 B; arkusze na detalu 20 058 B transferu. Mobile:
+  LCP detali 2 044–2 795 ms (działka 2 795 — margines ok. 405 ms do
+  progu 3 200, jak po (a)), TBT 0 (lista 43 ms), CLS 0,000, `total`
+  299–479 KB. Desktop: LCP 476–639 ms, TBT 0, CLS ≤ 0,006, `total`
+  369–551 KB. Chunk lightboxa nie wchodzi do pomiaru (pobiera się po
+  dotknięciu galerii).
+
+### 11.6 PLACEHOLDER (U9) nowe w (b)
+
+`DETAIL.nfTextEmpty` (404 bez aktywnych ofert). Pozostałe teksty (b)
+były na liście §7 od (a): `lightboxCta`, `galleryTitle`, `closeGallery`,
+`nfHeading`, `nfText`, `nfLink`, `nfLatest`.
+
+### 11.7 Co sprawdzić na fizycznym telefonie (po (b))
+
+1. Lightbox: tap w kadr hero, miniaturę i „Wszystkie zdjęcia" otwiera
+   sheet od właściwego kadru; swipe poziomy przewija DOKŁADNIE o jeden
+   kadr, licznik nadąża.
+2. Swipe-down zamyka (z nagłówka i z samego zdjęcia) i NIE odświeża
+   strony (Android); ruch po skosie nie zamyka przy przewijaniu kadrów.
+3. Przycisk wstecz systemu przy otwartym lightboxie: `overlay.ts` nie
+   obsługuje `popstate`, więc wstecz opuści stronę oferty — obserwacja,
+   czy to przeszkadza.
+4. Blokada scrolla pod lightboxem na iOS (strona nie jedzie pod
+   palcem); po zamknięciu wraca ta sama pozycja, hero stoi na oglądanym
+   kadrze.
+5. Limit warstw GPU Androida przy 22 kadrach `hero` (działka): klatkowanie
+   albo czarne kadry = sygnał do zmniejszenia wariantu lightboxa.
+6. „Zadzwoń" w stopce lightboxa otwiera dialer; „Napisz" zamyka
+   i przewija do sekcji kontaktu.
+7. „Drukuj / PDF" na iOS → arkusz druku/udostępniania z PDF: siatka
+   zdjęć i mapa są wczytane, tabela nie łamie wierszy, nie ma chrome'u.
+8. Wygasły adres oferty (np. `/oferty/x/y/sw000000/` i `/sw000000`):
+   komunikat o ofercie i 3 karty, bez mignięcia komunikatu generycznego.
+9. Obrót ekranu / iPad do poziomu (≥ 1025) przy otwartym lightboxie →
+   lightbox się zamyka; ponowne otwarcie daje modal na cały ekran.
+
+### 11.8 Decyzje po raporcie (Mateusz, 2026-10-03)
+
+Wszystkie cztery wg rekomendacji — bez zmian w kodzie:
+
+1. **Helper importu Vite na detalu** (+733 B gzip przy pierwszym
+   wejściu) — ZAAKCEPTOWANY: `script` detalu to 22 % bramki, a przy
+   dynamicznym `import()` nie ma prostego obejścia.
+2. **`offers.css` na każdej 404** (5,1 KB gzip, także w wariancie
+   generycznym) — ZOSTAJE; osobny arkusz kart tylko dla 404 nie jest
+   wart drugiej kopii stylów karty.
+3. **Wspólne arkusze listy rodzaju i detalu** (trasa `[...path]`) —
+   ODŁOŻONE do porządkowego PR-a domknięcia Etapów 4 + 5
+   (`docs/optional-todos.md`).
+4. **Przycisk wstecz systemu przy otwartym lightboxie** — bez zmiany;
+   ocena na fizycznym telefonie po merge'u, ewentualna obsługa `popstate`
+   to osobna decyzja o `overlay.ts` (`docs/optional-todos.md`).
 

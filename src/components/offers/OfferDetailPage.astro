@@ -13,6 +13,10 @@
 // `data-offer-detail`, `data-offer-number`, `data-offer-price`,
 // `data-offer-photo`, `data-offer-map`, `main h1`.
 // Zero Preact — czysty Astro + `src/scripts/offer-detail.ts`.
+// (b): powłoka lightboxa w `LightboxShell.astro` (szablon klonowany do
+// body przy pierwszym otwarciu — przed otwarciem `#of-lightbox` NIE
+// istnieje w DOM), blok zdjęć i linie tylko do druku (`@media print`
+// w `offer-detail.css`).
 import "./offer-detail.css";
 import ctaImage from "@/assets/img/onas-cta.webp";
 import Footer from "@/components/Footer.astro";
@@ -59,10 +63,12 @@ import { CONTACT_PATH } from "@/lib/routes";
 import {
   AGENT,
   OFFER_JSONLD_IMAGES,
+  OFFER_PRINT_PHOTOS,
   OFFER_THUMBS_EAGER,
   SHOW_PRICE_WHEN_SOLD,
 } from "@/lib/site-config";
 import Icon from "./Icon.astro";
+import LightboxShell from "./LightboxShell.astro";
 import type { DetailIconName as IconName } from "./icons-detail";
 
 interface Props {
@@ -440,6 +446,28 @@ const videoHref = offer.videoId
                   </div>
                 </div>
               )}
+              {photos.length > 1 && (
+                <div
+                  class="od-print-photos"
+                  data-offer-print-photos
+                  aria-hidden="true"
+                >
+                  {/* siatka druku: na ekranie `display:none` + `lazy` (obrazy
+                   się nie pobierają); przed drukiem JS przełącza je na
+                   `eager` i czeka na wczytanie */}
+                  {photos.slice(1, 1 + OFFER_PRINT_PHOTOS).map((p) => (
+                    <img
+                      src={imgAt(p.r2Key, "card")}
+                      alt=""
+                      width={p.width}
+                      height={p.height}
+                      loading="lazy"
+                      decoding="async"
+                      data-print-img
+                    />
+                  ))}
+                </div>
+              )}
             </>
           ) : (
             <div class="od-nophoto">
@@ -652,6 +680,7 @@ const videoHref = offer.videoId
                       height={p.height}
                       loading="lazy"
                       decoding="async"
+                      data-print-img
                     />
                   </button>
                 ))}
@@ -732,6 +761,26 @@ const videoHref = offer.videoId
         }
 
         {
+          (videoHref || offer.tourUrl) && (
+            <div class="od-print-only od-print-links" data-offer-print-links>
+              {/* tylko druk: sekcje film/spacer znikają, zostają adresy */}
+              {videoHref && (
+                <p>
+                  <strong>{`${DETAIL.video}: `}</strong>
+                  {videoHref}
+                </p>
+              )}
+              {offer.tourUrl && (
+                <p>
+                  <strong>{`${DETAIL.tour}: `}</strong>
+                  {offer.tourUrl}
+                </p>
+              )}
+            </div>
+          )
+        }
+
+        {
           map && (
             <section id="mapa" class="od-sec" aria-labelledby="od-h-map">
               <h2 id="od-h-map" class="od-h2">
@@ -748,6 +797,7 @@ const videoHref = offer.videoId
                 loading="lazy"
                 decoding="async"
                 data-offer-map
+                data-print-img
               />
               <div class="od-map-foot">
                 <p class="od-loc od-loc--map">
@@ -898,6 +948,12 @@ const videoHref = offer.videoId
         <a class="od-btn od-btn--copper" href="#kontakt">{DETAIL.write}</a>
       </div>
     </div>
+
+    <p class="od-print-only od-print-foot" data-offer-print-foot>
+      {`${Astro.site!.host} · ${offer.number}`}
+    </p>
+
+    {first && <LightboxShell />}
   </main>
   <Footer />
 </BaseLayout>
