@@ -4,7 +4,7 @@
 // pnpm test:smoke:prod (BASE_URL).
 // Selektory celowo ogólne (main h1) — mają przetrwać wymianę szkieletu
 // Etapu 0 na docelowe widoki bez edycji smoke'a. Asercja nagłówka noindex
-// fazy podglądu — Etap 3 (niżej); asercje formularzy dochodzą w Etapie 5.
+// fazy podglądu — Etap 3 (niżej); sonda endpointu formularzy — Etap 5A.
 import { expect, test } from "@playwright/test";
 import { collectPageIssues, useMediaStub } from "../helpers/guards";
 
@@ -83,27 +83,31 @@ test.describe("smoke", { tag: "@prod-smoke" }, () => {
       !process.env.BASE_URL,
       "endpoint istnieje tylko na deployu (BASE_URL)",
     );
-    // Jedna sonda, nie 6: reguła WAF formularza blokuje serie POST-ów
-    // z jednego IP — probe per projekt by ją strącał.
+    // Jedna sonda, nie 6: endpoint jest niezależny od przeglądarki, a seria
+    // POST-ów z jednego adresu wyglądałaby jak nadużycie.
     test.skip(
       testInfo.project.name !== "chromium-1920",
       "sonda endpointu niezależna od przeglądarki — wystarczy raz",
     );
     // Wypełniony honeypot = ścieżka bot-trap: funkcja odpowiada 200 i CICHO
-    // odrzuca PRZED wysyłką przez Resend — sonda nie generuje maili.
+    // odrzuca PRZED weryfikacją i wysyłką — sonda nie generuje maili
+    // i działa także bez sekretów w środowisku. Nagłówek `accept` jak
+    // w module klienckim (bez niego funkcja traktuje POST jako wysyłkę
+    // bez JS i odsyła 303 na stronę formularza).
     const res = await request.post("/api/kontakt", {
+      headers: { accept: "application/json" },
       multipart: {
-        // kontrakt pól odziedziczony z szablonu; zmienia się w Etapie 5
+        form: "kontakt",
         name: "Prod Smoke",
-        contact: "prod-smoke@example.com",
-        place: "",
+        email: "prod-smoke@example.com",
+        phone: "",
         message: "Sonda żywotności endpointu — honeypot celowo wypełniony.",
         firma: "smoke-probe-bot-trap",
         elapsed: "10000",
-        lang: "pl",
         "cf-turnstile-response": "",
       },
     });
     expect(res.status()).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
   });
 });

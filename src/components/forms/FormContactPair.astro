@@ -1,0 +1,47 @@
+---
+// Para kontaktowa: DWA osobne pola (e-mail, telefon), wymagane co
+// najmniej jedno. Opakowanie `data-f="contact"` niesie błąd „nie podano
+// żadnego"; pola mają własne błędy formatu. Kolejność E-mail → Telefon
+// jest jedna dla wszystkich formularzy (docs/analiza-formularze-a.md F5).
+import { EMAIL_MAX, PHONE_MAX } from "@/lib/contact-form";
+import FormField from "./FormField.astro";
+import { FORM_COPY } from "./forms-copy";
+
+interface Props {
+  /** Prefiks id pól (unikalny per formularz na stronie). */
+  idPrefix: string;
+}
+const { idPrefix } = Astro.props;
+const hintId = `${idPrefix}-contact-hint`;
+---
+
+<div class="fm-pair" data-f="contact">
+  <div class="fm-row2">
+    <FormField
+      id={`${idPrefix}-email`}
+      f="email"
+      type="email"
+      label={FORM_COPY.email.label}
+      placeholder={FORM_COPY.email.placeholder}
+      autocomplete="email"
+      maxlength={EMAIL_MAX}
+      error={FORM_COPY.errors.email}
+      describedby={hintId}
+    />
+    <FormField
+      id={`${idPrefix}-phone`}
+      f="phone"
+      type="tel"
+      label={FORM_COPY.phone.label}
+      placeholder={FORM_COPY.phone.placeholder}
+      autocomplete="tel"
+      maxlength={PHONE_MAX}
+      error={FORM_COPY.errors.phone}
+      describedby={hintId}
+    />
+  </div>
+  <p class="fm-hint" id={hintId}>{FORM_COPY.contactHint}</p>
+  <p class="fm-msg" id={`${idPrefix}-contact-err`} data-msg>
+    {FORM_COPY.errors.contact}
+  </p>
+</div>

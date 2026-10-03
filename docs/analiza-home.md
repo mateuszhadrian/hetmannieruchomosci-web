@@ -1,8 +1,9 @@
 # Mini-analiza 4.4 — strona główna (`/`)
 
-> **Status:** ZAAKCEPTOWANA 2026-10-03 (wszystkie rekomendacje Q1–Q9
-> z §9), zrealizowana na gałęzi `feat/home` — uzupełnienia po
-> implementacji w §10. Część 4.4 Etapu 4 wg instrukcji
+> **Status:** ZMERGOWANA (PR #24, 2026-10-03). Zaakceptowana 2026-10-03
+> (wszystkie rekomendacje Q1–Q9 z §9), zrealizowana na gałęzi
+> `feat/home` — uzupełnienia po implementacji w §10. Część 4.4 Etapu 4
+> wg instrukcji
 > wykonawczej (dokument lokalny, `docs/plan/`) — tabela 4.4, „Tryb pracy",
 > „Zasada rozjazdów"; prompt §4.4 z `etap-4-prompty.md`. Referencja
 > wyglądu: `docs/design/export/index.html` (gałęzie `.br-m` i `.br-d`),

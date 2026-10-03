@@ -1,0 +1,99 @@
+---
+// Pole formularza: prawdziwy `<label>` nad polem, opcjonalna podpowiedź
+// i komunikat błędu w HTML (pokazuje go CSS przy klasie `.err` na
+// opakowaniu — skrypt zapala tylko klasę; forms.css). Oznaczamy pola
+// OPCJONALNE, nie wymagane. `f` = nazwa pola z walidacji
+// (`FieldName` w lib/contact-form.ts) → `data-f` opakowania.
+import type { FieldName } from "@/lib/contact-form";
+import { FORM_COPY } from "./forms-copy";
+
+interface Props {
+  id: string;
+  /** `name` kontrolki i zarazem `data-f` opakowania. */
+  f: FieldName;
+  label: string;
+  type?: "text" | "email" | "tel" | "textarea";
+  placeholder?: string;
+  autocomplete?: string;
+  inputmode?: "text" | "decimal" | "numeric" | "tel" | "email";
+  maxlength?: number;
+  required?: boolean;
+  optional?: boolean;
+  hint?: string;
+  /** Komunikat błędu pola (widoczny przy `.err`). */
+  error?: string;
+  /** Dodatkowe id opisu spoza pola (np. podpowiedź pary e-mail/telefon). */
+  describedby?: string;
+}
+const {
+  id,
+  f,
+  label,
+  type = "text",
+  placeholder,
+  autocomplete,
+  inputmode,
+  maxlength,
+  required = false,
+  optional = false,
+  hint,
+  error,
+  describedby,
+} = Astro.props;
+
+// stałe opisy pola (podpowiedzi); komunikaty błędów dopina form-ui.ts
+// dopiero, gdy błąd jest aktywny
+const desc =
+  [hint ? `${id}-hint` : "", describedby ?? ""].filter(Boolean).join(" ") ||
+  undefined;
+---
+
+<div class="fm-field" data-f={f}>
+  <label class="fm-label" for={id}
+    >{label}{
+      optional && <span class="fm-opt">{` ${FORM_COPY.optional}`}</span>
+    }</label
+  >
+  {
+    type === "textarea" ? (
+      <textarea
+        class="fm-input fm-input--area"
+        id={id}
+        name={f}
+        placeholder={placeholder}
+        maxlength={maxlength}
+        required={required}
+        aria-describedby={desc}
+        data-desc={desc}
+      />
+    ) : (
+      <input
+        class="fm-input"
+        id={id}
+        name={f}
+        type={type}
+        placeholder={placeholder}
+        autocomplete={autocomplete}
+        inputmode={inputmode}
+        maxlength={maxlength}
+        required={required}
+        aria-describedby={desc}
+        data-desc={desc}
+      />
+    )
+  }
+  {
+    hint && (
+      <p class="fm-hint" id={`${id}-hint`}>
+        {hint}
+      </p>
+    )
+  }
+  {
+    error && (
+      <p class="fm-msg" id={`${id}-err`} data-msg>
+        {error}
+      </p>
+    )
+  }
+</div>

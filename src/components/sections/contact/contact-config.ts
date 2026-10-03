@@ -1,25 +1,20 @@
-// Formularze — stałe konfiguracyjne. STAN Etapu 0: mechanika
-// odziedziczona z szablonu; pola, komunikaty i klucze wchodzą w Etapie 5.
-import { DESKTOP_MIN_PX } from "../../../lib/site-config";
+// Widok /kontakt/ — stałe. Importują je sekcje i testy e2e; @media
+// w komponentach trzymać W PARZE (CSS nie zaimportuje stałej).
+import { BUSINESS } from "../../../lib/jsonld";
+import { CONTACT_MAP_MIN_PX, DESKTOP_MIN_PX } from "../../../lib/site-config";
 
-/** Próg desktop/mobile — breakpoint projektu. Trzymaj W PARZE z `@media`
- *  w sekcjach: CSS nie zaimportuje stałej. Importują ją testy e2e (nie
- *  hardkodują progu). */
+/** Próg układu jedno- / dwukolumnowego = breakpoint projektu. */
 export const CONTACT_DESKTOP_MIN_PX = DESKTOP_MIN_PX;
 
-/** Pages Function w tym repo (functions/api/kontakt.ts). */
-export const CONTACT_ENDPOINT = "/api/kontakt";
+/** Próg podmiany pliku mapy w `<picture>` (mobile ↔ desktop) — niżej niż
+ *  breakpoint układu, żeby szeroki telefon dostał plik desktopowy. */
+export const CONTACT_MAP_SWAP_PX = CONTACT_MAP_MIN_PX;
 
-/** Klucz PUBLICZNY widgetu Turnstile — wchodzi do HTML-u produkcji, więc
- *  jego miejsce jest w repo. PUSTY do czasu założenia widgetu (Etap 5);
- *  pusty klucz zawodzi głośno, zamiast przepuszczać zgłoszenia. Sekret
- *  tego samego widgetu żyje WYŁĄCZNIE w zmiennych projektu Pages jako
- *  TURNSTILE_SECRET_KEY i weryfikuje token po stronie
- *  functions/api/kontakt.ts. */
-export const TURNSTILE_SITE_KEY = "";
-export const TURNSTILE_SRC =
-  "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-
-/** Ile czekamy na token — challenge w trybie managed może wymagać
- *  interakcji użytkownika, więc limit musi być ludzki, nie sieciowy. */
-export const TURNSTILE_TIMEOUT_MS = 90_000;
+/** Link do map po ADRESIE biura — ten sam cel co w stopce; zwykła kotwica,
+ *  nic się nie ładuje przed kliknięciem (zero żądań do podmiotów trzecich
+ *  przy wejściu). */
+export const OFFICE_MAPS_URL =
+  "https://maps.google.com/?q=" +
+  encodeURIComponent(
+    `${BUSINESS.street}, ${BUSINESS.postalCode} ${BUSINESS.locality}`,
+  );

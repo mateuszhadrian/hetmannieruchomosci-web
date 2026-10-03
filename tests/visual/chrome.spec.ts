@@ -69,6 +69,14 @@ test("chrome: stopka vs baseline", async ({ page }) => {
   // a pasek fixed wjeżdżałby na górę stopki (na mobile stopka jest
   // wyższa niż viewport). Pasek ma własne zrzuty — tu go chowamy.
   await page.addStyleTag({ content: ".hdr { visibility: hidden !important }" });
+  // Stopka nie może zależeć od treści strony nad nią: wysokość widoku bywa
+  // ułamkowa (clamp z vw), a wtedy zrzut elementu zaokrągla się o piksel
+  // inaczej. Na czas zrzutu `main` dostaje stałą, całkowitą wysokość.
+  await page.addStyleTag({
+    content:
+      "main { box-sizing: border-box !important; height: 600px !important;" +
+      " min-height: 0 !important; overflow: hidden !important }",
+  });
   const footer = page.locator("footer");
   await footer.scrollIntoViewIfNeeded();
   await settle(page, 300);

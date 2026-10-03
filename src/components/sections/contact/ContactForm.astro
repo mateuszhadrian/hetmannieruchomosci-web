@@ -1,0 +1,97 @@
+---
+// Formularz „Napisz do nas" (/kontakt/) — biała karta z nagłówkiem
+// i polami: imię i nazwisko, para e-mail / telefon (wymagane co najmniej
+// jedno), wiadomość. Blok końcowy (zgoda, nota, przycisk), antyspam
+// i ekran potwierdzenia daje wspólna ramka FormFrame.astro; mechanika
+// w forms/form-ui.ts (docs/analiza-formularze-a.md).
+// `id="formularz"` — cel powrotu po wysyłce bez JS (endpoint → 303).
+import FormContactPair from "@/components/forms/FormContactPair.astro";
+import FormField from "@/components/forms/FormField.astro";
+import FormFrame from "@/components/forms/FormFrame.astro";
+import {
+  FORM_COPY,
+  KONTAKT_FORM_COPY as t,
+} from "@/components/forms/forms-copy";
+import { MESSAGE_MAX, NAME_MAX } from "@/lib/contact-form";
+---
+
+<section class="kf" id="formularz" aria-labelledby="kontakt-form-h">
+  <div class="kf-head">
+    <h2 class="kf-h2" id="kontakt-form-h">{t.heading}</h2>
+    <p class="kf-lead">{t.lead}</p>
+  </div>
+  <FormFrame kind="kontakt" idPrefix="kf" copy={t.frame}>
+    <FormField
+      id="kf-name"
+      f="name"
+      label={FORM_COPY.name.label}
+      placeholder={FORM_COPY.name.placeholder}
+      autocomplete="name"
+      maxlength={NAME_MAX}
+      required
+      error={FORM_COPY.errors.name}
+    />
+    <FormContactPair idPrefix="kf" />
+    <FormField
+      id="kf-message"
+      f="message"
+      type="textarea"
+      label={t.message.label}
+      placeholder={t.message.placeholder}
+      maxlength={MESSAGE_MAX}
+      required
+      error={FORM_COPY.errors.message}
+    />
+  </FormFrame>
+</section>
+
+<style>
+  .kf {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(24px, 7vw, 36px);
+    margin-top: clamp(40px, 11vw, 64px);
+    padding: clamp(40px, 11vw, 64px) max(var(--pad), calc((100% - 600px) / 2))
+      clamp(48px, 13vw, 80px);
+    background: var(--bg-card);
+    scroll-margin-top: var(--hdr-h);
+  }
+  .kf-head {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .kf-h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(22px, 6vw, 30px);
+    line-height: 1.2;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--navy);
+  }
+  .kf-lead {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--slate);
+    text-wrap: pretty;
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .kf {
+      gap: clamp(24px, 2.4vw, 32px);
+      margin-top: 0;
+      padding: clamp(32px, 3.4vw, 48px);
+      scroll-margin-top: calc(var(--hdr-h) + 16px);
+    }
+    .kf-h2 {
+      font-size: clamp(24px, 2.2vw, 32px);
+    }
+    .kf-lead {
+      max-width: 52ch;
+      font-size: clamp(15px, 1.15vw, 17px);
+    }
+  }
+</style>

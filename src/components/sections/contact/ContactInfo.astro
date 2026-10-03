@@ -1,0 +1,291 @@
+---
+// Mapa + karta danych /kontakt/ (docs/analiza-formularze-a.md §1.1, F9–F11).
+//
+// MAPA: statyczny plik (zero żądań do dostawcy map przy wejściu), dwa
+// warianty podmieniane w `<picture>` przy CONTACT_MAP_SWAP_PX. Obraz stoi
+// w NATURALNYCH proporcjach pliku — napis atrybucji wypalony przy dolnej
+// krawędzi jest wymagany licencją, więc żadnego `object-fit: cover`,
+// żadnego zaokrąglenia dolnych rogów i żadnego elementu nasuniętego na
+// dół mapy. Dlatego karta danych stoi POD mapą (design nasuwał ją na
+// mapę), a promień lewego dolnego rogu niesie karta. Mapa jest na
+// telefonie największym elementem pierwszego ekranu (LCP) — ładuje się
+// od razu, z podniesionym priorytetem, bez `loading="lazy"`.
+//
+// KARTA: telefon i e-mail WYŁĄCZNIE przez sloty antyscrapingowe
+// (`a[data-tel]`, `a[data-mail="biuro"]` — wypełnia je fillContactSlots
+// z Navbara); bez JS wiersze slotów znikają, a `<noscript>` to wyjaśnia.
+// Adres = jeden, biuro (z `BUSINESS`); siedziba zostaje w stopce.
+import mapDesktop from "@/assets/img/mapa-kontakt-desktop.webp";
+import mapMobile from "@/assets/img/mapa-kontakt-mobile.webp";
+import { BUSINESS } from "@/lib/jsonld";
+import { CONTACT_PATH } from "@/lib/routes";
+import { CONTACT_MAP_SWAP_PX, OFFICE_MAPS_URL } from "./contact-config";
+import { CONTACT_COPY as t } from "./contact-copy";
+---
+
+<div class="ki">
+  <a
+    class="ki-map"
+    data-contact-map
+    href={OFFICE_MAPS_URL}
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    <picture>
+      <source
+        media={`(min-width: ${CONTACT_MAP_SWAP_PX}px)`}
+        srcset={mapDesktop.src}
+        width={mapDesktop.width}
+        height={mapDesktop.height}
+      />
+      <img
+        src={mapMobile.src}
+        width={mapMobile.width}
+        height={mapMobile.height}
+        alt={t.mapAlt}
+        fetchpriority="high"
+        decoding="async"
+      />
+    </picture>
+    <span class="ki-badge">{t.mapLink} <span aria-hidden="true">→</span></span>
+  </a>
+
+  <address class="ki-card" data-contact-card>
+    <div class="ki-row ki-row--tel">
+      <p class="ki-k">{t.labels.phone}</p>
+      <a class="ki-link ki-tel" data-tel href={CONTACT_PATH} hidden
+        ><span data-slot></span></a
+      >
+    </div>
+    <div class="ki-row ki-row--mail">
+      <p class="ki-k">{t.labels.mail}</p>
+      <a class="ki-link ki-mail" data-mail="biuro" href={CONTACT_PATH} hidden
+        ><span data-slot></span></a
+      >
+    </div>
+    <div class="ki-sub">
+      <div class="ki-row ki-row--office">
+        <p class="ki-k">{t.labels.office}</p>
+        <p class="ki-v">
+          {BUSINESS.street}<br />{BUSINESS.postalCode}
+          {BUSINESS.locality}
+        </p>
+      </div>
+      <div class="ki-row ki-row--hours">
+        <p class="ki-k">{t.labels.hours}</p>
+        <p class="ki-v">
+          {t.hoursDays}
+          <span class="ki-nw">{t.hoursTime}</span>
+        </p>
+      </div>
+    </div>
+    <noscript><p class="ki-nojs">{t.noJs}</p></noscript>
+  </address>
+</div>
+
+<style>
+  .ki {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── mapa: pełna szerokość ekranu, naturalne proporcje pliku ── */
+  .ki-map {
+    position: relative;
+    display: block;
+    background: var(--bg-photo);
+    text-decoration: none;
+  }
+  .ki-map img {
+    display: block;
+    width: 100%;
+    height: auto;
+    /* proporcje pliku mobilnego (880×694); od 600 px plik desktopowy */
+    aspect-ratio: 880 / 694;
+  }
+  .ki-badge {
+    position: absolute;
+    top: 16px;
+    right: var(--pad);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 0 14px;
+    background: var(--navy);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .ki-map:focus-visible {
+    outline: 2px solid var(--navy);
+    outline-offset: 3px;
+  }
+
+  /* ── karta danych: pod mapą, w kolumnie treści ── */
+  .ki-card {
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "office office"
+      "tel hours"
+      "mail mail";
+    gap: clamp(16px, 4.4vw, 22px) 12px;
+    width: min(600px, calc(100% - 2 * var(--pad)));
+    margin-inline: auto;
+    padding: clamp(20px, 5.6vw, 30px);
+    border: 1px solid var(--glass-line);
+    border-top: 0;
+    border-radius: 0 0 0 clamp(28px, 8vw, 48px);
+    background: var(--glass);
+    font-style: normal;
+  }
+  .ki-sub {
+    display: contents;
+  }
+  .ki-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    min-width: 0;
+  }
+  /* bez JS slot zostaje ukryty — znika cały wiersz (etykieta bez wartości) */
+  .ki-row:has(> a[hidden]) {
+    display: none;
+  }
+  .ki-row--tel {
+    grid-area: tel;
+  }
+  .ki-row--mail {
+    grid-area: mail;
+  }
+  .ki-row--office {
+    grid-area: office;
+  }
+  .ki-row--hours {
+    grid-area: hours;
+  }
+  .ki-k {
+    margin: 0;
+    font-family: var(--font-label);
+    font-size: 11px;
+    line-height: 1;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .ki-v {
+    margin: 0;
+    font-size: clamp(16px, 4.4vw, 19px);
+    line-height: 1.4;
+    color: var(--ink);
+  }
+  .ki-nw {
+    white-space: nowrap;
+  }
+  .ki-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin: -10px 0;
+    font-size: clamp(16px, 4.4vw, 19px);
+    font-weight: 600;
+    color: var(--navy);
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+  /* własny `display` wygrywa z atrybutem hidden */
+  .ki-link[hidden] {
+    display: none;
+  }
+  .ki-link:hover {
+    color: var(--copper-text);
+  }
+  .ki-link:focus-visible {
+    outline: 2px solid var(--navy);
+    outline-offset: 3px;
+  }
+  .ki-tel {
+    white-space: nowrap;
+  }
+  .ki-mail {
+    overflow-wrap: anywhere;
+  }
+  .ki-nojs {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--slate);
+  }
+
+  /* plik desktopowy mapy od 600 px (W PARZE z CONTACT_MAP_SWAP_PX) */
+  @media (min-width: 600px) {
+    .ki-map img {
+      aspect-ratio: 1206 / 838;
+    }
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .ki-map {
+      border: 1px solid var(--glass-line);
+    }
+    .ki-badge {
+      top: clamp(16px, 1.6vw, 24px);
+      right: clamp(16px, 1.6vw, 24px);
+      min-height: 44px;
+      padding: 0 18px;
+    }
+    .ki-card {
+      grid-template-areas:
+        "tel tel"
+        "mail mail"
+        "sub sub";
+      gap: clamp(20px, 2vw, 28px);
+      width: 100%;
+      padding: clamp(24px, 2.6vw, 36px);
+      border-radius: 0 0 0 clamp(36px, 3.8vw, 56px);
+    }
+    .ki-sub {
+      grid-area: sub;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: clamp(16px, 1.6vw, 24px);
+      padding-top: clamp(16px, 1.6vw, 22px);
+      border-top: 1px solid rgba(var(--glow), 0.14);
+    }
+    .ki-row--office,
+    .ki-row--hours {
+      grid-area: auto;
+    }
+    .ki-k {
+      letter-spacing: 0.16em;
+    }
+    .ki-v {
+      font-size: clamp(15px, 1.15vw, 17px);
+      line-height: 1.45;
+    }
+    .ki-link {
+      min-height: 0;
+      margin: 0;
+    }
+    .ki-tel {
+      font-size: clamp(26px, 2.4vw, 34px);
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+    }
+    .ki-mail {
+      font-size: clamp(17px, 1.45vw, 21px);
+      line-height: 1.3;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ki-link {
+      transition: none;
+    }
+  }
+</style>

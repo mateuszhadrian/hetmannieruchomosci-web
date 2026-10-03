@@ -21,7 +21,7 @@
 | Co                                                        | Do kiedy / warunek                              |
 | --------------------------------------------------------- | ----------------------------------------------- |
 | Wektor znaku, `favicon.svg`, finalne ikony i og-image     | Etap 6                                          |
-| Klucz publiczny Turnstile (dziś pusty)                    | Etap 5                                          |
+| Klucz publiczny Turnstile (dziś pusty — `src/components/forms/form-config.ts`); sekrety funkcji formularzy i opcjonalny adresat podglądów `KONTAKT_TO` | po założeniu zasobów w chmurze (krok 5.1 instrukcji); do tego czasu formularze na podglądzie kończą wysyłkę komunikatem błędu i nic nie wysyłają |
 | Przepięcie hosta mediów `MEDIA_BASE` na domenę klientki (dziś host tymczasowy) | Etap 8                                     |
 | Rozdzielenie arkuszy listy rodzaju i detalu oferty (jedna trasa `[...path]` linkuje CSS obu widoków na obu) | porządkowy PR domknięcia Etapów 4 + 5 — do rozważenia razem z przeglądem budżetów |
 | Przycisk wstecz systemu przy otwartej nakładce (lightbox, sheety): dziś opuszcza stronę, bo `overlay.ts` nie obsługuje `popstate` | po teście na fizycznym telefonie po 4.3 (b); zmiana = osobna decyzja o `overlay.ts` |

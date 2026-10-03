@@ -1,0 +1,97 @@
+---
+// Ramka formularza — wspólna dla wszystkich formularzy serwisu (Etap 5A,
+// docs/analiza-formularze-a.md): pola ze slotu, blok końcowy w kolejności
+// zgoda → nota → przycisk (elementy kolumny flex z `gap`, nie obszary
+// gridu), pułapka na boty, kontener Turnstile, komunikat błędu wysyłki
+// i ekran potwierdzenia W MIEJSCU formularza. Mechanika: form-ui.ts.
+//
+// Bez JS formularz renderuje się kompletny (`method`/`action`, natywna
+// walidacja z `required`), ale wysyłka wymaga JavaScriptu (token
+// Turnstile) — mówi to `<noscript>`; endpoint odsyła taki POST z powrotem.
+//
+// Zgoda marketingowa: opcjonalna, odznaczona, bez gwiazdki — formularz
+// wysyła się bez niej. Nota informuje, checkbox zbiera zgodę: nie łączyć.
+// Telefon w komunikatach przez slot antyscrapingowy (`a[data-tel]`).
+import { MARKETING_CONSENT, type ActiveFormKind } from "@/lib/contact-form";
+import { CONTACT_PATH, POLICY_PATH } from "@/lib/routes";
+import { FORM_ENDPOINT } from "./form-config";
+import { FORM_COPY, RESPONSE_TIME, type FormFrameCopy } from "./forms-copy";
+import "./forms.css";
+
+interface Props {
+  kind: ActiveFormKind;
+  /** Prefiks id elementów (unikalny per formularz na stronie). */
+  idPrefix: string;
+  copy: FormFrameCopy;
+}
+const { kind, idPrefix, copy } = Astro.props;
+---
+
+<div class="fm-frame" data-form-frame data-state="form">
+  <form class="fm-form" data-form={kind} method="post" action={FORM_ENDPOINT}>
+    <input type="hidden" name="form" value={kind} />
+    <slot />
+
+    <label class="fm-consent">
+      <input type="checkbox" name="marketing" value="1" />
+      <span>{MARKETING_CONSENT}</span>
+    </label>
+
+    <p class="fm-note">
+      {copy.purpose}
+      {FORM_COPY.noteTail}
+      <a href={POLICY_PATH}>{FORM_COPY.policyLink}</a>.
+    </p>
+
+    {
+      /* pułapka na boty: readonly (autofill nie wypełnia pól readonly —
+         focus zdejmuje atrybut), poza kolejnością Tab, ukryta wizualnie
+         (NIE display:none) */
+    }
+    <div class="fm-hp" aria-hidden="true">
+      <label for={`${idPrefix}-firma`}>{FORM_COPY.honeypot}</label>
+      <input
+        id={`${idPrefix}-firma`}
+        name="firma"
+        type="text"
+        tabindex="-1"
+        autocomplete="off"
+        readonly
+      />
+    </div>
+
+    <div class="fm-ts" data-form-ts></div>
+
+    <noscript><p class="fm-nojs">{FORM_COPY.noJs}</p></noscript>
+
+    <p class="fm-srv" data-form-error role="alert" hidden>
+      {copy.serverError}
+      <a class="fm-tel" data-tel href={CONTACT_PATH} hidden
+        ><span data-slot></span></a
+      >
+    </p>
+
+    <button
+      class="sx-btn fm-send"
+      type="submit"
+      data-form-submit
+      data-send={copy.submit}
+      data-sending={FORM_COPY.sending}
+      ><span data-label>{copy.submit}</span></button
+    >
+    <slot name="after" />
+  </form>
+
+  <div class="fm-done" data-form-done hidden>
+    <h3 class="fm-done-h" tabindex="-1" data-done-h>{copy.doneHeading}</h3>
+    <p class="fm-done-p">
+      {copy.doneBefore}
+      <strong>{RESPONSE_TIME}</strong>{copy.doneAfter}
+      {copy.doneCall}
+      <a class="fm-tel" data-tel href={CONTACT_PATH} hidden
+        ><span data-slot></span></a
+      >
+    </p>
+    <button class="fm-again" type="button" data-form-again>{copy.again}</button>
+  </div>
+</div>

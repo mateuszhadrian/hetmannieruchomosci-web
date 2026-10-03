@@ -90,9 +90,11 @@ formularz, nakładki) została, widoki powstają od nowa wg `docs/design/`.
   i sortowania oraz lightbox galerii) stoją na `src/scripts/overlay.ts` —
   mechaniki nie ruszać. Scroll NATYWNY na dokumencie
   (`.claude/rules/scroll.md`).
-- **Formularze:** Pages Function `functions/api/kontakt.ts` + Resend,
-  logika w `src/lib/contact-form.ts`. Functions uruchamiają się wyłącznie
-  dla `/api/*` (`public/_routes.json`).
+- **Formularze:** JEDEN endpoint — Pages Function
+  `functions/api/kontakt.ts` + Resend, rodzaj formularza w polu `form`;
+  reguły i maile w `src/lib/contact-form.ts` (wspólne dla klienta
+  i funkcji), markup i mechanika w `src/components/forms/`. Functions
+  uruchamiają się wyłącznie dla `/api/*` (`public/_routes.json`).
 - **Pliki platformy** w `public/`: `_headers` (noindex dla podglądu
   i `*.pages.dev`; domena główna bez wpisu), `_routes.json`, `robots.txt`.
 - **Eksport designu** (`docs/design/export/*.html`) = referencja WYGLĄDU,
@@ -859,10 +861,10 @@ offer-lightbox.ts` (chunk z dynamicznego `import()` w `offer-detail.ts`,
   **Tym samym CAŁE 4.3 (a + b: detal oferty, lightbox, arkusz druku, 404
   świadoma ofert) jest WYKONANE** (PR #21–#23).
 
-- **Etap 4 / 4.4 (strona główna) — W TOKU** (2026-10-03, gałąź
-  `feat/home`, mini-analiza `docs/analiza-home.md` zaakceptowana wg
-  rekomendacji Q1–Q9; kod i testy gotowe lokalnie, ZOSTAŁO: workflow
-  baseline'ów linux, baseline'y darwin, PR, merge, `prod-smoke`):
+- **Etap 4 / 4.4 (strona główna) — WYKONANY** (2026-10-03, PR #24
+  zmergowany 19:04 UTC; `ci.yml` i `prod-smoke` na main zielone;
+  baseline'y linux + darwin w PR; gałąź `feat/home`, mini-analiza
+  `docs/analiza-home.md` zaakceptowana wg rekomendacji Q1–Q9):
   `src/pages/index.astro` (czysty Astro, bez wyspy; bramka `html.js-motion`
   inline w `<head>` z bezpiecznikiem, dwa `preload` plakatu z `media`,
   skrypt strony = przypięcie `--svh` + dynamiczny `import()` ruchu przy
@@ -928,7 +930,85 @@ offer-lightbox.ts` (chunk z dynamicznego `import()` w `offer-detail.ts`,
   = 70 % progu 1,2 MB (w tym film 443 KB; z dawnym MP4 byłoby 108 %,
   z dawnym WebM 204 %)**, LCP mobile 2 110–2 270 ms (margines ok. 1 s do
   3 200 — obserwacja), desktop 628–658 ms, TBT 0, CLS ≤ 0,007. Progi
-  nietknięte.
+  nietknięte. Pierwszy bieg `e2e` na PR był czerwony (H26 — WebKit na
+  Linuksie pobierał `<source>` mimo `preload="none"`), poprawka w tym
+  samym PR (adresy w `data-src`); job `lighthouse` zielony na PR i na
+  main (asercje na medianie z 5 przebiegów; dokładnej liczby LCP mobile
+  „/" z runnera nie odczytano — lokalnie 2 110–2 270 ms przy progu
+  3 200, do sprawdzenia przy najbliższym `lhci-measure.yml`).
+
+- **Etap 5 / 5A PR 1 (wspólna mechanika formularzy + `/kontakt/`) —
+  W TOKU** (2026-10-03, gałąź `feat/kontakt`, mini-analiza
+  `docs/analiza-formularze-a.md` zaakceptowana wg rekomendacji Q1–Q8;
+  kod i testy gotowe lokalnie, ZOSTAŁO: workflow baseline'ów linux,
+  baseline'y darwin, PR, merge, `prod-smoke`; potem PR 2
+  `/sprzedaj-z-nami/` na gałęzi `feat/sprzedaj`). Kroki w chmurze dla
+  formularzy (klucz Resend, widget Turnstile, KV, zmienne Pages) NIE są
+  jeszcze wykonane — kod i testy stoją na atrapach, `TURNSTILE_SITE_KEY`
+  pusty, na `nowa.` wysyłka kończy się komunikatem błędu i nic nie
+  wysyła (stan oczekiwany). `src/lib/contact-form.ts` PRZEPISANY:
+  rodzaje `kontakt | sprzedaj | oferta | praca` (obsługiwane dwa
+  pierwsze), `validateForm(kind, raw)` — jedna funkcja dla klienta
+  i funkcji, zwraca dane albo listę błędnych pól (`name`, `email`,
+  `phone`, `contact` = para, `message`, `type`, `transaction`, `area`,
+  `price`); dwa OSOBNE pola kontaktowe, wymagane co najmniej jedno;
+  słowniki zgłoszenia `ESTATE_TYPES` (1–4) i `TRANSACTIONS` (131, 132);
+  `parseArea`, `parsePrice`; `MARKETING_CONSENT` (jedno brzmienie dla
+  widoków i maili); `buildMail` — maile A (kontakt) i B (zgłoszenie
+  nieruchomości, niesie powierzchnię i cenę), temat stały per formularz,
+  adres strony w stopce z hosta żądania. `functions/api/kontakt.ts`:
+  kolejność kroków — metoda (405), POST bez `Accept: application/json`
+  = wysyłka bez JS → 303 na stronę formularza, rozmiar po nagłówku
+  (413, `FORM_MAX_BYTES`), rodzaj (400), pułapka (200 bez wysyłki),
+  walidacja (400 + `fields`), sekrety (503), Turnstile (403 / 502),
+  limit dzienny w KV (503; binding opcjonalny), Resend (502);
+  `reply_to` tylko przy podanym e-mailu, nagłówek `X-Entity-Ref-ID`,
+  opcjonalna zmienna `KONTAKT_TO` nadpisuje adresata (podglądy PR-ów).
+  `src/components/forms/` (mechanika przeniesiona z
+  `sections/contact/`): `form-ui.ts` (`initForms()`; zero tekstów w JS,
+  `novalidate` nadawane skryptem, `aria-describedby` z komunikatem
+  tylko przy aktywnym błędzie, pułapki klienckie, Turnstile wstawiany
+  do DOM dopiero przy pierwszym `focusin`, stany wysyłki, potwierdzenie
+  w miejscu formularza), `form-config.ts`, `FormFrame.astro`,
+  `FormField.astro`, `FormContactPair.astro`, `forms.css` (klasy
+  `fm-*`), `forms-copy.ts`; token `--error` w `global.css`.
+  `src/pages/kontakt.astro` + `sections/contact/`: `ContactIntro`,
+  `ContactInfo` (mapa w NATURALNYCH proporcjach pliku w `<picture>`
+  z progiem 600 px, karta danych POD mapą — napis atrybucji przy dolnej
+  krawędzi nie może być kadrowany ani zasłonięty; sloty `data-tel`
+  i `data-mail="biuro"`, jeden adres — biuro), `ContactForm`,
+  `contact-copy.ts` (PLACEHOLDER U9), `contact-config.ts`; widok bez
+  ruchu. Rozstrzygnięcia F1–F35 w analizie §2 i §10.2. Testy: unit
+  `contact-form` (przepisany, 46) i `contact-endpoint` (nowy, 19;
+  `fetch` i KV jako atrapy); e2e nowy `kontakt.spec.ts` (19 testów;
+  treść `chromium-1920`, formularz także `chromium-pixel-5`
+  i `webkit-iphone-14`; endpoint i Turnstile ZAWSZE zaślepione —
+  `tests/helpers/forms.ts`: `stubEndpoint`, `recordPosts`,
+  `stubTurnstile`, `installClock` / `passFillTime`); `smoke`: sonda
+  produkcyjna w nowym kontrakcie pól z nagłówkiem
+  `accept: application/json`; visual nowy `kontakt.spec.ts` (`kontakt-full`,
+  `kontakt-form-errors`, `kontakt-form-done` × 6 profili = 18 PNG na
+  platformę); `chrome.spec`: `chrome-footer` przypina `main` do stałej
+  wysokości na czas zrzutu (zrzut zależał od ułamkowej wysokości treści
+  nad stopką); `lighthouserc*.cjs` + `/kontakt/`. Weryfikacja lokalna:
+  format/lint/typecheck, unit 450 (443 zielone + 7 skip), build 89
+  stron, `test:dist` 6/6, e2e 495 (+765 skip profili) na 6 profilach —
+  zielone, axe 0 naruszeń w trzech stanach formularza; `test:visual` 23
+  czerwone OCZEKIWANE (18 nowych bez baseline'u + `chrome-footer` × 3:
+  1366, iPhone SE, iPhone 14 + `chrome-sheet` × 2: iPhone 14, Pixel 5 —
+  zmierzone progiem 0; `chrome-bar` i `chrome-home-*` bez ruchu), 134
+  zielone. Pierwszy bieg `e2e` na PR #25 był czerwony (F36 — WebKit na
+  Linuksie po `focus()` zostawiał pierwsze błędne pole pod stałym
+  paskiem; lokalnie na macOS zielony): moduł woła teraz
+  `focus({ preventScroll: true })` i sam dosuwa pole pod pasek
+  (`revealUnderBar`). BUDŻET (`build:visual`): `script` na `/kontakt/`
+  13 926 B brutto / 6 131 B gzip (chrome 8 135 + moduł formularzy
+  5 791 / 2 600); wyspa listy co do bajta (38 653 B); LHCI lokalnie (oba
+  configi, asercje czyste na 9 adresach): `/kontakt/` `script` 7 829 B
+  = 20 % bramki, `total` 181 KB mobile / 200 KB desktop, LCP mobile ok.
+  2 040 ms (element LCP = mapa; margines ok. 1,16 s do 3 200 —
+  obserwacja), desktop 475 ms, TBT 0, CLS ≤ 0,007, zero podmiotów
+  trzecich. Progi nietknięte.
 
 ## Dokumentacja
 
