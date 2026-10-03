@@ -25,4 +25,6 @@
 | Przepięcie hosta mediów `MEDIA_BASE` na domenę klientki (dziś host tymczasowy) | Etap 8                                     |
 | Dopasowanie modułu ruchu do reveali z designu             | pierwszy widok z animacją wejścia (Etap 4)      |
 | Re-enkodowanie `hero.webm` (2,0 MB wobec 0,9 MB w MP4)    | Etap 4.4, razem z osadzeniem wideo              |
+| Rozdzielenie arkuszy listy rodzaju i detalu oferty (jedna trasa `[...path]` linkuje CSS obu widoków na obu) | porządkowy PR domknięcia Etapów 4 + 5 — do rozważenia razem z przeglądem budżetów |
+| Przycisk wstecz systemu przy otwartej nakładce (lightbox, sheety): dziś opuszcza stronę, bo `overlay.ts` nie obsługuje `popstate` | po teście na fizycznym telefonie po 4.3 (b); zmiana = osobna decyzja o `overlay.ts` |
 | Panel treści, blog, przełącznik „Praca" w panelu          | faza 2 — poza zakresem tej budowy               |
