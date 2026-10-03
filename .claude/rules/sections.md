@@ -25,12 +25,19 @@ odziedziczone z szablonu projektu i stan chrome'u po Etapie 0.
   narzędzia — nie wchodzą. Skalowanie: `clamp()` + tokeny z
   `src/styles/global.css`.
 - Moduły ruchu (`*-motion.ts`) ładowane DYNAMICZNIE tylko przy
-  `prefers-reduced-motion: no-preference`; bez JS / przy reduce sekcja
+  `prefers-reduced-motion: no-preference`; bez JS i przy reduce sekcja
   renderuje pełną, statyczną treść. Reveale i parallaxy designu
-  (`data-rv`, `data-px`) portujemy na CSS + IntersectionObserver za
-  bramką `js-motion` — triggery zawsze na scrollu DOKUMENTU.
-- **BEZ bibliotek ruchu i scrolla** — ruch sekcji to własne pętle rAF
-  i `IntersectionObserver` (wzorzec `content-motion.ts`).
+  (`data-rv`, `data-px`) stoją na CSS i IntersectionObserver za bramką
+  `js-motion` — triggery zawsze na scrollu DOKUMENTU. Wspólny moduł:
+  `src/components/sections/content-motion.ts` (od 4.4 — opis w sekcji
+  „Strona główna" niżej); strona treściowa dokłada tylko swoje wejście
+  chunku (`<widok>-motion.ts`) i bramkę inline w `<head>`.
+- **BEZ bibliotek ruchu i scrolla** — ruch sekcji to własne pętle rAF i
+  `IntersectionObserver` (wzorzec `content-motion.ts`).
+- **`data-rv` tylko na blokach NIEinteraktywnych** (wrapper, nie link
+  ani przycisk): reguła reveala niesie własne `transition`, które
+  nadpisałoby przejścia hover elementu (przycisk, kafel z `transform` na
+  hover) i dawało hover w tempie reveala.
 - Breakpoint projektu: **1025 px** (desktop ≥ 1025; tablet 1024 px
   dostaje układ tabletowy). **Drugi próg 768 px** (telefon < 768);
   mapa kontaktu podmienia plik przy 600 px. Stałe w
@@ -397,6 +404,84 @@ true)`). **Akcja wymagająca przewinięcia strony („Napisz" → `#kontakt`)
   `aktywna`. Układ generyczny centruje przez `place-items: center` —
   działa to też w układzie blokowym (`justify-self`), więc wariant
   ofertowy resetuje `place-items` i ma `width: 100%`.
+
+## Strona główna — stan po Etapie 4.4 (`docs/analiza-home.md`)
+
+- **Czysty Astro i mały TS, bez wyspy:** `src/pages/index.astro` składa
+  `src/components/sections/home/` (`HomeHero`, `HomeAbout`, `HomeOffers`
+  z `HomeOfferTile`, `HomeServices`, `HomeSell`, `HomeContact`); stałe w
+  `home-config.ts`, WSZYSTKIE teksty w `home-copy.ts` (PLACEHOLDER U9;
+  testy importują je stamtąd). Wspólne prymitywy stron treściowych:
+  `sections/content.css` (klasy globalne `sx-*`: sekcja, eyebrow, `h2`
+  dwukolorowy, akapit, przycisk; kadr `.px-frame`; stany reveali) i
+  `SectionHead.astro`. Style sekcji — scoped w komponentach; elementy z
+  dziecka (`SectionHead`, kafel) przez `:global()`.
+- **Bramka ruchu:** skrypt `is:inline` w slocie `head` nadaje
+  `html.js-motion` przy `no-preference` PRZED malowaniem; skrypt strony
+  ładuje `home-motion.ts` dynamicznym `import()`. Bezpieczniki, żeby
+  treść nigdy nie została ukryta: `.catch` importu zdejmuje klasę, a
+  bramka zdejmuje ją 3 s po `load`, jeśli moduł nie ustawił
+  `data-motion` na `<html>`. Stany startowe w CSS WYŁĄCZNIE pod
+  `html.js-motion`.
+- **Hero** (`data-home-hero` — NIE `data-hero`: ten atrybut nosi pasek
+  nawigacji): wysokość `var(--svh, 100svh)`; warstwy: `<img>` w
+  `<picture>` (obraz priorytetowy: `eager`, `fetchpriority`, dwa
+  `preload` z `media` w `<head>`, ŻADNEGO reveala) → `<video>`
+  (`opacity: 0`, `display: none` poniżej 1025) → scrim, tint, szum →
+  treść. Kadr pionowy `hero-poster-tall.webp` poniżej 768 px
+  (`HOME_POSTER_TALL_BELOW_PX`). Elementy tylko-mobile `.hero-m` i
+  tylko-desktop `.hero-d` (jeden markup). Elementem LCP jest `h1` —
+  Chrome nie liczy obrazu wypełniającego całe okno. **Krycia szkła i
+  scrimów są z POMIARU kontrastu** na najjaśniejszych kadrach filmu
+  (analiza H14) — axe nie liczy kontrastu nad obrazem (zwraca
+  „incomplete"), więc zmiana krycia, koloru tekstu albo materiału wideo
+  wymaga ponownego pomiaru (metoda w analizie §10.2).
+- **Film → zdjęcie (`home-hero.ts`):** w HTML `muted`, `playsinline`,
+  `preload="none"`, bez `autoplay` i bez `poster`; `<source>` MP4 →
+  WebM z adresami w `data-src`, NIE w `src` (WebKit na Linuksie pobiera
+  pierwsze źródło mimo `preload="none"`) — JS wpisuje `src` i woła
+  `load()` dopiero przy starcie. Start wyłącznie od 1025 px, po
+  wczytaniu plakatu; stan na
+  `video[data-state]`: `idle` → `playing` (dopiero zdarzenie `playing`
+  pokazuje film) → `photo` (koniec materiału, odrzucone `play()`, błąd,
+  zejście poniżej progu; `saveData` w ogóle nie startuje). Zoom: JEDNA
+  warstwa `[data-hero-zoom]` (zdjęcie i film), `transform` z pętli rAF z
+  dociąganiem; cele liczone z PROSTOKĄTÓW, nie ze `scrollY` (blokada
+  scrolla nakładek zeruje `scrollY`). Szum bez `mix-blend-mode`.
+- **`content-motion.ts`** (wspólny): reveale — IntersectionObserver
+  nadaje `.is-in` (raz; blok nad oknem odsłaniany od razu), kaskada
+  desktop przez `--rvd` inline, `data-rv="soft"` = sam fade,
+  `data-rv="d"` = reveal tylko od 1025 (bloki na szkle:
+  `backdrop-filter` mruga przy zmianie krycia). Parallax — obraz
+  `[data-px]` w kadrze `.px-frame` (`overflow: clip`; kadr szukany przez
+  `closest`, bo obraz bywa w `<picture>`): pod `js-motion` obraz dostaje
+  zapas `--px-a` (0,08 i 0,10 — W PARZE z `PX_AMT_*` w
+  `content-config.ts`), JS pisze sam `translate3d`; transform jest
+  czystą funkcją pozycji scrolla (liczony także poza oknem),
+  przemalowanie na `resize` tylko przy zmianie szerokości.
+- **`content-viewport.ts`:** `armViewportPin(host)` przypina `--svh`
+  dopiero, gdy `100svh` drgnie bez zmiany szerokości (przeglądarki
+  zmieniające rozmiar widoku z paskiem adresu; także rozciągnięcie okna
+  przy zrzucie fullPage w WebKit); `vpH()` dla pętli ruchu. Poza bramką
+  ruchu — to stabilność układu.
+- **Kafle ofert:** `pickHomeOffers()` (`src/lib/offers/home-offers.ts`)
+  = najnowsze `aktywna`, najwyżej `HOME_OFFERS_MAX`; zero → sekcja bez
+  siatki. `HomeOfferTile.astro` to wygląd z designu na LOGICE karty
+  (`cardKicker`, `cardBadges`, `formatPrice`, `formatLocation`, wpis
+  indeksu) — zmiana reguł prezentacji oferty idzie do `offers-ui.ts`
+  albo `format.ts`, nie do kafla. Znaczniki `data-home-offer="{numer}"`
+  (NIE `data-offer-card` — ten liczy strażnik fixture'u na liście).
+  Obraz `card`; duży kafel pełnej trójki ma
+  `<source media="(min-width: 1025px)" srcset="card 1x, hero 2x">`
+  (deskryptory `x`, nie `w` — przy `w` przeglądarka brała `hero` już na
+  ekranach 1×). Telefon i tablet: karuzela `scroll-snap`
+  (`scroll-snap-stop: always`), wyjście do krawędzi przez `--ho-gut`.
+- **Dekoracyjne numery** (kafle usług, kroki) to liczniki CSS w
+  pseudo-elementach — nie tekst w DOM (kontrast dekoracji nie wchodzi do
+  axe, kolejność niesie `<ol>`).
+- **Sloty kontaktowe z własnym `display`** potrzebują reguły
+  `[hidden] { display: none }` — `display: inline-flex` klasy wygrywa z
+  atrybutem `hidden`.
 
 ## Dane kontaktowe (antyscraping)
 

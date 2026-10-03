@@ -1,10 +1,99 @@
 ---
-import SkeletonPage from "@/components/SkeletonPage.astro";
+// Strona główna (Etap 4.4, docs/analiza-home.md): hero z filmem
+// przechodzącym w zdjęcie, sekcje 01–05, trzy kafle ofert z danych.
+// Czysty Astro + mały TS — bez wyspy.
+//
+// RUCH (reveale, parallax, film i zoom hero) siedzi w home-motion.ts,
+// ładowanym DYNAMICZNIE tylko przy prefers-reduced-motion: no-preference.
+// Stany startowe uzbraja klasa html.js-motion nadawana skryptem inline
+// PRZED malowaniem — bez JS i przy reduce strona jest w pełni statyczna
+// i kompletna (.claude/rules/sections.md). Plakat hero to element LCP:
+// preload w <head>, żadnego reveala na nim.
+import posterTall from "@/assets/img/hero-poster-tall.webp";
+import poster from "@/assets/img/hero-poster.webp";
+import Footer from "@/components/Footer.astro";
+import Navbar from "@/components/navbar/Navbar.astro";
+import "@/components/sections/content.css";
+import { HOME_POSTER_TALL_BELOW_PX } from "@/components/sections/home/home-config";
+import HomeAbout from "@/components/sections/home/HomeAbout.astro";
+import HomeContact from "@/components/sections/home/HomeContact.astro";
+import HomeHero from "@/components/sections/home/HomeHero.astro";
+import HomeOffers from "@/components/sections/home/HomeOffers.astro";
+import HomeSell from "@/components/sections/home/HomeSell.astro";
+import HomeServices from "@/components/sections/home/HomeServices.astro";
 import { ui } from "@/i18n/ui";
+import BaseLayout from "@/layouts/BaseLayout.astro";
 ---
 
-<SkeletonPage
-  title={ui.pl["meta.title"]}
-  description={ui.pl["meta.description"]}
-  heading="Hetman Nieruchomości"
-/>
+<BaseLayout title={ui.pl["meta.title"]} description={ui.pl["meta.description"]}>
+  {/* plakat hero = LCP: jeden preload per kadr (jak <picture> w HomeHero) */}
+  <link
+    slot="head"
+    rel="preload"
+    as="image"
+    href={posterTall.src}
+    media={`(max-width: ${HOME_POSTER_TALL_BELOW_PX - 1}px)`}
+    fetchpriority="high"
+  />
+  <link
+    slot="head"
+    rel="preload"
+    as="image"
+    href={poster.src}
+    media={`(min-width: ${HOME_POSTER_TALL_BELOW_PX}px)`}
+    fetchpriority="high"
+  />
+  <script is:inline slot="head">
+    // PRZED malowaniem: ruch dozwolony → html.js-motion (uzbraja stany
+    // startowe reveali i zapas kadrów parallaxu; reszta w home-motion.ts).
+    // Bezpiecznik: gdyby moduł ruchu się nie wczytał (nie ustawi
+    // data-motion), klasa schodzi i treść NIE zostaje ukryta.
+    if (matchMedia("(prefers-reduced-motion: no-preference)").matches) {
+      const root = document.documentElement;
+      root.classList.add("js-motion");
+      addEventListener("load", () => {
+        setTimeout(() => {
+          if (!root.hasAttribute("data-motion")) {
+            root.classList.remove("js-motion");
+          }
+        }, 3000);
+      });
+    }
+  </script>
+
+  <Navbar />
+
+  <main class="home">
+    <HomeHero />
+    <HomeAbout />
+    <HomeOffers />
+    <HomeServices />
+    <HomeSell />
+    <HomeContact />
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<script>
+  import { armViewportPin } from "@/components/sections/content-viewport";
+
+  // stabilna wysokość sekcji pełnoekranowych — układ, nie dekoracja,
+  // więc poza bramką ruchu
+  const home = document.querySelector<HTMLElement>("main.home");
+  if (home) armViewportPin(home);
+
+  if (matchMedia("(prefers-reduced-motion: no-preference)").matches) {
+    import("@/components/sections/home/home-motion").catch(() => {
+      document.documentElement.classList.remove("js-motion");
+    });
+  }
+</script>
+
+<style>
+  /* `--svh` przypina content-viewport.ts dopiero wtedy, gdy przeglądarka
+     rusza wysokością okna bez zmiany szerokości; domyślnie czysty CSS */
+  .home {
+    --svh: 100svh;
+  }
+</style>

@@ -799,10 +799,10 @@ hidden` zamiast `clip`); `test:visual` 24 czerwone OCZEKIWANE (nowe
   `oferty` i `chrome` bez ruchu. Bieg 2026-10-03 syncu bez zmian.
 
 - **Etap 4 / 4.3 (b) (detal oferty: lightbox, arkusz druku, 404 świadoma
-  ofert) — W TOKU** (2026-10-03, gałąź `feat/oferta-lightbox`, plan (b)
-  i rozstrzygnięcia R35–R42 zaakceptowane — `docs/analiza-oferta.md` §11;
-  kod i testy gotowe lokalnie, ZOSTAŁO: workflow baseline'ów linux,
-  baseline'y darwin, PR, merge, `prod-smoke`): `src/scripts/
+  ofert) — WYKONANY** (2026-10-03, PR #23 zmergowany 15:09 UTC; `ci.yml`
+  i `prod-smoke` na main zielone; baseline'y linux + darwin w PR; gałąź
+  `feat/oferta-lightbox`, plan (b) i rozstrzygnięcia R35–R42
+  zaakceptowane — `docs/analiza-oferta.md` §11): `src/scripts/
 offer-lightbox.ts` (chunk z dynamicznego `import()` w `offer-detail.ts`,
   prefetch po pierwszym dotknięciu galerii; powłoka `#of-lightbox` =
   klon szablonu `template[data-lb-tpl]` z nowego `LightboxShell.astro`,
@@ -856,6 +856,79 @@ offer-lightbox.ts` (chunk z dynamicznego `import()` w `offer-detail.ts`,
   helper importu na detalu zaakceptowany; `offers.css` na 404 zostaje;
   rozdzielenie arkuszy listy rodzaju i detalu oraz przycisk wstecz przy
   otwartej nakładce odłożone (`docs/optional-todos.md`).
+  **Tym samym CAŁE 4.3 (a + b: detal oferty, lightbox, arkusz druku, 404
+  świadoma ofert) jest WYKONANE** (PR #21–#23).
+
+- **Etap 4 / 4.4 (strona główna) — W TOKU** (2026-10-03, gałąź
+  `feat/home`, mini-analiza `docs/analiza-home.md` zaakceptowana wg
+  rekomendacji Q1–Q9; kod i testy gotowe lokalnie, ZOSTAŁO: workflow
+  baseline'ów linux, baseline'y darwin, PR, merge, `prod-smoke`):
+  `src/pages/index.astro` (czysty Astro, bez wyspy; bramka `html.js-motion`
+  inline w `<head>` z bezpiecznikiem, dwa `preload` plakatu z `media`,
+  skrypt strony = przypięcie `--svh` + dynamiczny `import()` ruchu przy
+  `no-preference`) + `src/components/sections/home/`: `HomeHero.astro`
+  (pełnoekranowe `var(--svh, 100svh)`, znacznik `data-home-hero`; `<img>`
+  w `<picture>` jako obraz priorytetowy — kadr pionowy
+  `hero-poster-tall.webp` 720×816 poniżej 768 px; `<video>` z `muted`,
+  `playsinline`, `preload="none"`, bez `autoplay`, `<source>` MP4 → WebM
+  z adresami w `data-src` (JS wpisuje `src` dopiero przy starcie — H26:
+  WebKit na Linuksie pobierał źródło mimo `preload="none"`, czerwony
+  `e2e` na PR #24);
+  elementy tylko-mobile `.hero-m` / tylko-desktop `.hero-d`),
+  `HomeAbout`, `HomeOffers` + `HomeOfferTile` (kafel z designu na logice
+  karty: wpis indeksu, `cardKicker`/`cardBadges`/`formatPrice`;
+  `data-home-offer`; karuzela `scroll-snap` poniżej 1025, od 1025 siatka
+  „duży i dwa mniejsze”; `<source>` `card 1x, hero 2x` tylko na dużym kaflu),
+  `HomeServices`, `HomeSell`, `HomeContact` (sloty `data-tel` /
+  `data-mail="biuro"` z `<span data-slot>`, adres z `BUSINESS`),
+  `home-config.ts`, `home-copy.ts` (WSZYSTKIE teksty — PLACEHOLDER U9),
+  `home-hero.ts` (film startuje z JS wyłącznie ≥ 1025 px po wczytaniu
+  plakatu; `video[data-state]` `idle` → `playing` → `photo`; zwolnienie
+  do 0,2× w ostatnich 1,5 s; każda inna ścieżka = zdjęcie; zoom warstwy
+  `[data-hero-zoom]` 1 → 1,30 i gaśnięcie `h1` pętlą rAF z dociąganiem),
+  `home-motion.ts` (wejście chunku). Wspólne dla stron treściowych:
+  `src/components/sections/content.css` (klasy `sx-*`, kadr `.px-frame`,
+  stany reveali), `SectionHead.astro`, **`content-motion.ts` PRZEPISANY**
+  na selektory designu (`[data-rv]` → `.is-in` przez
+  IntersectionObserver, `[data-px]` z zapasem `--px-a` = `PX_AMT_*`;
+  gałęzie szablonu usunięte — uwaga (5) Etapu 0 zamknięta),
+  `content-config.ts`, `content-viewport.ts` (`armViewportPin`, `vpH`);
+  `src/lib/offers/home-offers.ts` (`pickHomeOffers`: najnowsze `aktywna`,
+  maks. `HOME_OFFERS_MAX` = 3, zero → sekcja bez siatki). Zasoby:
+  `public/video/hero.mp4` 443 KB (H.264 CRF 28) i `hero.webm` 461 KB
+  (VP9 CRF 42) — przekodowane (było 896 KB / 2,0 MB);
+  `scripts/optimize-images.mjs` + parametr wycinka; `hero-poster-m.webp`
+  usunięty. ROZSTRZYGNIĘCIA (analiza §2 i §10.2): H13 kolory AA (tekst
+  `--ink` na miedzi, eyebrow `--copper-text`, fraza `h2` `--copper-dark`);
+  H14 krycia hero z POMIARU kontrastu na najjaśniejszych kadrach filmu
+  (szkło karty .45 zamiast .24, pas leadu .55, scrim pod `h1` na
+  telefonie — axe zgłasza tekst nad obrazem jako „incomplete", więc
+  pomiar jest jedynym strażnikiem); H18 elementem LCP na „/" jest `h1`
+  (Chrome nie liczy obrazu na całe okno); H9 szum bez `mix-blend-mode`;
+  H22 `data-rv` tylko na blokach nieinteraktywnych. Testy: unit
+  `home-offers` (6); e2e nowy `home.spec.ts` (19 testów; treść
+  `chromium-1920`, układ/hero/ruch także `chromium-pixel-5`
+  i `webkit-iphone-14`); `navigation` (wariant „/" bez dosztukowania)
+  i `smoke` + `useMediaStub`; `tests/helpers/visual.ts`: `revealSweep`
+  na `[data-rv]:not(.is-in)`, nowy `blockHeroVideo()` (odcięcie
+  `/video/**` zamiast maski — film leży pod treścią hero); visual nowy
+  `home.spec.ts` (`home-top`, `home-full` × 6 profili = 12 PNG na
+  platformę) + `chrome-home-*` do regeneracji. Weryfikacja lokalna:
+  format/lint/typecheck, unit 410 (+2 skip), build 89 stron, `test:dist`
+  6/6, e2e 453 (+693 skip profili) na 6 profilach — zielone, axe 0
+  naruszeń; `test:visual` 21 czerwonych OCZEKIWANYCH (12 nowych bez
+  baseline'u + `chrome-home-top` × 6 + `chrome-home-solid` × 3: 1366,
+  iPhone SE, iPhone 14; pozostałe trzy profile identyczne co do piksela
+  → workflow linux w trybie `changed`), 118 zielonych. BUDŻET
+  (`build:visual`): `script` na „/" 14 039 B brutto / 6 298 B gzip
+  (chrome 8 135 / 3 373 + skrypt strony 971 / 596 + helper `import()`
+  1 254 / 704 + chunk ruchu 3 679 / 1 625); wyspa listy co do bajta
+  (38 653 B); LHCI lokalnie (oba configi, asercje czyste): „/" `script`
+  9 345 B = 23 % bramki, `total` mobile 297 KB (30 %), **desktop 844 KB
+  = 70 % progu 1,2 MB (w tym film 443 KB; z dawnym MP4 byłoby 108 %,
+  z dawnym WebM 204 %)**, LCP mobile 2 110–2 270 ms (margines ok. 1 s do
+  3 200 — obserwacja), desktop 628–658 ms, TBT 0, CLS ≤ 0,007. Progi
+  nietknięte.
 
 ## Dokumentacja
 

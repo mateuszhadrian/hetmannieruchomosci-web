@@ -1,0 +1,249 @@
+---
+// 05 Kontakt (4.4, docs/analiza-home.md §1.2, H7, H8): ciemna sekcja ze
+// zdjęciem tła (parallax), nagłówek, telefon dużą czcionką, szklana lista
+// (e-mail, adres biura, godziny) i wejście na /kontakt/. Telefon i e-mail
+// WYŁĄCZNIE przez sloty antyscrapingowe (`a[data-tel]`,
+// `a[data-mail="biuro"]` — wypełnia je `fillContactSlots` z Navbara);
+// w statycznym HTML są puste i ukryte, bez JS do kontaktu prowadzi
+// przycisk. Adres biura z `BUSINESS` (jedno źródło danych firmy).
+import imgM from "@/assets/img/kontakt-biuro-m.webp";
+import img from "@/assets/img/kontakt-biuro.webp";
+import { BUSINESS } from "@/lib/jsonld";
+import { CONTACT_PATH } from "@/lib/routes";
+import SectionHead from "../SectionHead.astro";
+import { HOME_COPY } from "./home-copy";
+
+const t = HOME_COPY.contact;
+---
+
+<section
+  class="sx-sec sx-sec--dark hc"
+  data-home="kontakt"
+  aria-labelledby="home-kontakt-h"
+>
+  <div class="px-frame hc-bg" aria-hidden="true">
+    <img
+      data-px
+      src={img.src}
+      srcset={`${imgM.src} ${imgM.width}w, ${img.src} ${img.width}w`}
+      sizes="100vw"
+      width={img.width}
+      height={img.height}
+      alt=""
+      loading="lazy"
+      decoding="async"
+    />
+  </div>
+  <span class="hc-shade" aria-hidden="true"></span>
+  <div class="sx-in hc-in">
+    <div class="hc-main">
+      <div data-rv>
+        <SectionHead
+          id="home-kontakt-h"
+          eyebrow={t.eyebrow}
+          title={t.title}
+          accent={t.accent}
+        />
+      </div>
+      <p class="sx-text hc-text" data-rv style="--rvd: 0.07s">{t.text}</p>
+      <div class="hc-tel-row" data-rv style="--rvd: 0.14s">
+        <a class="hc-tel" data-tel href={CONTACT_PATH} hidden
+          ><span data-slot></span></a
+        >
+      </div>
+    </div>
+    <div class="hc-side">
+      <address class="hc-list" data-rv="d">
+        <a
+          class="hc-row hc-row--mail"
+          data-mail="biuro"
+          href={CONTACT_PATH}
+          hidden><span data-slot></span></a
+        >
+        <p class="hc-row">
+          {BUSINESS.street}<br />{BUSINESS.postalCode}
+          {BUSINESS.locality}
+        </p>
+        <p class="hc-row">{t.hours}</p>
+      </address>
+      <div data-rv style="--rvd: 0.07s">
+        <a class="sx-btn" href={t.href}>{t.cta}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hc {
+    display: flex;
+    flex-direction: column;
+    min-height: clamp(480px, 142vw, 640px);
+  }
+  .hc-bg,
+  .hc-shade {
+    position: absolute;
+    inset: 0;
+  }
+  .hc-bg img {
+    object-position: 50% 40%;
+  }
+  .hc-shade {
+    background: linear-gradient(
+      180deg,
+      rgba(14, 32, 60, 0.9) 0%,
+      rgba(14, 32, 60, 0.74) 42%,
+      rgba(14, 32, 60, 0.96) 100%
+    );
+  }
+  .hc-in,
+  .hc-main,
+  .hc-side {
+    display: flex;
+    flex-direction: column;
+  }
+  .hc-in {
+    gap: clamp(24px, 7vw, 40px);
+    width: 100%;
+  }
+  .hc-main {
+    align-items: flex-start;
+    gap: clamp(12px, 3.4vw, 16px);
+  }
+  .hc-text {
+    color: rgba(255, 255, 255, 0.84);
+  }
+  .hc-tel-row {
+    margin-top: clamp(12px, 3.6vw, 24px);
+  }
+  .hc-tel {
+    display: inline-flex;
+    align-items: center;
+    min-height: 52px;
+    font-family: var(--font-label);
+    font-size: clamp(28px, 8.7vw, 42px);
+    line-height: 1.1;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: #fff;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 0.3s ease;
+  }
+  .hc-tel:hover {
+    color: var(--copper-light);
+  }
+  /* sloty startują ukryte — `display` klasy nie może wygrać z [hidden] */
+  .hc-tel[hidden],
+  .hc-row[hidden] {
+    display: none;
+  }
+  .hc-side {
+    align-items: flex-start;
+    gap: clamp(24px, 7vw, 40px);
+  }
+  .hc-list {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    font-style: normal;
+    background: rgba(221, 221, 221, 0.14);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border-top: 2px solid var(--copper);
+    border-radius: 0 0 0 clamp(18px, 5vw, 24px);
+  }
+  .hc-row {
+    margin: 0;
+    padding: clamp(12px, 3.4vw, 16px) clamp(16px, 4.6vw, 22px);
+    font-size: clamp(15px, 4.103vw, 17px);
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.86);
+  }
+  .hc-row + .hc-row {
+    border-top: 1px solid rgba(221, 221, 221, 0.18);
+  }
+  /* bez JS wiersz e-maila jest ukryty — adres zostaje pierwszym wierszem */
+  .hc-row[hidden] + .hc-row {
+    border-top: 0;
+  }
+  .hc-row--mail {
+    display: flex;
+    align-items: center;
+    min-height: 52px;
+    box-sizing: border-box;
+    color: #fff;
+    text-decoration: none;
+    word-break: break-word;
+    transition: background 0.3s ease;
+  }
+  .hc-row--mail:hover {
+    background: rgba(221, 221, 221, 0.1);
+  }
+  .hc-tel:focus-visible,
+  .hc-row--mail:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .hc {
+      justify-content: center;
+      min-height: clamp(620px, 56vw, 860px);
+    }
+    .hc-shade {
+      background: linear-gradient(
+        102deg,
+        rgba(14, 32, 60, 0.97) 0%,
+        rgba(14, 32, 60, 0.9) 46%,
+        rgba(14, 32, 60, 0.6) 100%
+      );
+    }
+    .hc-in {
+      display: grid;
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      gap: clamp(40px, 4vw, 88px);
+      align-items: end;
+    }
+    .hc-main {
+      gap: clamp(18px, 1.8vw, 28px);
+    }
+    .hc-main :global(.sx-h2) {
+      max-width: 24ch;
+    }
+    .hc-text {
+      max-width: 42ch;
+    }
+    .hc-tel-row {
+      margin-top: clamp(4px, 0.8vw, 12px);
+    }
+    .hc-tel {
+      min-height: clamp(48px, 3.5vw, 60px);
+      font-size: clamp(36px, 3.6vw, 64px);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+    }
+    .hc-side {
+      gap: clamp(20px, 2vw, 30px);
+    }
+    .hc-list {
+      border-radius: 0 0 0 clamp(24px, 2.4vw, 36px);
+    }
+    .hc-row {
+      padding: clamp(16px, 1.6vw, 24px) clamp(20px, 2vw, 30px);
+      font-size: clamp(15px, 1.1vw, 18px);
+    }
+    .hc-row--mail {
+      min-height: clamp(48px, 3.5vw, 60px);
+      padding-block: clamp(14px, 1.4vw, 20px);
+      font-size: clamp(15px, 1.15vw, 19px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hc-tel,
+    .hc-row--mail {
+      transition: none;
+    }
+  }
+</style>

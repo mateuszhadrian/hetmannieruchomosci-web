@@ -16,10 +16,16 @@ import {
 import { BUSINESS } from "../../src/lib/jsonld";
 import { CONTACT_PATH, OFFERS_PATH, STATIC_PATHS } from "../../src/lib/routes";
 import { expectBreakpointFlip } from "../helpers/breakpoint";
-import { collectPageIssues, usePreviewGuard } from "../helpers/guards";
+import {
+  collectPageIssues,
+  useMediaStub,
+  usePreviewGuard,
+} from "../helpers/guards";
 import { gotoReady, scrollPageTo, settle } from "../helpers/scroll";
 
 usePreviewGuard();
+// strona główna niesie od 4.4 kafle ofert (obrazy z hosta mediów)
+useMediaStub();
 
 /** Szkielety bywają krótsze niż potrzeba testom scrolla — dosztukuj
  *  wysokości dokumentu (kontrakt dotyczy chrome'u, nie długości strony). */
@@ -133,8 +139,8 @@ test.describe("wariant strony głównej (data-scroll-nav)", () => {
   test("„/”: przezroczysty na górze, przemalowany pozycją scrolla, pełny po wysokości okna", async ({
     page,
   }) => {
+    // od 4.4 „/” ma pełnoekranowe hero i treść pod nim — bez dosztukowania
     await gotoReady(page);
-    await ensureScrollRoom(page);
     const root = page.locator("[data-nav]");
     const bg = page.locator(".hdr-bg");
     await expect(root).toHaveAttribute("data-scroll-nav", "");

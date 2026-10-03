@@ -1,0 +1,427 @@
+---
+// Hero strony głównej (4.4, docs/analiza-home.md §1.1, H1–H4, H9, H17).
+// Pełnoekranowe (`100svh`; pasek „/" liczy próg przemalowania z wysokości
+// okna). Warstwy: zdjęcie (element LCP — `eager`, priorytet, preload
+// w index.astro; NIE obejmuje go żaden reveal) → film (opacity 0, dopóki
+// nie gra; startuje go home-hero.ts wyłącznie na desktopie i tylko przy
+// dozwolonym ruchu) → tint i szum → treść. Bez JS / przy reduce: samo
+// zdjęcie. Jeden markup: elementy tylko-mobile (`.hero-m`) i tylko-desktop
+// (`.hero-d`) przełącza `display` — próg W PARZE z HOME_DESKTOP_MIN_PX.
+import logoColor from "@/assets/logo/logo-color.webp";
+import posterTall from "@/assets/img/hero-poster-tall.webp";
+import poster from "@/assets/img/hero-poster.webp";
+import { OFFERS_PATH, SELL_PATH } from "@/lib/routes";
+import { HOME_POSTER_TALL_BELOW_PX } from "./home-config";
+import { HOME_COPY } from "./home-copy";
+
+const t = HOME_COPY.hero;
+---
+
+<section class="hero" data-home="hero" data-home-hero>
+  <div class="hero-media" aria-hidden="true">
+    <div class="hero-zoom" data-hero-zoom>
+      <picture>
+        <source
+          media={`(max-width: ${HOME_POSTER_TALL_BELOW_PX - 1}px)`}
+          srcset={posterTall.src}
+          width={posterTall.width}
+          height={posterTall.height}
+        />
+        <img
+          class="hero-photo"
+          data-hero-photo
+          src={poster.src}
+          width={poster.width}
+          height={poster.height}
+          alt=""
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+        />
+      </picture>
+      {
+        /* bez `autoplay`: start z JS (home-hero.ts) za bramką ruchu;
+           MP4 pierwsze (H.264 gra wszędzie), WebM dla reszty. Adresy
+           w `data-src`, NIE w `src`: WebKit na Linuksie pobiera pierwsze
+           źródło mimo `preload="none"` — bez `src` żadna przeglądarka nie
+           ściągnie filmu, dopóki JS nie zdecyduje o starcie (telefon
+           i tablet nie pobierają go nigdy) */
+      }
+      <video
+        class="hero-video"
+        data-hero-video
+        data-state="idle"
+        muted
+        playsinline
+        preload="none"
+        tabindex="-1"
+        disablepictureinpicture
+      >
+        <source data-src="/video/hero.mp4" type="video/mp4" />
+        <source data-src="/video/hero.webm" type="video/webm" />
+      </video>
+    </div>
+    <span class="hero-scrim hero-m"></span>
+    <span class="hero-tint hero-d"></span>
+    <span class="hero-noise hero-d"></span>
+  </div>
+
+  <div class="hero-in">
+    <div class="hero-main">
+      <div class="hero-card">
+        <p class="hero-eyebrow hero-d">{t.eyebrow}</p>
+        <h1 data-hero-fade>{t.heading}</h1>
+        <span class="hero-rule hero-d" aria-hidden="true"></span>
+        <p class="hero-lead hero-d">{t.leadDesktop}</p>
+        <div class="hero-cta hero-d">
+          <a class="hero-btn hero-btn--copper" href={OFFERS_PATH}
+            >{t.ctaOffers}</a
+          >
+          <a class="hero-btn" href={SELL_PATH}>{t.ctaSell}</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-foot">
+      <div class="hero-strip hero-strip--lead hero-m">
+        <p class="hero-lead">{t.leadMobile}</p>
+      </div>
+      <div class="hero-strip hero-strip--logo hero-m">
+        <img
+          src={logoColor.src}
+          width={logoColor.width}
+          height={logoColor.height}
+          alt=""
+          decoding="async"
+        />
+      </div>
+      <ul class="hero-cols hero-d">
+        {
+          t.columns.map((col) => (
+            <li>
+              <span class="hero-col-k">{col.title}</span>
+              <span class="hero-col-d">{col.text}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    /* Krycia dobrane POMIAREM kontrastu tekstu na najjaśniejszych kadrach
+       filmu i zdjęcia (docs/analiza-home.md H14; allowlista axe pusta,
+       a axe nie liczy kontrastu nad obrazem — pilnujemy go sami):
+       szkło karty desktop .45 (design .24 dawał leadowi 2,6:1), pas leadu
+       na telefonie .55 (design: brąz .1 — 1,4:1 na jasnym pasie zachodu),
+       scrim pod nagłówkiem telefonu .25 (design: brak — 2,9:1 na tablecie). */
+    --hero-glass: rgba(9, 18, 36, 0.45);
+    --hero-strip: rgba(9, 18, 36, 0.55);
+    --hero-scrim: linear-gradient(
+      180deg,
+      rgba(9, 18, 36, 0.25) 0%,
+      rgba(9, 18, 36, 0.15) 38%,
+      rgba(9, 18, 36, 0) 62%
+    );
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    min-height: var(--svh, 100svh);
+    overflow: clip;
+    color: var(--silver);
+    background: var(--navy);
+  }
+  .hero-d {
+    display: none;
+  }
+
+  /* ── warstwy obrazu ── */
+  .hero-media,
+  .hero-zoom,
+  .hero-scrim,
+  .hero-tint,
+  .hero-noise {
+    position: absolute;
+    inset: 0;
+  }
+  .hero-scrim {
+    background: var(--hero-scrim);
+  }
+  .hero-zoom {
+    transform-origin: 89% 50%;
+  }
+  .hero-photo,
+  .hero-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+    object-position: 89% 50%;
+  }
+  /* film gra wyłącznie na desktopie (home-hero.ts) — poniżej progu nie
+     tworzy nawet warstwy */
+  .hero-video {
+    display: none;
+    opacity: 0;
+    /* wyjście (po filmie): 1,2 s jak w designie */
+    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .hero-video[data-state="playing"] {
+    opacity: 1;
+    /* wejście: krótkie przenikanie ze zdjęcia w pierwszą klatkę */
+    transition-duration: 0.6s;
+  }
+
+  /* ── treść ── */
+  .hero-in {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: clamp(24px, 7vw, 40px);
+  }
+  .hero-main {
+    padding: calc(var(--hdr-h) + clamp(19.6px, 5.641vw, 29.3px)) var(--pad) 0;
+  }
+  h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(26px, 8.205vw, 48px);
+    line-height: 1.2;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--silver);
+    text-wrap: pretty;
+    text-shadow: 1px 2px 11px rgba(0, 0, 0, 0.35);
+  }
+  .hero-foot {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(16px, 4.872vw, 28px);
+  }
+  .hero-strip {
+    display: flex;
+    padding: 0 var(--pad);
+  }
+  .hero-strip--lead {
+    justify-content: flex-end;
+    background: var(--hero-strip);
+    -webkit-backdrop-filter: blur(11px);
+    backdrop-filter: blur(11px);
+  }
+  .hero-lead {
+    margin: 0;
+    max-width: 32ch;
+    text-align: right;
+    font-size: clamp(15px, 4.103vw, 22px);
+    line-height: 1.5;
+    color: #fff;
+    text-wrap: pretty;
+    text-shadow: -2px 2px 6px rgba(0, 0, 0, 1);
+  }
+  .hero-strip--logo {
+    justify-content: center;
+    padding-block: clamp(32px, 10.256vw, 56px);
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(13px);
+    backdrop-filter: blur(13px);
+  }
+  .hero-strip--logo img {
+    display: block;
+    width: clamp(200px, 85.64vw, 480px);
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .hero {
+      display: block;
+      height: var(--svh, 100svh);
+      /* niskie okno: treść hero nie może się obciąć */
+      min-height: 600px;
+    }
+    .hero-m {
+      display: none;
+    }
+    .hero-d {
+      display: block;
+    }
+    .hero-zoom {
+      transform-origin: 50% 50%;
+    }
+    .hero-photo,
+    .hero-video {
+      object-position: 50% 50%;
+    }
+    .hero-video {
+      display: block;
+    }
+    .hero-tint {
+      background: rgba(9, 18, 36, 0.1);
+    }
+    /* szum jak w designie, ale BEZ mix-blend-mode (H9): mieszanie
+       pełnoekranowej warstwy nad skalowanym filmem to droga do
+       przemalowań — zwykłe krycie daje ten sam efekt taniej */
+    .hero-noise {
+      opacity: 0.06;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 140px 140px;
+    }
+
+    .hero-in {
+      position: absolute;
+      inset: var(--hdr-h) 0 0;
+      gap: 0;
+    }
+    .hero-main {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      padding: min(clamp(12px, 2.4vw, 44px), 2.4svh) clamp(40px, 7vw, 150px);
+    }
+    .hero-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: min(clamp(10px, 1.7vw, 30px), 2.1svh);
+      max-width: clamp(560px, 64vw, 1000px);
+      padding: min(clamp(26px, 3.2vw, 56px), 5svh) clamp(32px, 4vw, 76px);
+      text-align: center;
+      background: var(--hero-glass);
+      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(221, 221, 221, 0.14);
+      border-radius: 3px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+    }
+    .hero-eyebrow {
+      margin: 0;
+      font-family: var(--font-label);
+      font-weight: 500;
+      font-size: clamp(11px, 0.85vw, 13px);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(221, 221, 221, 0.86);
+    }
+    h1 {
+      font-size: min(clamp(34px, 3.7vw, 68px), 8.2svh);
+      line-height: 1.06;
+      text-wrap: balance;
+    }
+    .hero-rule {
+      width: clamp(48px, 4vw, 80px);
+      height: 2px;
+      background: var(--copper);
+    }
+    .hero-lead {
+      max-width: clamp(380px, 38vw, 640px);
+      text-align: center;
+      font-size: clamp(16px, 1.32vw, 22px);
+      color: rgba(255, 255, 255, 0.94);
+      text-shadow: none;
+    }
+    .hero-cta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(12px, 1.1vw, 18px);
+      padding-top: min(clamp(2px, 0.8vw, 12px), 1.2svh);
+    }
+    .hero-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      height: clamp(48px, 3.5vw, 60px);
+      padding: 0 clamp(24px, 2.2vw, 36px);
+      border: 1px solid rgba(221, 221, 221, 0.5);
+      border-radius: 2px;
+      background: rgba(221, 221, 221, 0.06);
+      color: var(--silver);
+      font-weight: 500;
+      font-size: clamp(15px, 1.12vw, 18px);
+      text-decoration: none;
+      transition: background 0.3s ease;
+    }
+    .hero-btn:hover {
+      background: rgba(221, 221, 221, 0.18);
+    }
+    .hero-btn--copper {
+      border-color: transparent;
+      background: var(--copper);
+      color: var(--navy-deep);
+      font-weight: 600;
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.26);
+    }
+    .hero-btn--copper:hover {
+      background: var(--copper-hover);
+    }
+    .hero-btn:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 3px;
+    }
+
+    .hero-foot {
+      flex: none;
+      gap: 0;
+    }
+    .hero-cols {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      margin: 0;
+      padding: 0 clamp(40px, 3.4vw, 64px) clamp(18px, 3vw, 54px);
+      list-style: none;
+      border-top: 1px solid rgba(221, 221, 221, 0.14);
+      background: rgba(9, 18, 36, 0.32);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+    }
+    .hero-cols li {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(6px, 0.7vw, 12px);
+      padding: clamp(14px, 2vw, 34px) clamp(16px, 1.6vw, 28px) 0;
+      text-align: center;
+    }
+    .hero-cols li:nth-child(2) {
+      border-inline: 1px solid rgba(221, 221, 221, 0.14);
+    }
+    .hero-col-k {
+      font-family: var(--font-label);
+      font-weight: 500;
+      font-size: clamp(11px, 0.95vw, 15px);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--silver);
+    }
+    .hero-col-d {
+      font-size: clamp(15px, 1.05vw, 17px);
+      line-height: 1.45;
+      color: rgba(221, 221, 221, 0.88);
+    }
+  }
+
+  /* niskie okno desktop: opisy kolumn znikają (design: ≤ 700 px) */
+  @media (min-width: 1025px) and (max-height: 700px) {
+    .hero-col-d {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-btn {
+      transition: none;
+    }
+  }
+</style>

@@ -1,0 +1,17 @@
+---
+// Nagłówek sekcji stron treściowych: eyebrow (kreska + wersaliki)
+// i `h2` dwukolorowy — druga fraza w miedzi. Style: content.css
+// (klasy `sx-*`, globalne). `id` niesie `aria-labelledby` sekcji.
+interface Props {
+  id: string;
+  eyebrow: string;
+  title: string;
+  accent: string;
+}
+const { id, eyebrow, title, accent } = Astro.props;
+---
+
+<div class="sx-head">
+  <p class="sx-eyebrow">{eyebrow}</p>
+  <h2 class="sx-h2" id={id}>{title} <span>{accent}</span></h2>
+</div>

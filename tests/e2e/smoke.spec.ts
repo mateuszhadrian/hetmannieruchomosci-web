@@ -6,7 +6,10 @@
 // Etapu 0 na docelowe widoki bez edycji smoke'a. Asercja nagłówka noindex
 // fazy podglądu — Etap 3 (niżej); asercje formularzy dochodzą w Etapie 5.
 import { expect, test } from "@playwright/test";
-import { collectPageIssues } from "../helpers/guards";
+import { collectPageIssues, useMediaStub } from "../helpers/guards";
+
+// „/" niesie od 4.4 kafle ofert — obrazy z hosta mediów idą przez zaślepkę
+useMediaStub();
 
 test.describe("smoke", { tag: "@prod-smoke" }, () => {
   test("/ wstaje: 200, lang=pl, h1 renderuje, bez błędów konsoli", async ({

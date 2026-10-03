@@ -39,6 +39,18 @@ export async function settleImages(page: Page): Promise<void> {
   });
 }
 
+/**
+ * Odcina film hero strony głównej (żądania `/video/**`) — wołać PRZED
+ * nawigacją. Film leży pod treścią hero i jest widoczny tylko w trakcie
+ * odtwarzania, więc maska Playwrighta zakryłaby cały pierwszy ekran
+ * razem z nagłówkiem. Odcięcie żądań uruchamia zaprojektowaną ścieżkę
+ * błędu: zostaje zdjęcie (stan trwały po ok. 5 s także u użytkownika),
+ * a klatka filmu nigdy nie trafia na zrzut. Odtwarzanie testuje e2e.
+ */
+export async function blockHeroVideo(page: Page): Promise<void> {
+  await page.route("**/video/**", (route) => route.abort());
+}
+
 /** Wspólny start sweepa: nawigacja + freeze.css + repaint + zdjęcia. */
 export async function prepareSweep(page: Page, path = "/"): Promise<void> {
   await gotoReady(page, path);
@@ -75,11 +87,9 @@ export async function revealSweep(page: Page): Promise<void> {
   // Każdy wciąż uzbrojony element wjeżdża do kadru na pełne settle;
   // elementy nieodhaczalne (schowane pod zwiniętym max-height — IO tnie
   // intersectionRect po overflow przodka) odpuszczamy po 3 przebiegach.
-  // Selektory = atrybuty wejść z content-motion.ts (dopasowanie do
-  // reveali designu razem z tym modułem, Etap 4).
-  const armed = page.locator(
-    "html.js-motion [data-rev]:not(.in), html.js-motion [data-ryc]:not(.in), html.js-motion [data-rycsb]:not(.in)",
-  );
+  // Selektor = atrybut wejść z content-motion.ts (`[data-rv]` → `.is-in`)
+  // — trzymać W PARZE z modułem ruchu.
+  const armed = page.locator("html.js-motion [data-rv]:not(.is-in)");
   for (let pass = 0; pass < 3 && (await armed.count()) > 0; pass++) {
     for (const el of await armed.all()) {
       if (!(await el.isVisible().catch(() => false))) continue;

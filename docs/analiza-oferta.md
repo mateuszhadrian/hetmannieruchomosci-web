@@ -2,7 +2,7 @@
 
 > **Status:** ZAAKCEPTOWANA 2026-10-03 (wszystkie rekomendacje §0 i §6);
 > część (a) ZMERGOWANA (PR #21, poprawka #22), część (b) — lightbox, druk,
-> 404 — zrealizowana na gałęzi `feat/oferta-lightbox` (§11). Część 4.3 Etapu 4 wg instrukcji
+> 404 — ZMERGOWANA (PR #23, 2026-10-03; §11). Część 4.3 Etapu 4 wg instrukcji
 > wykonawczej (dokument lokalny, `docs/plan/`) — tabela 4.3, „Kontrakty
 > poza widokiem", „Zasada rozjazdów"; prompt §4.3 z `etap-4-prompty.md`.
 > Referencja wyglądu: `docs/design/export/oferta.html` (gałęzie `.br-m`

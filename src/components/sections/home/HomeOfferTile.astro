@@ -1,0 +1,294 @@
+---
+// Kafel oferty strony głównej (4.4, docs/analiza-home.md Q2): wygląd
+// z designu (zdjęcie na całe pole + gradient + kicker, tytuł, lokalizacja,
+// cena), LOGIKA wspólna z kartą listy — wejściem jest ten sam wpis indeksu
+// (`OfferIndexEntry`), a etykiety i formaty pochodzą z tych samych funkcji
+// (`cardKicker`, `cardBadges`, `formatPrice`, `formatLocation`). Treści
+// z CRM wyłącznie jako tekst. Obraz: `imgAt(…, "card")`; DUŻY kafel na
+// desktopie dostaje dodatkowo wariant `hero` dla ekranów @2× (Q9 — ten
+// sam adres co pierwsze zdjęcie detalu, zero nowych transformacji).
+import Icon from "@/components/offers/Icon.astro";
+import { imgAt } from "@/lib/img";
+import {
+  ASK_FOR_PRICE,
+  formatLocation,
+  formatPrice,
+} from "@/lib/offers/format";
+import type { OfferIndexEntry } from "@/lib/offers/index-entry";
+import { cardBadges, cardKicker, UI } from "@/lib/offers/offers-ui";
+import { SHOW_PRICE_WHEN_SOLD } from "@/lib/site-config";
+import { HOME_DESKTOP_MIN_PX } from "./home-config";
+
+interface Props {
+  entry: OfferIndexEntry;
+  /** „teraz" do plakietki „Nowość" (BUILD_NOW) */
+  now: Date;
+  /** duży kafel siatki desktop — ostrzejszy obraz na ekranach @2× */
+  large?: boolean;
+}
+const { entry: e, now, large = false } = Astro.props;
+
+const badges = cardBadges(e, now);
+const sold = e.status === "sprzedana" || e.status === "wynajeta";
+const showPrice = !sold || SHOW_PRICE_WHEN_SOLD;
+const price = formatPrice(e.price, e.transaction, e.currency);
+const discount =
+  e.price !== null && e.previousPrice !== undefined && e.previousPrice > e.price
+    ? formatPrice(e.previousPrice, e.transaction, e.currency)
+    : null;
+const title = e.title || e.typeName;
+---
+
+<a
+  class="ht"
+  href={e.path}
+  data-home-offer={e.number}
+  data-offer-status={e.status}
+>
+  {
+    e.photo ? (
+      <picture>
+        {large && (
+          <source
+            media={`(min-width: ${HOME_DESKTOP_MIN_PX}px)`}
+            srcset={`${imgAt(e.photo.r2Key, "card")} 1x, ${imgAt(e.photo.r2Key, "hero")} 2x`}
+          />
+        )}
+        <img
+          class="ht-img"
+          src={imgAt(e.photo.r2Key, "card")}
+          alt={e.photo.alt}
+          width={e.photo.width}
+          height={e.photo.height}
+          loading="lazy"
+          decoding="async"
+        />
+      </picture>
+    ) : (
+      <span class="ht-nophoto">{UI.photosSoon}</span>
+    )
+  }
+  <span class="ht-shade" aria-hidden="true"></span>
+  {
+    badges.length > 0 && (
+      <span class="ht-badges">
+        {badges.map((b) => (
+          <span class="ht-badge" data-badge={b}>
+            {b}
+          </span>
+        ))}
+      </span>
+    )
+  }
+  <span class="ht-body">
+    <span class="ht-kicker">{cardKicker(e)}</span>
+    <h3 class="ht-title">{title}</h3>
+    <span class="ht-loc">
+      <span class="ht-loc-ico"><Icon name="pin" /></span>
+      <span>{formatLocation(e.location)}</span>
+    </span>
+    {
+      showPrice && (
+        <span class="ht-price" data-home-offer-price>
+          {discount && <s>{discount}</s>}
+          <span data-ask={price === ASK_FOR_PRICE ? "" : undefined}>
+            {price}
+          </span>
+        </span>
+      )
+    }
+  </span>
+</a>
+
+<style>
+  .ht {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    box-sizing: border-box;
+    height: 100%;
+    overflow: clip;
+    color: #fff;
+    text-decoration: none;
+    background: var(--navy);
+    border-radius: 0 0 0 clamp(22px, 6vw, 30px);
+  }
+  .ht-img {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+  }
+  /* stan bez zdjęć: pasy z makiety + podpis */
+  .ht-nophoto {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.86);
+    background: repeating-linear-gradient(
+      135deg,
+      #1d426f 0 12px,
+      var(--navy) 12px 24px
+    );
+  }
+  .ht-shade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(14, 32, 60, 0) 34%,
+      rgba(14, 32, 60, 0.78) 68%,
+      rgba(14, 32, 60, 0.95)
+    );
+  }
+  .ht-badges {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .ht-badge {
+    display: inline-flex;
+    align-items: center;
+    height: 26px;
+    padding: 0 10px;
+    background: var(--ink);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  /* design: biały tekst na miedzi (3,1:1) — tekst --ink trzyma AA */
+  .ht-badge[data-badge="Nowość"],
+  .ht-badge[data-badge="Rezerwacja"] {
+    background: var(--copper);
+    color: var(--ink);
+  }
+  .ht-body {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: clamp(16px, 4.4vw, 20px);
+  }
+  .ht-kicker {
+    font-size: 12px;
+    line-height: 1;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--copper-light);
+  }
+  .ht-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(17px, 4.6vw, 21px);
+    line-height: 1.3;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: #fff;
+    text-wrap: pretty;
+  }
+  .ht-loc {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 15px;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.92);
+  }
+  .ht-loc-ico {
+    display: flex;
+    flex: none;
+    font-size: 17px;
+    color: var(--copper-light);
+  }
+  .ht-price {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 10px;
+    font-size: clamp(22px, 6vw, 27px);
+    line-height: 1.1;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #fff;
+  }
+  .ht-price s {
+    font-size: 0.6em;
+    font-weight: 500;
+    letter-spacing: 0;
+    color: rgba(255, 255, 255, 0.8);
+  }
+  .ht:focus-visible {
+    outline: 2px solid var(--navy);
+    outline-offset: 3px;
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .ht {
+      border-radius: 0 0 0 clamp(22px, 2.2vw, 32px);
+      transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    /* małe kafle są niskie, a treść zajmuje ponad połowę pola — gradient
+       zaczyna się wyżej niż w designie (26 % / 64 %), żeby kicker nie
+       lądował na jasnym zdjęciu */
+    .ht-shade {
+      background: linear-gradient(
+        180deg,
+        rgba(14, 32, 60, 0) 8%,
+        rgba(14, 32, 60, 0.78) 52%,
+        rgba(14, 32, 60, 0.95)
+      );
+    }
+    .ht-badges {
+      top: clamp(14px, 1.2vw, 18px);
+      left: clamp(16px, 1.4vw, 20px);
+    }
+    .ht-badge {
+      font-family: var(--font-label);
+      font-weight: 500;
+      padding: 0 11px;
+    }
+    .ht-body {
+      gap: clamp(6px, 0.6vw, 9px);
+      padding: clamp(20px, 1.8vw, 28px);
+    }
+    .ht-kicker {
+      font-family: var(--font-label);
+      font-size: clamp(11px, 0.8vw, 12px);
+      font-weight: 500;
+    }
+    .ht-title {
+      font-size: clamp(17px, 1.35vw, 21px);
+      line-height: 1.28;
+    }
+    .ht-loc {
+      font-size: clamp(14px, 0.95vw, 15px);
+      color: rgba(255, 255, 255, 0.9);
+    }
+    .ht-loc-ico {
+      font-size: 1.1em;
+    }
+    .ht-price {
+      font-size: clamp(20px, 1.6vw, 25px);
+    }
+  }
+
+  @media (min-width: 1025px) and (prefers-reduced-motion: no-preference) {
+    .ht:hover {
+      transform: translateY(-6px);
+    }
+  }
+</style>
