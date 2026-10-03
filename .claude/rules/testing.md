@@ -298,7 +298,9 @@ spec otwierający trasy ofert), `useChromium1920Only`, `collectPageIssues`.
   per plik — `*-darwin.png` (lokalnie: `pnpm test:visual:update`) i
   `*-linux.png` (ręcznie wyzwalany workflow `update-visual-baselines.yml`,
   bot-commit na branch PR-a; awaryjnie Docker
-  `mcr.microsoft.com/playwright:v<wersja>-noble`). Zamierzona zmiana
+  `mcr.microsoft.com/playwright:v<wersja>-noble`; do DIAGNOZY czerwonego workflow ten sam obraz uruchamiany lokalnie —
+  komenda w `docs/analiza-oferta.md` §10; wygenerowane w kontenerze PNG
+  usuń, baseline'y linux biorą się z workflow). Zamierzona zmiana
   wyglądu = kod + OBA komplety w jednym PR. Kolejność NA ZAWSZE:
   kod → workflow linux → commit darwin na końcu (bot-push nie wyzwala CI).
 - **Zielony zrzut NIE znaczy „baseline aktualny"** — różnica może siedzieć

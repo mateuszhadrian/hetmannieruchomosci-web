@@ -320,6 +320,11 @@ calc(var(--hdr-h) + var(--od-anchors-h) + 8px)` — także `.od-contact`
   `ogImage` w `BaseLayout`, JSON-LD `realEstateListing()` z `jsonld.ts`
   (adres do ulicy, bez `geo`, cena pominięta przy `null`) przez
   `JsonLd.astro` w slocie head. `data-build-now` na `main` (jak lista).
+- **Żadnego `scrollIntoView` w skryptach widoku** do dosuwania elementu
+  w POZIOMYM pasku (miniatury, kotwice): `block: "nearest"` przewija też
+  przodków, czyli stronę w pionie — rusza sticky i wywraca zrzuty pełnej
+  strony na linuksowym Chromium („two consecutive stable screenshots",
+  bieg 37113992326). Używaj `revealInStrip()` (sam `scrollLeft` paska).
 - `tests/e2e/oferta.spec.ts` korzysta z lokalnego `imgAt()` zbudowanego
   z `IMG_VARIANTS` + `MEDIA_BASE` — prawdziwy `imgAt` czyta
   `import.meta.env`, którego Node Playwrighta nie ma.

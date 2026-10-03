@@ -766,7 +766,12 @@ hidden` zamiast `clip`); `test:visual` 24 czerwone OCZEKIWANE (nowe
   CLS 0,006, TBT 0; mobile `script` 7 415 B, `total` 296–475 KB, LCP
   2 108–2 785 ms (działka: margines 415 ms do 3 200 — obserwacja),
   TBT 0, CLS 0. ROZJAZDY
-  po implementacji: zwijanie opisu własne (nie `CollapsibleText`
+  po implementacji: workflow baseline'ów linux (bieg 37113992326) padł
+  na „two consecutive stable screenshots” na chromium desktop —
+  `scrollIntoView` miniatury/kotwicy przewijał stronę w pionie i ruszał
+  sticky w trakcie zrzutu; poprawka `revealInStrip()` (sam `scrollLeft`
+  paska), odtworzona i potwierdzona w kontenerze Playwright 1.61.1-noble
+  (bez poprawki 5/8 niestabilne, z poprawką 8/8 zielone); zwijanie opisu własne (nie `CollapsibleText`
   szablonu — ten zwija tylko mobile), `Icon.astro` zamiast inline SVG,
   puste kotwice slotów muszą mieć `<span data-slot>` (lint); miniatury
   spoza pierwszych 6 (`OFFER_THUMBS_EAGER`) dogrywane przez IO —

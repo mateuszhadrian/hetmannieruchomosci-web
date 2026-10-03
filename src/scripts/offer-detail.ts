@@ -47,6 +47,21 @@ function indexFromScroll(): number {
   );
 }
 
+/** Dosuwa element do widocznej części POZIOMEGO paska — wyłącznie
+ *  `scrollLeft` paska. `scrollIntoView` przewijałoby też przodków
+ *  (stronę w pionie), a to rusza elementami sticky — także w trakcie
+ *  zrzutu pełnej strony w testach wizualnych. */
+function revealInStrip(strip: HTMLElement, el: HTMLElement) {
+  const left = el.offsetLeft - strip.offsetLeft;
+  const right = left + el.offsetWidth;
+  if (left < strip.scrollLeft) strip.scrollLeft = left;
+  else if (right > strip.scrollLeft + strip.clientWidth) {
+    strip.scrollLeft = right - strip.clientWidth;
+  }
+}
+
+const thumbStrip = q<HTMLElement>(".od-thumbs-track");
+
 function paint(i: number) {
   current = i;
   if (count) count.textContent = `${i + 1} / ${slides.length}`;
@@ -54,13 +69,7 @@ function paint(i: number) {
     const on = Number(t.dataset.galThumb) === i;
     if (on) t.setAttribute("aria-current", "true");
     else t.removeAttribute("aria-current");
-    if (on && t.scrollIntoView) {
-      t.scrollIntoView({
-        block: "nearest",
-        inline: "nearest",
-        behavior: "auto",
-      });
-    }
+    if (on && thumbStrip) revealInStrip(thumbStrip, t);
   }
 }
 
@@ -202,12 +211,14 @@ const anchorLinks = qa<HTMLAnchorElement>(
 if (anchorLinks.length && "IntersectionObserver" in window) {
   const byId = new Map(anchorLinks.map((a) => [a.dataset.anchor!, a]));
   const visible = new Map<string, number>();
+  const anchorStrip = q<HTMLElement>(".od-anchors-in");
   const setCurrent = (id: string) => {
     for (const a of anchorLinks) {
       if (a.dataset.anchor === id) a.setAttribute("aria-current", "true");
       else a.removeAttribute("aria-current");
     }
-    byId.get(id)?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+    const link = byId.get(id);
+    if (link && anchorStrip) revealInStrip(anchorStrip, link);
   };
   const io = new IntersectionObserver(
     (entries) => {

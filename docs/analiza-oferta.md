@@ -616,6 +616,27 @@ agenta (part3 §6.3), formaty (`format.ts`), „Zapytaj o cenę", plakietki.
 - **E2E a `imgAt`:** prawdziwy `imgAt()` czyta `import.meta.env`, którego
   Node Playwrighta nie ma — spec buduje adres z `IMG_VARIANTS` +
   `MEDIA_BASE` lokalnie.
+- **Workflow baseline'ów linux padł (bieg 37113992326) na 6/8 zrzutach
+  chromium desktop: „Failed to take two consecutive stable screenshots"**
+  — strona zmieniała się między kolejnymi zrzutami pełnej strony.
+  Przyczyna: `scrollIntoView({ block: "nearest" })` na aktywnej
+  miniaturze (po `scroll` toru) i na aktywnej kotwicy (po
+  IntersectionObserver) przewija też PRZODKÓW, czyli stronę w pionie,
+  a to rusza elementami sticky (pasek kotwic, panel boczny) w trakcie
+  zrzutu. Poprawka: `revealInStrip()` zmienia wyłącznie `scrollLeft`
+  paska. Odtworzone i potwierdzone w kontenerze
+  `mcr.microsoft.com/playwright:v1.61.1-noble` (ścieżka awaryjna
+  z `testing.md`): bez poprawki 5/8 niestabilnych, z poprawką 8/8
+  zielone w dwóch przebiegach. Komenda diagnozy (pierwszy przebieg pisze
+  brakujące `*-linux.png`, drugi je porównuje):
+
+  ```
+  docker run --rm -v "$PWD":/work -v /work/node_modules -w /work -e CI=1 mcr.microsoft.com/playwright:v1.61.1-noble bash -c "corepack enable; pnpm install --frozen-lockfile; pnpm build:visual; pnpm exec playwright test tests/visual/oferta.spec.ts --project=chromium-1920"
+  ```
+
+  Po diagnozie `rm -rf .pnpm-store` (store pnpm z kontenera ląduje
+  w repo i wywraca `format:check`) oraz `git clean -f tests/visual/__screenshots__`. Baseline'y linux nadal z workflow (kontener
+  tylko do diagnozy; wygenerowane w nim PNG usunięte).
 - **Visual `not-found-full` na webkit-iphone-se** padł RAZ w łańcuchu
   końcowym (wysokość strony 1 447 px zamiast 1 361 — `100svh` pod
   obciążeniem), w izolacji i w pełnym `test:visual` wcześniej zielony;
