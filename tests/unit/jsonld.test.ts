@@ -9,7 +9,14 @@ import {
   buildPhoneDisplay,
   buildPhoneHref,
 } from "../../src/lib/contact-details";
-import { BUSINESS, localBusiness, webSite } from "../../src/lib/jsonld";
+import {
+  BUSINESS,
+  localBusiness,
+  realEstateListing,
+  webSite,
+} from "../../src/lib/jsonld";
+import type { Offer } from "../../src/lib/offers/schema";
+import { syntheticFullOffers } from "../helpers/raw";
 
 const SITE = "https://hetmannieruchomosci.com";
 const business = localBusiness(SITE);
@@ -24,9 +31,22 @@ const FORBIDDEN = [
   buildPhoneDisplay().replace("+48 ", ""),
 ];
 
+// Węzeł oferty (4.3) na danych syntetycznych — adres do ulicy, bez numeru.
+const offerBase = syntheticFullOffers()[0];
+const makeOffer = (patch: Partial<Offer>): Offer => ({
+  ...offerBase,
+  ...patch,
+});
+const PATH = "/oferty/mieszkanie-na-sprzedaz/poznan/sw000001/";
+const EXTRAS = {
+  description: "Opis testowy. Drugie zdanie.",
+  images: [`${SITE}/media/a.webp`, `${SITE}/media/b.webp`],
+};
+const listing = realEstateListing(SITE, offerBase, PATH, EXTRAS);
+
 describe("antyscraping", () => {
   it("węzły nie niosą telefonów ani e-maila w żadnej postaci", () => {
-    for (const node of [business, site]) {
+    for (const node of [business, site, listing]) {
       const serialized = JSON.stringify(node);
       for (const needle of FORBIDDEN) {
         expect(serialized.includes(needle), `JSON-LD zawiera „${needle}”`).toBe(
@@ -148,6 +168,107 @@ describe("webSite()", () => {
 
   it("NIE deklaruje SearchAction (wyszukiwarka nie ma endpointu)", () => {
     expect(JSON.stringify(site)).not.toContain("SearchAction");
+  });
+});
+
+describe("realEstateListing()", () => {
+  it("RealEstateListing z @id oferty, nazwą, opisem, datą i identyfikatorem", () => {
+    expect(listing["@type"]).toBe("RealEstateListing");
+    expect(listing["@id"]).toBe(`${SITE}${PATH}#oferta`);
+    expect(listing.url).toBe(`${SITE}${PATH}`);
+    expect(listing.name).toBe(offerBase.title.trim() || offerBase.typeName);
+    expect(listing.description).toBe(EXTRAS.description);
+    expect(listing.datePosted).toBe(offerBase.addedAt);
+    expect(listing.identifier).toBe(offerBase.number);
+    expect(listing.image).toEqual(EXTRAS.images);
+    expect(listing.provider).toEqual({ "@id": business["@id"] });
+  });
+
+  it("adres do ULICY: bez numeru budynku i lokalu, bez geo", () => {
+    const withStreet = realEstateListing(
+      SITE,
+      makeOffer({
+        location: {
+          ...offerBase.location,
+          street: "Milczańska",
+          streetType: "ul.",
+        },
+      }),
+      PATH,
+      EXTRAS,
+    );
+    const addr = withStreet.address as Record<string, string>;
+    expect(addr["@type"]).toBe("PostalAddress");
+    expect(addr.streetAddress).toBe("ul. Milczańska");
+    expect(addr.streetAddress).not.toMatch(/\d/);
+    expect(addr.addressLocality).toBe(offerBase.location.city);
+    expect(addr.addressCountry).toBe("PL");
+    expect(withStreet).not.toHaveProperty("geo");
+    const noStreet = realEstateListing(
+      SITE,
+      makeOffer({
+        location: {
+          ...offerBase.location,
+          street: undefined,
+          streetType: undefined,
+        },
+      }),
+      PATH,
+      EXTRAS,
+    );
+    expect(noStreet.address).not.toHaveProperty("streetAddress");
+  });
+
+  it("cena jako Offer; przy „Zapytaj o cenę” węzeł ceny znika", () => {
+    const priced = realEstateListing(
+      SITE,
+      makeOffer({ price: 649000, currency: "PLN" }),
+      PATH,
+      EXTRAS,
+    );
+    expect(priced.offers).toMatchObject({
+      "@type": "Offer",
+      price: 649000,
+      priceCurrency: "PLN",
+    });
+    const ask = realEstateListing(
+      SITE,
+      makeOffer({ price: null }),
+      PATH,
+      EXTRAS,
+    );
+    expect(ask).not.toHaveProperty("offers");
+    expect(JSON.stringify(ask)).not.toContain('"price"');
+  });
+
+  it("powierzchnia w m² (MTK) i pokoje tylko gdy są", () => {
+    expect(listing.floorSize).toEqual({
+      "@type": "QuantitativeValue",
+      value: offerBase.area,
+      unitCode: "MTK",
+    });
+    const noRooms = realEstateListing(
+      SITE,
+      makeOffer({ rooms: undefined }),
+      PATH,
+      EXTRAS,
+    );
+    expect(noRooms).not.toHaveProperty("numberOfRooms");
+    const rooms = realEstateListing(
+      SITE,
+      makeOffer({ rooms: 3 }),
+      PATH,
+      EXTRAS,
+    );
+    expect(rooms.numberOfRooms).toBe(3);
+  });
+
+  it("bez zdjęć → bez pola image", () => {
+    const none = realEstateListing(SITE, offerBase, PATH, {
+      ...EXTRAS,
+      images: [],
+    });
+    expect(none).not.toHaveProperty("image");
   });
 });
 

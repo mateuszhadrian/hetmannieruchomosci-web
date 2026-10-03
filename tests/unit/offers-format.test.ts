@@ -1,6 +1,8 @@
 // Formattery wartości oferty — test przeniesiony z analizy danych CRM.
 import { describe, expect, it } from "vitest";
 import {
+  countNoun,
+  formatDateShort,
   formatArea,
   formatDecimal,
   formatFloor,
@@ -19,6 +21,22 @@ import {
 } from "../../src/lib/offers/format";
 
 const S = " ";
+
+describe("format (detal 4.3)", () => {
+  it("formatDateShort: „28 sie 2026” w czasie polskim, spacje niełamliwe", () => {
+    expect(formatDateShort("2026-08-28T10:00:00+02:00")).toBe(
+      `28${S}sie${S}2026`,
+    );
+    expect(formatDateShort("2024-01-01")).toBe(`1${S}sty${S}2024`);
+    // północ UTC 31.12 = 1 stycznia w Warszawie
+    expect(formatDateShort("2025-12-31T23:30:00Z")).toBe(`1${S}sty${S}2026`);
+  });
+  it("countNoun: przy 1 sam rzeczownik, dalej liczebnik", () => {
+    expect(countNoun(1, "balkon", "balkony", "balkonów")).toBe("balkon");
+    expect(countNoun(2, "balkon", "balkony", "balkonów")).toBe(`2${S}balkony`);
+    expect(countNoun(5, "balkon", "balkony", "balkonów")).toBe(`5${S}balkonów`);
+  });
+});
 
 describe("format", () => {
   it("„Pokaż N ofert” biernikiem", () => {
