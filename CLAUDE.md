@@ -774,13 +774,26 @@ hidden` zamiast `clip`); `test:visual` 24 czerwone OCZEKIWANE (nowe
   (bez poprawki 5/8 niestabilne, z poprawką 8/8 zielone); job `lighthouse`
   na PR #21 padł na TBT mobile `/oferty/` 715 ms > 600 (zadanie
   hydratacji wyspy 765 ms; kod listy nietknięty, detale 0–92 ms) —
-  wariancja runnera jak R27, ponowny bieg przez push docs; zwijanie opisu własne (nie `CollapsibleText`
+  wariancja runnera jak R27, ponowny bieg zielony; zwijanie opisu własne (nie `CollapsibleText`
   szablonu — ten zwija tylko mobile), `Icon.astro` zamiast inline SVG,
   puste kotwice slotów muszą mieć `<span data-slot>` (lint); miniatury
   spoza pierwszych 6 (`OFFER_THUMBS_EAGER`) dogrywane przez IO —
   natywne `lazy` w poziomym pasku ładowało wszystkie (22 × `card` ≈ 1 MB
   na produkcji, niewidoczne w LHCI na fixture). Porządek po
   cronie: bieg 2026-10-03 (08:03 UTC, bez zmian) opisany we wpisie S2c.
+  PO MERGE'U (PR #21, 2026-10-03 10:46 UTC): `ci.yml` na main padł
+  w jobie `e2e` na `oferty-wyspa.spec.ts` „błąd pobrania index.json …
+  Ponów" (limit 30 s przy kliknięciu „Ponów", także w retry) — R34
+  w `docs/analiza-oferty.md` §13.7: handler „Ponów" synchronicznie
+  odmontowywał blok błędu (zdjęcie flagi na starcie próby), Playwright
+  nie potwierdzał kliknięcia i ponawiał je na nieistniejącym przycisku;
+  lokalnie flaky 2/4. Poprawka `fix/oferty-retry-race` w `SearchIsland.tsx`:
+  flaga błędu schodzi po sukcesie albo z nowym `applied` (batch),
+  `pending` jako stan, próba automatyczna = skeleton, ręczne ponowienie =
+  blok zostaje z przyciskiem `disabled` + `aria-busy` (`retrying`);
+  `prod-smoke` na main zielony. Wyspa po poprawce 38 611 B brutto /
+  13 755 B gzip (+375 / +147); e2e listy 89/89 na 3 profilach, visual
+  `oferty` i `chrome` bez ruchu. Bieg 2026-10-03 syncu bez zmian.
 
 ## Dokumentacja
 
