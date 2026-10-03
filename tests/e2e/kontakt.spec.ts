@@ -11,6 +11,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import {
   FORM_ENDPOINT,
+  FORM_SCROLL_GAP_PX,
   TURNSTILE_SRC,
 } from "../../src/components/forms/form-config";
 import {
@@ -418,14 +419,19 @@ test.describe("kontakt: formularz", () => {
       "aria-describedby",
       "kf-contact-hint kf-contact-err",
     );
-    // pole z fokusem nie chowa się pod stałym paskiem
-    const clear = await name.evaluate((el) => {
+    // Pole z fokusem (razem z etykietą) stoi POD stałym paskiem i w oknie.
+    // Dosuwa je skrypt, nie przeglądarka — WebKit na Linuksie przy samym
+    // focus() zostawiał pole pod paskiem (czerwony `e2e` na PR #25).
+    const place = await wrap(page, "name").evaluate((el) => {
       const hdr = document.querySelector("[data-nav]")!;
-      return (
-        el.getBoundingClientRect().top - hdr.getBoundingClientRect().bottom
-      );
+      const r = el.getBoundingClientRect();
+      return {
+        clear: r.top - hdr.getBoundingClientRect().bottom,
+        inView: r.bottom <= window.innerHeight,
+      };
     });
-    expect(clear).toBeGreaterThan(0);
+    expect(place.clear).toBeGreaterThanOrEqual(FORM_SCROLL_GAP_PX - 1);
+    expect(place.inView).toBe(true);
 
     expect(endpoint.count()).toBe(0);
     await expect(page.locator("[data-form-done]")).toBeHidden();

@@ -21,6 +21,7 @@ export const TURNSTILE_SRC =
  *  interakcji użytkownika, więc limit musi być ludzki, nie sieciowy. */
 export const TURNSTILE_TIMEOUT_MS = 90_000;
 
-/** Odstęp ramki formularza od paska po wysyłce (potwierdzenie jest niższe
- *  od formularza — bez dosunięcia użytkownik zostałby w stopce). */
-export const FORM_DONE_SCROLL_GAP_PX = 16;
+/** Odstęp od stałego paska, gdy skrypt dosuwa w okno pierwsze błędne pole
+ *  albo ramkę z potwierdzeniem (potwierdzenie jest niższe od formularza —
+ *  bez dosunięcia użytkownik zostałby w stopce). */
+export const FORM_SCROLL_GAP_PX = 16;

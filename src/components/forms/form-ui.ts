@@ -22,7 +22,7 @@ import {
   type FormRaw,
 } from "@/lib/contact-form";
 import {
-  FORM_DONE_SCROLL_GAP_PX,
+  FORM_SCROLL_GAP_PX,
   FORM_ENDPOINT,
   TURNSTILE_SITE_KEY,
   TURNSTILE_SRC,
@@ -62,6 +62,21 @@ function loadTurnstile(): Promise<void> {
     document.head.appendChild(s);
   });
   return turnstileLoad;
+}
+
+/** Dosuwa element w okno: górna krawędź nie wyżej niż dół stałego paska
+ *  (+ odstęp), a gdy element jest pod oknem — dolna krawędź w oknie.
+ *  Natywny `window.scrollTo`, bez animacji. */
+function revealUnderBar(el: HTMLElement): void {
+  const hdr = document.querySelector<HTMLElement>("[data-nav]");
+  const limit = (hdr?.offsetHeight ?? 0) + FORM_SCROLL_GAP_PX;
+  const r = el.getBoundingClientRect();
+  if (r.top < limit) {
+    window.scrollTo(0, window.scrollY + r.top - limit);
+  } else if (r.bottom > window.innerHeight) {
+    const down = r.bottom - window.innerHeight + FORM_SCROLL_GAP_PX;
+    window.scrollTo(0, window.scrollY + Math.min(down, r.top - limit));
+  }
 }
 
 type Control = HTMLInputElement | HTMLTextAreaElement;
@@ -199,7 +214,12 @@ function initForm(frame: HTMLElement): void {
     // pole w zwiniętym bloku opcjonalnym — najpierw go otwieramy
     const details = control.closest("details");
     if (details) details.open = true;
-    control.focus();
+    // Przewijanie robimy SAMI: przeglądarki różnie dosuwają pole przy
+    // focus() pod stałym paskiem (WebKit na Linuksie zostawiał je pod
+    // paskiem mimo scroll-margin) — a pole zasłonięte paskiem to błąd,
+    // którego użytkownik nie widzi.
+    control.focus({ preventScroll: true });
+    revealUnderBar(first ?? control);
   }
 
   // pisanie w polu gasi jego błąd (i błąd pary, do której należy)
@@ -239,10 +259,7 @@ function initForm(frame: HTMLElement): void {
       ?.focus({ preventScroll: true });
     // potwierdzenie jest niższe od formularza — dosuwamy ramkę pod pasek,
     // jeśli jej górna krawędź została nad oknem
-    const hdr = document.querySelector<HTMLElement>("[data-nav]");
-    const limit = (hdr?.offsetHeight ?? 0) + FORM_DONE_SCROLL_GAP_PX;
-    const top = frame.getBoundingClientRect().top;
-    if (top < limit) window.scrollTo(0, window.scrollY + top - limit);
+    revealUnderBar(frame);
   }
 
   function readRaw(): FormRaw {
