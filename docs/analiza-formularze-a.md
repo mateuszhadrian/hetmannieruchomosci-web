@@ -480,17 +480,31 @@ realizuje PR 2; PR 1 zamyka Q6–Q8.
 | F30 | Zrzuty elementu formularza na telefonie | pasek fixed wjeżdżał na zszywany zrzut — chowany na czas zrzutu (jak w `chrome-footer`) |
 | F31 | Ekran potwierdzenia w zrzucie | bez zegara i bez sieci: endpoint i Turnstile zaślepione; zwykle wysyłka w teście jest szybsza niż minimalny czas i moduł pokazuje potwierdzenie bez żądania, na wolnym runnerze żądanie trafia w zaślepkę — ekran ten sam |
 | F32 | Silnik tekstowy Playwrighta pomija `<noscript>` | asercje wersji bez JS idą locatorem po klasie, nie `getByText` |
-| F33 | Fokus pierwszego błędnego pola pod stałym paskiem | pola mają `scroll-margin-top` (pasek + zapas); test mierzy, że pole z fokusem stoi pod paskiem |
+| F33 | Fokus pierwszego błędnego pola pod stałym paskiem | pola mają `scroll-margin-top` (pasek + zapas); test mierzy, że pole z fokusem stoi pod paskiem — poprawione po CI, patrz F36 |
 | F34 | Obrys pól `rgba(24,58,107,.24)` z designu | zostaje (wygląd); kontrast obrysu jest niski (ok. 1,5:1) — axe tego nie bada, do oceny na telefonie w słońcu (§10.6) |
 | F35 | `Reply-To`, temat | temat stały per formularz (bez danych klienta — nie ma czego wstrzyknąć), `reply_to` pomijane przy samym telefonie; puste pola opcjonalne zgłoszenia pomijane, brakujący kanał kontaktu = „nie podano" |
+
+**F36 — po czerwonym jobie `e2e` na PR #25 (bieg 37151670813):** test
+„pusta wysyłka" padł wyłącznie na `webkit-iphone-14` w CI — po `focus()`
+pierwsze błędne pole stało 105 px POD stałym paskiem (lokalnie, na
+macOS, przeglądarka dosuwała je poprawnie; druga po H26 różnica WebKita
+między systemami). Poprawka w kodzie, nie w teście: moduł woła
+`focus({ preventScroll: true })` i SAM dosuwa opakowanie pola pod pasek
+(`revealUnderBar` — to samo, co dosuwa ramkę z potwierdzeniem; natywny
+`window.scrollTo`). Dosuwanie nie zależy już od tego, jak silnik
+traktuje `scroll-margin` przy fokusie. Test mierzy teraz całe
+opakowanie (etykieta + pole): odstęp od paska ≥ `FORM_SCROLL_GAP_PX`
+i dolna krawędź w oknie. Koszt: +187 B brutto / +66 B gzip (liczby
+w §10.3 już po poprawce; pomiar LHCI sprzed poprawki — `script` rośnie
+o ok. 70 B).
 
 ### 10.3 Budżet (pomiar jak §12.5 analizy 4.2, `pnpm build:visual`)
 
 | Plik | Rola | brutto | gzip -9 |
 | --- | --- | --- | --- |
 | chrome (Navbar, Footer, `contact-details`, `site-config`) | bez zmian (4 pliki; gzip liczony per plik) | 8 135 B | 3 531 B |
-| `kontakt.astro_…js` | moduł formularzy: walidacja, pułapki, Turnstile, wysyłka | 5 604 B | 2 534 B |
-| **razem `script` na `/kontakt/`** | | **13 739 B** | **6 065 B** |
+| `kontakt.astro_…js` | moduł formularzy: walidacja, pułapki, Turnstile, wysyłka (po F36) | 5 791 B | 2 600 B |
+| **razem `script` na `/kontakt/`** | | **13 926 B** | **6 131 B** |
 | `kontakt.*.css` | widok + `forms.css` + `content.css` | 9 745 B | 2 352 B |
 | HTML `/kontakt/` | | 26 361 B | 6 348 B |
 

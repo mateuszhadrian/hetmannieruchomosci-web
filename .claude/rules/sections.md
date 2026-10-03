@@ -560,8 +560,13 @@ true)`). **Akcja wymagająca przewinięcia strony („Napisz" → `#kontakt`)
   niższe od formularza). Telefon w potwierdzeniu i w komunikacie błędu
   przez slot `a[data-tel]`. Klasy z własnym `display` mają regułę
   `[hidden] { display: none }`.
-- Pola: `font-size` 16 px (podłoga iOS), `scroll-margin-top` pod stały
-  pasek (fokus pierwszego błędnego pola nie chowa się pod nim).
+- Pola: `font-size` 16 px (podłoga iOS). **Dosuwanie pod stały pasek
+  robi SKRYPT, nie przeglądarka:** `focus({ preventScroll: true })`,
+  a potem `revealUnderBar()` (natywny `window.scrollTo`) dla pierwszego
+  błędnego pola i dla ramki z potwierdzeniem. WebKit na Linuksie po
+  samym `focus()` zostawiał pole pod paskiem mimo `scroll-margin-top`
+  (czerwony `e2e` na PR #25, lokalnie na macOS zielony) — nie polegaj
+  na przewijaniu przy fokusie.
 
 ## Kontakt — stan po Etapie 5A (`docs/analiza-formularze-a.md`)
 

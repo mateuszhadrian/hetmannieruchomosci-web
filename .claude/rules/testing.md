@@ -50,8 +50,10 @@ Turnstile; bez JS (`javaScriptEnabled: false`): formularz widoczny,
 `.fm-nojs` i `.ki-nojs` widoczne (**locator po klasie — silnik tekstowy
 Playwrighta pomija `<noscript>`**), wiersze slotów ukryte. Formularz:
 pusta wysyłka → `.err` na `name`, `contact`, `message` (nie na `email`
-/ `phone`), komunikaty `> [data-msg]`, fokus na pierwszym polu nad
-którym nie stoi pasek, `aria-invalid`, `aria-describedby` z id
+/ `phone`), komunikaty `> [data-msg]`, fokus na pierwszym polu, którego
+opakowanie stoi ≥ `FORM_SCROLL_GAP_PX` pod paskiem i mieści się w oknie
+(dosuwa skrypt — WebKit na Linuksie zostawiał pole pod paskiem, czerwony
+`e2e` na PR #25), `aria-invalid`, `aria-describedby` z id
 komunikatu TYLKO przy błędzie, zero żądań, pisanie gasi błąd (pole
 pary gasi błąd pary); błędny e-mail / telefon → błąd pola; sam e-mail
 → jedno żądanie (`accept: application/json`, `form`, pola, `elapsed`

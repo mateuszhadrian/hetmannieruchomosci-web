@@ -997,9 +997,13 @@ offer-lightbox.ts` (chunk z dynamicznego `import()` w `offer-detail.ts`,
   czerwone OCZEKIWANE (18 nowych bez baseline'u + `chrome-footer` × 3:
   1366, iPhone SE, iPhone 14 + `chrome-sheet` × 2: iPhone 14, Pixel 5 —
   zmierzone progiem 0; `chrome-bar` i `chrome-home-*` bez ruchu), 134
-  zielone. BUDŻET (`build:visual`): `script` na `/kontakt/` 13 739 B
-  brutto / 6 065 B gzip (chrome 8 135 + moduł formularzy 5 604 /
-  2 534); wyspa listy co do bajta (38 653 B); LHCI lokalnie (oba
+  zielone. Pierwszy bieg `e2e` na PR #25 był czerwony (F36 — WebKit na
+  Linuksie po `focus()` zostawiał pierwsze błędne pole pod stałym
+  paskiem; lokalnie na macOS zielony): moduł woła teraz
+  `focus({ preventScroll: true })` i sam dosuwa pole pod pasek
+  (`revealUnderBar`). BUDŻET (`build:visual`): `script` na `/kontakt/`
+  13 926 B brutto / 6 131 B gzip (chrome 8 135 + moduł formularzy
+  5 791 / 2 600); wyspa listy co do bajta (38 653 B); LHCI lokalnie (oba
   configi, asercje czyste na 9 adresach): `/kontakt/` `script` 7 829 B
   = 20 % bramki, `total` 181 KB mobile / 200 KB desktop, LCP mobile ok.
   2 040 ms (element LCP = mapa; margines ok. 1,16 s do 3 200 —
