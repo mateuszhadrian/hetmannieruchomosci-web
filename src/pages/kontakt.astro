@@ -1,10 +1,74 @@
 ---
-import SkeletonPage from "@/components/SkeletonPage.astro";
+// /kontakt/ (Etap 5A, docs/analiza-formularze-a.md): wstęp, mapa
+// statyczna z linkiem do map, karta danych (sloty antyscrapingowe)
+// i formularz „Napisz do nas". Czysty Astro + moduł formularzy (ładowany
+// zawsze — to funkcja, nie dekoracja). Widok nie ma ruchu (design go tu
+// nie przewiduje), więc nie ma bramki `js-motion`.
+import Footer from "@/components/Footer.astro";
+import Navbar from "@/components/navbar/Navbar.astro";
+import ContactForm from "@/components/sections/contact/ContactForm.astro";
+import ContactInfo from "@/components/sections/contact/ContactInfo.astro";
+import ContactIntro from "@/components/sections/contact/ContactIntro.astro";
+import "@/components/sections/content.css";
 import { ui } from "@/i18n/ui";
+import BaseLayout from "@/layouts/BaseLayout.astro";
 ---
 
-<SkeletonPage
+<BaseLayout
   title={ui.pl["contactPage.title"]}
   description={ui.pl["contactPage.description"]}
-  heading="Kontakt"
-/>
+>
+  <Navbar />
+
+  <main class="kt">
+    <div class="kt-in">
+      <ContactIntro />
+      <div class="kt-grid" data-contact-grid>
+        <ContactInfo />
+        <ContactForm />
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<script>
+  import { initForms } from "@/components/forms/form-ui";
+
+  initForms();
+</script>
+
+<style>
+  /* pasek chrome'u jest FIXED — treść startuje pod nim */
+  .kt {
+    padding-top: calc(var(--hdr-h) + clamp(19.6px, 5.641vw, 29.3px));
+    background: var(--bg);
+  }
+  .kt-grid {
+    display: block;
+    margin-top: clamp(24px, 7vw, 40px);
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .kt {
+      padding: calc(var(--hdr-h) + clamp(24px, 2.6vw, 48px)) var(--pad)
+        clamp(64px, 6vw, 96px);
+    }
+    .kt-in {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(40px, 4vw, 64px);
+      max-width: var(--col);
+      margin-inline: auto;
+    }
+    .kt-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 5.6fr) minmax(0, 6.4fr);
+      align-items: start;
+      gap: clamp(40px, 4vw, 72px);
+      margin-top: 0;
+    }
+  }
+</style>

@@ -1,0 +1,54 @@
+---
+// Wstęp /kontakt/ (docs/analiza-formularze-a.md §1.1): eyebrow, `h1`
+// dwukolorowy, akapit. Klasy `sx-*` z content.css; `h1` ma własny rozmiar
+// (nagłówek strony, nie sekcji).
+import { CONTACT_COPY as t } from "./contact-copy";
+---
+
+<div class="ci">
+  <p class="sx-eyebrow">{t.eyebrow}</p>
+  <h1 class="ci-h1">{t.title} <span>{t.accent}</span></h1>
+  <p class="sx-text ci-lead">{t.lead}</p>
+</div>
+
+<style>
+  .ci {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: clamp(12px, 3.4vw, 16px);
+    padding-inline: max(var(--pad), calc((100% - 600px) / 2));
+  }
+  .ci-h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(24px, 7.2vw, 42px);
+    line-height: 1.18;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--navy);
+    text-wrap: pretty;
+  }
+  /* druga fraza w miedzi — odcień trzymający 3:1 na --bg (jak sx-h2) */
+  .ci-h1 span {
+    color: var(--copper-dark);
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .ci {
+      max-width: 960px;
+      gap: clamp(16px, 1.6vw, 22px);
+      padding-inline: 0;
+    }
+    .ci-h1 {
+      font-size: clamp(34px, 3.6vw, 54px);
+      line-height: 1.1;
+    }
+    .ci-lead {
+      max-width: 52ch;
+      font-size: clamp(16px, 1.25vw, 19px);
+      line-height: 1.6;
+    }
+  }
+</style>

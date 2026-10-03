@@ -12,6 +12,9 @@ module.exports = {
       url: [
         "/",
         "/polityka-prywatnosci/",
+        // widok z formularzem (5A): mapa statyczna, moduł formularzy; Turnstile
+        // ładuje się dopiero po focusie, więc nie wchodzi do pomiaru
+        "/kontakt/",
         "/oferty/",
         "/oferty/mieszkanie-na-sprzedaz/",
         // detale z fixture'u (4.3) — jak w lighthouserc.cjs

@@ -35,6 +35,9 @@ module.exports = {
       url: [
         "/",
         "/polityka-prywatnosci/",
+        // widok z formularzem (5A): mapa statyczna, moduł formularzy; Turnstile
+        // ładuje się dopiero po focusie, więc nie wchodzi do pomiaru
+        "/kontakt/",
         "/oferty/",
         // lista SSG z fixture'u (4.2 a): 2 karty, obniżka, plakietka Sprzedane
         "/oferty/mieszkanie-na-sprzedaz/",

@@ -1,0 +1,283 @@
+/* Formularze — style wspólne (klasy `fm-*`, globalne; arkusz importuje
+   FormFrame.astro). Wygląd pól z designu (kontakt.html, sprzedaj-z-nami
+   .html): etykieta nad polem, pole 52/54 px z cienkim obrysem, fokus
+   miedziany. Stany, których design nie ma (błąd, wysyłanie, potwierdzenie,
+   błąd wysyłki) — docs/analiza-formularze-a.md §3.
+   Pola mają PODŁOGĘ font-size 16 px (Safari iOS zoomuje stronę przy
+   fokusie mniejszego pola). Próg 1025 px W PARZE z DESKTOP_MIN_PX. */
+
+.fm-frame {
+  /* potwierdzenie i pierwsze błędne pole lądują pod stałym paskiem */
+  scroll-margin-top: calc(var(--hdr-h) + 16px);
+}
+.fm-form,
+.fm-done {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(18px, 5vw, 24px);
+}
+/* własny `display` wygrywa z atrybutem hidden — przywracamy go jawnie */
+.fm-form[hidden],
+.fm-done[hidden],
+.fm-srv[hidden],
+.fm-tel[hidden] {
+  display: none;
+}
+
+/* ── pole ── */
+.fm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.fm-label {
+  font-size: 15px;
+  line-height: 1.3;
+  font-weight: 600;
+  color: var(--navy);
+}
+.fm-opt {
+  font-weight: 400;
+  color: var(--muted);
+}
+.fm-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 52px;
+  margin: 0;
+  padding: 0 14px;
+  border: 1px solid rgba(var(--glow), 0.24);
+  border-radius: 0;
+  background: var(--bg-card);
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--ink);
+  outline: none;
+  scroll-margin-top: calc(var(--hdr-h) + 48px);
+}
+.fm-input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+.fm-input--area {
+  height: auto;
+  min-height: 140px;
+  padding: 14px;
+  line-height: 1.5;
+  resize: vertical;
+}
+.fm-input:focus {
+  border-color: var(--copper);
+  box-shadow: 0 0 0 2px rgba(201, 130, 54, 0.45);
+}
+
+/* ── para e-mail / telefon ── */
+.fm-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.fm-row2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+.fm-hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* ── błędy: komunikat siedzi w HTML, pokazuje go klasa .err na
+   BEZPOŚREDNIM opakowaniu (para ma własny komunikat, pola — własne) ── */
+.fm-msg {
+  display: none;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  font-weight: 600;
+  color: var(--error);
+}
+.err > .fm-msg {
+  display: block;
+}
+.fm-field.err .fm-input,
+.fm-pair.err .fm-input {
+  border-color: var(--error);
+}
+.fm-field.err .fm-input:focus,
+.fm-pair.err .fm-input:focus {
+  box-shadow: 0 0 0 2px rgba(179, 38, 30, 0.3);
+}
+
+/* ── blok końcowy: zgoda → nota → przycisk (elementy kolumny flex) ── */
+.fm-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--slate);
+  text-wrap: pretty;
+  cursor: pointer;
+}
+.fm-consent input {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: var(--navy);
+  cursor: pointer;
+}
+.fm-note,
+.fm-nojs {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+.fm-note a {
+  color: var(--navy);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.fm-nojs {
+  padding: 12px 14px;
+  border-left: 2px solid var(--copper);
+  background: rgba(var(--glow), 0.06);
+  color: var(--slate);
+}
+
+/* pułapka na boty: ukryta wizualnie, NIE display:none */
+.fm-hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.fm-form {
+  position: relative;
+}
+.fm-ts:empty {
+  display: none;
+}
+
+.fm-srv {
+  margin: 0;
+  padding: 12px 14px;
+  border-left: 2px solid var(--error);
+  background: rgba(179, 38, 30, 0.06);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.fm-tel {
+  font-weight: 600;
+  color: var(--navy);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+/* przycisk wysyłki: wygląd `sx-btn` (content.css) na elemencie <button> */
+.sx-btn.fm-send {
+  border: 0;
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+.sx-btn.fm-send:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* ── ekran potwierdzenia (w miejscu formularza) ── */
+.fm-done {
+  align-items: flex-start;
+  gap: 14px;
+}
+.fm-done-h {
+  margin: 0;
+  font-size: clamp(22px, 6vw, 30px);
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--navy);
+  outline: none;
+}
+.fm-done-p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--slate);
+  text-wrap: pretty;
+}
+.fm-again {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  margin-top: 6px;
+  padding: 0 20px;
+  border: 1px solid var(--navy);
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--navy);
+  cursor: pointer;
+  transition:
+    background 0.3s ease,
+    color 0.3s ease;
+}
+.fm-again:hover {
+  background: var(--navy);
+  color: #fff;
+}
+.fm-again:focus-visible,
+.fm-consent input:focus-visible,
+.fm-note a:focus-visible,
+.fm-tel:focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: 3px;
+}
+
+/* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+@media (min-width: 1025px) {
+  .fm-form {
+    gap: clamp(18px, 1.8vw, 24px);
+  }
+  .fm-input {
+    height: 54px;
+    padding: 0 16px;
+  }
+  .fm-input--area {
+    height: auto;
+    min-height: 150px;
+    padding: 14px 16px;
+  }
+  .fm-pair {
+    gap: 10px;
+  }
+  .fm-row2 {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(16px, 1.6vw, 22px);
+  }
+  .sx-btn.fm-send {
+    align-self: flex-start;
+    min-height: 56px;
+    padding: 0 clamp(28px, 2.8vw, 40px);
+    border-radius: 0 0 0 clamp(14px, 1.4vw, 20px);
+  }
+  .fm-done-h {
+    font-size: clamp(24px, 2.2vw, 32px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fm-again {
+    transition: none;
+  }
+}

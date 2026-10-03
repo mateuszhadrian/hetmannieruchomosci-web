@@ -62,6 +62,8 @@ html {
   --silver: #dddddd; /* tekst i kreski na ciemnym tle */
   --line: #e2dfd8;
   --line-soft: #ece9e3;
+  /* błąd pola formularza (design go nie ma): 6,5:1 na białym */
+  --error: #b3261e;
 
   /* background */
   --bg: #f3f2ef; /* tło strony */
