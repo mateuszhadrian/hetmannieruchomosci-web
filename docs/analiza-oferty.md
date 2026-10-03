@@ -923,6 +923,24 @@ z 30 KB. Przekroczenie bramki = stop i zgłoszenie.
   zapas wyłącznie na lightbox 4.3 i hero 4.4; pozostałe progi bez zmian.
   HTML `/oferty/` na fixture: 96,5 KB brutto / 13,6 KB gzip (`props`
   28 434 znaków — przyrost wobec (b) to prop `nav` z R26).
+- **R34 — flaky „Ponów" (main 2026-10-03, bieg 37117494021, lokalnie
+  2/4 → 5/6):** `retry()` → `loadAll()` zdejmowało flagę błędu na
+  starcie próby, więc blok `[data-offers-error]` odmontowywał się
+  SYNCHRONICZNIE w handlerze kliknięcia; Playwright nie mógł potwierdzić
+  kliknięcia („element was detached from the DOM, retrying") i czekał
+  30 s na przycisk, którego już nie było (dane nadeszły, lista
+  wyrenderowana). Przy okazji druga rasa: po zastosowaniu nowego stanu
+  jeden kadr pokazywał komunikat ze STAREJ próby, zanim efekt wystartował
+  nową — test łapał ten kadr, a automatyczna próba (już bez `route.abort`)
+  zdejmowała blok w trakcie klikania. Poprawka w `SearchIsland.tsx`:
+  flaga błędu schodzi tylko po sukcesie albo wraz z nowym `applied`
+  (batch w jednym renderze); `pending` jako stan; próba automatyczna =
+  skeleton, ręczne ponowienie = blok zostaje z przyciskiem `disabled`
+  + `aria-busy` (`retrying`) do wyniku; `textsLoading`/`countFailed`
+  liczone z `pending`. Oba testy błędów 8/8 zielone w pętli lokalnej;
+  `oferty-wyspa` + `oferty-mobile` + `oferty` + `a11y` 89/89 na trzech
+  profilach; wyspa 38 611 B brutto / 13 755 B gzip (+375 / +147 wobec
+  (c)); visual `oferty` i `chrome` bez ruchu.
 - **`oferty-card` na profilach mobilnych rozjechał się bez zmiany karty:**
   nowy pasek narzędzi ma inną wysokość niż blok nawigacji (a), więc karta
   leży na innej ułamkowej pozycji y — zrzut elementu różni się

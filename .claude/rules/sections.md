@@ -242,6 +242,15 @@ mount)` w `useLayoutEffect` przy każdym renderze, `render(null)`
   wiecznego „…"; pole opisu `aria-busy` + `#op-opis-hint` podczas
   pobierania tekstów. Na liście rodzaju parametry adresu nigdy nie
   wymagają pełnego indeksu — wymaga go dopiero zmiana rodzaju w panelu.
+  **Stany pobierania (R34, po flaky na main 2026-10-03):** flaga błędu
+  schodzi dopiero po SUKCESIE pobrania albo przy nowym stanie
+  zastosowanym (`setApplied` kasuje ją w tym samym renderze); żądanie
+  w drodze to STAN `pending` (ref nie przerenderuje); próba automatyczna
+  pokazuje skeleton, ręczne „Ponów" trzyma blok błędu z przyciskiem
+  `disabled` + `aria-busy` (`retrying`) do wyniku. **Handler kliknięcia
+  nie może synchronicznie odmontować klikniętego elementu** — Playwright
+  nie potrafi wtedy potwierdzić kliknięcia („element was detached from
+  the DOM, retrying") i ponawia je na przycisku, którego już nie ma.
 - **Komentarz we frontmatterze `.astro` nie może zawierać `<` ze spacją**
   (np. „sheety < 1025"): kompilator Astro gubi typy frontmatteru
   i `astro check` zgłasza `any` w zupełnie innych liniach. `<noscript>`

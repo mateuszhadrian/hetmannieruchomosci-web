@@ -159,12 +159,19 @@ const loadSheets = () => (sheetsPromise ??= import("./sheets"));
 export function SearchIsland(p: SearchIslandProps) {
   const route = useMemo(() => parsePath(p.pathname), [p.pathname]);
   const initial = useMemo(() => parseSearch(p.pathname, ""), [p.pathname]);
-  const [applied, setApplied] = useState<SearchState>(initial);
+  const [applied, setAppliedRaw] = useState<SearchState>(initial);
   const [all, setAll] = useState<OfferIndexEntry[] | null>(
     p.complete ? p.entries : null,
   );
   const [texts, setTexts] = useState<Record<string, string> | null>(null);
   const [failed, setFailed] = useState({ all: false, texts: false });
+  /** Nowy stan zastosowany kasuje STARĄ flagę błędu w tym samym renderze
+   *  (batch) — inaczej jeden kadr pokazywał komunikat z poprzedniej próby,
+   *  zanim efekt wystartował nową (wyścig z klikiem w „Ponów"). */
+  const setApplied = (next: SearchState) => {
+    setAppliedRaw(next);
+    setFailed((f) => (f.all || f.texts ? { all: false, texts: false } : f));
+  };
   const [draft, setDraft] = useState<Draft>(() =>
     draftFrom(initial, p.entries),
   );
@@ -176,6 +183,14 @@ export function SearchIsland(p: SearchIslandProps) {
   const [sheet, setSheet] = useState<SheetKind | null>(null);
   const [view, setView] = useState<ListView>(OFFERS_LIST_VIEW);
   const loading = useRef({ all: false, texts: false });
+  /** żądanie w drodze — jako STAN (ref nie przerenderuje): ponowienie po
+   *  błędzie ma pokazać `aria-busy`, choć flaga błędu zostaje do sukcesu */
+  const [pending, setPending] = useState({ all: false, texts: false });
+  /** ręczne „Ponów" w toku: blok błędu ZOSTAJE zamontowany (przycisk
+   *  `disabled` + `aria-busy`) do wyniku — synchroniczne odmontowanie
+   *  w handlerze kliknięcia gubiło klik (Playwright: „element was
+   *  detached from the DOM, retrying"; flaky na main 2026-10-03) */
+  const [retrying, setRetrying] = useState(false);
   const sheets = useRef<SheetsModule | null>(null);
   const root = useRef<HTMLDivElement>(null);
 
@@ -192,42 +207,66 @@ export function SearchIsland(p: SearchIslandProps) {
   const needsAll = !withinRoute(applied);
   const needsTexts = applied.description !== undefined && texts === null;
   const renderable = !needsAll && !needsTexts;
-  const fetchFailed = (needsAll && failed.all) || (needsTexts && failed.texts);
+  const busy = pending.all || pending.texts;
+  // Błąd pokazujemy, gdy ostatnia próba padła i NIC nie jest w drodze
+  // (automatyczna próba po zmianie stanu dostaje skeleton, nie stary
+  // komunikat); wyjątek: ręczne ponowienie trzyma blok z zajętym przyciskiem.
+  const fetchFailed =
+    ((needsAll && failed.all) || (needsTexts && failed.texts)) &&
+    (!busy || retrying);
 
+  // Flaga błędu schodzi DOPIERO po udanym pobraniu, nie na starcie
+  // ponowienia: zdjęcie jej na starcie odmontowywało blok błędu i montowało
+  // go z powrotem po kolejnej porażce — klik w „Ponów" trafiał w węzeł
+  // właśnie odłączany (e2e: „element was detached from the DOM", flaky
+  // na main 2026-10-03). Ponowienie w trakcie trwającego żądania nic nie
+  // robi — żądanie i tak dobiegnie końca.
   const loadAll = () => {
     if (loading.current.all || all !== null) return;
     loading.current.all = true;
-    setFailed((f) => (f.all ? { ...f, all: false } : f));
+    setPending((q) => ({ ...q, all: true }));
     fetch(INDEX_URL)
       .then((r) =>
         r.ok ? (r.json() as Promise<OffersIndex>) : Promise.reject(r.status),
       )
-      .then((idx) => setAll(idx.offers))
+      .then((idx) => {
+        setAll(idx.offers);
+        setFailed((f) => (f.all ? { ...f, all: false } : f));
+      })
       .catch(() => {
         loading.current.all = false;
-        setFailed((f) => ({ ...f, all: true }));
-      });
+        setFailed((f) => (f.all ? f : { ...f, all: true }));
+      })
+      .finally(() => setPending((q) => ({ ...q, all: false })));
   };
   const loadTexts = () => {
     if (loading.current.texts || texts !== null) return;
     loading.current.texts = true;
-    setFailed((f) => (f.texts ? { ...f, texts: false } : f));
+    setPending((q) => ({ ...q, texts: true }));
     fetch(TEXT_URL)
       .then((r) =>
         r.ok
           ? (r.json() as Promise<Record<string, string>>)
           : Promise.reject(r.status),
       )
-      .then(setTexts)
+      .then((t) => {
+        setTexts(t);
+        setFailed((f) => (f.texts ? { ...f, texts: false } : f));
+      })
       .catch(() => {
         loading.current.texts = false;
-        setFailed((f) => ({ ...f, texts: true }));
-      });
+        setFailed((f) => (f.texts ? f : { ...f, texts: true }));
+      })
+      .finally(() => setPending((q) => ({ ...q, texts: false })));
   };
   const retry = () => {
+    setRetrying(true);
     if (needsAll) loadAll();
     if (needsTexts) loadTexts();
   };
+  useEffect(() => {
+    if (!busy) setRetrying(false);
+  }, [busy]);
 
   // Adres → stan po montażu i przy wstecz/dalej.
   useEffect(() => {
@@ -391,14 +430,18 @@ export function SearchIsland(p: SearchIslandProps) {
   const pages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const start = (applied.page - 1) * PAGE_SIZE;
   const inWindow = (i: number) => i >= start && i < start + PAGE_SIZE;
+  // błąd „widoczny" = flaga błędu bez trwającego ponowienia
   const draftFailed =
-    (draftNeedsAll && failed.all) || (draftNeedsTexts && failed.texts);
+    (draftNeedsAll && failed.all && !pending.all) ||
+    (draftNeedsTexts && failed.texts && !pending.texts);
   const showCount =
     !draftNeedsAll && !draftNeedsTexts
       ? applyFilters(pool, draftState, texts ?? undefined).length
       : null;
   const textsLoading =
-    (needsTexts || draftNeedsTexts) && !failed.texts && texts === null;
+    (needsTexts || draftNeedsTexts) &&
+    texts === null &&
+    (pending.texts || !failed.texts);
 
   const locationLabel =
     applied.locationSlug !== undefined
@@ -454,6 +497,8 @@ export function SearchIsland(p: SearchIslandProps) {
             type="button"
             class="op-btn op-btn--primary"
             data-offers-retry
+            disabled={retrying}
+            aria-busy={retrying || undefined}
             onClick={retry}
           >
             {EDGE.retry}
