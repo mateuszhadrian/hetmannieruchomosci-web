@@ -2,7 +2,9 @@
 
 > **Status:** ZAAKCEPTOWANA 2026-10-03 (wszystkie rekomendacje Q1–Q8
 > z §9). PR 1 (`feat/kontakt`: wspólna mechanika + `/kontakt/`)
-> zrealizowany — uzupełnienia w §10; PR 2 (`feat/sprzedaj`) przed nami.
+> ZMERGOWANY (PR #25, 2026-10-03) — uzupełnienia w §10; PR 2
+> (`feat/sprzedaj`: `/sprzedaj-z-nami/`) w toku — kod i testy gotowe
+> lokalnie 2026-10-04, uzupełnienia w §11.
 > Część 5A Etapu 5 wg instrukcji wykonawczej (dokument lokalny,
 > `docs/plan/`):
 > kroki 5.3 (kod wspólny), tabela 5A, 5.4 (testy); prompt §5A
@@ -570,3 +572,175 @@ błędu z numerem telefonu — to stan oczekiwany.
    Preview (własny adres — podglądy PR-ów nie piszą wtedy do biura).
 2. Wysyłki rzeczywiste (krok 5.5) dopiero po 5.1.
 3. Lokalny rejestr konfiguracji: dopisać nazwę zmiennej `KONTAKT_TO`.
+
+## 11. Uzupełnienia po implementacji — PR 2 (`feat/sprzedaj`)
+
+Zakres wg decyzji Q1–Q5: lokalizacja opcjonalna w bloku szczegółów (Q1),
+bez „liczby pokoi" (Q2), wariant paska nad hero jako jawna zmiana
+chrome'u (Q3), akapit hero bez obietnicy czasu (Q4), bramka ruchu jako
+komponent (Q5).
+
+### 11.1 Co powstało
+
+- `src/pages/sprzedaj-z-nami.astro` + `sections/sell/`: `SellHero`,
+  `SellSteps`, `SellForm`, `sell-copy.ts`, `sell-config.ts`,
+  `sell-motion.ts`.
+- `src/components/MotionGate.astro` (bramka `js-motion`; używają jej „/"
+  i „Sprzedaj z nami"), `src/components/forms/FormChoice.astro` (grupa
+  radio), `FormTel.astro` (slot telefonu w komunikatach), style kafli
+  i bloku opcjonalnego w `forms.css`, `SPRZEDAJ_FORM_COPY`
+  w `forms-copy.ts`.
+- Chrome (zakres Q3): `Navbar.astro` — prop `overHero`, próg
+  przemalowania z wysokości elementu `[data-nav-hero]`; `nav-config.ts`
+  — sam opis. `overlay.ts`, sheet, stopka i wygląd paska na pozostałych
+  trasach bez zmian.
+- `src/assets/img/sprzedaj-doradca-tall.webp` (720×816, 18 KB) — kadr
+  pionowy poniżej 768 px.
+- Testy: e2e `sprzedaj.spec.ts` (23 testy), `navigation.spec.ts` + 2
+  (wariant paska na drugiej trasie); visual `sprzedaj.spec.ts` (4 zrzuty
+  × 6 profili); `lighthouserc*.cjs` + `/sprzedaj-z-nami/`.
+
+### 11.2 Rozstrzygnięcia w trakcie (ciąg dalszy §2 i §10.2)
+
+| # | Temat | Rozstrzygnięcie |
+| --- | --- | --- |
+| F37 | **Q5 — bramka jako komponent, „/" bajt w bajt** | `dist/index.html` porównany przed i po wydzieleniu na buildzie ze stałą datą (`pnpm build:visual`): odcisk SHA-256 identyczny (`d1868b54…`), 39 248 B. Zwykły `pnpm build` nie nadaje się do takiego porównania — każdy przebieg wpisuje inny znacznik czasu w `data-build-now` (dwa buildy tego samego kodu różnią się tym jednym atrybutem). Komponent trzyma treść skryptu dosłownie (razem z komentarzem i wcięciem), stąd `<Fragment>` wokół skryptu; komentarz w skrypcie wspomina moduł ruchu strony głównej także na „Sprzedaj" — do poprawienia przy pierwszej zmianie skryptu, bez wartości funkcjonalnej |
+| F38 | **Q3 — skąd pasek zna hero** | strona przekazuje `<Navbar overHero />` i oznacza element hero atrybutem `data-nav-hero`; pasek liczy próg z `offsetHeight` tego elementu. Strona główna zostaje bez znacznika (hero pełnoekranowe → wysokość okna, czyli dokładnie dotychczasowy wzór — zachowanie „/" identyczne z konstrukcji, `HomeHero.astro` nietknięty). Wariant domyślnie nadal ma wyłącznie „/" (`overHero` nieprzekazany = strona główna) — `index.astro` nie musiał się zmienić poza bramką |
+| F39 | Zrzuty chrome'u po zmianie paska (próg 0) | `chrome-bar` (3 profile desktop), `chrome-sheet` (3 mobilne), `chrome-home-top` i `chrome-home-solid` (6), `chrome-footer` (6), a także `kontakt-form-errors`, `kontakt-form-done`, `home-top` — **0 różnic**; bez regeneracji. Wyjątek losowy, niezwiązany ze zmianą: F47 |
+| F40 | **F17 — pomiar kontrastu hero** | Metoda H14: zrzut okna z przezroczystym tekstem, kontrast liczony dla każdego piksela tła w prostokątach linii tekstu, wynik = 5. percentyl (najjaśniejsze 5 % tła); 14 rozmiarów okna (1920×1080, 1440×900, 1366×768, 1025×768, 1024×768, 820×1180, 768×1024, 600×900, 412×915, 390×844, 375×667, 360×640, 320×568, 844×390), scroll 0 i 30 % wysokości hero, dodatkowo ścieżka `reduce`. Gradient z designu: eyebrow na niskich telefonach 4,46:1 (320×568), 4,58–4,59:1 (360 i 375 px), 4,73:1 (600×900) — poniżej albo na granicy 4,5:1. **Wdrożone:** środkowy stop gradientu telefonu `.72` przy 46 % → `.80` przy 42 % (kolory tekstu bez zmian). Po zmianie (wszystkie rozmiary): eyebrow ≥ 5,3:1, akapit ≥ 8,0:1, `h1` biały ≥ 11,5:1, fraza miedziana `h1` ≥ 4,3:1 (duży tekst — próg 3:1). Desktop bez zmiany gradientu: eyebrow ≥ 6,0:1, akapit ≥ 8,0:1. **Pasek nad zdjęciem:** linki paska (biel .88, 13 px) ≥ 7,5:1, jasne logo ≥ 5,0:1. Axe zwraca te miejsca jako „incomplete" — pomiar jest jedynym strażnikiem |
+| F41 | Parallax zdjęcia PIERWSZEGO ekranu | moduł ruchu wpisuje transform dopiero po wczytaniu, a kadr stojący na górze strony o wysokości 66 % okna ma przy scrollu 0 przesunięcie ok. −15 px (1080 px okna) — zdjęcie przeskakiwałoby tuż po wejściu. Pozycja startowa jest więc policzona w CSS tym samym wzorem (zmienne `--sh-r` i `--px-a`; na telefonie wynik 0); e2e porównuje wartość z CSS z wartością wpisaną przez moduł |
+| F42 | Wysokość hero | `min-height` (nie `height`): telefon i tablet — okno, desktop — 66 % okna (design `vp-66`); na niskich oknach treść rozpycha hero zamiast się obcinać. Ułamek w `--sh-r` W PARZE z `SELL_HERO_DESKTOP_RATIO` |
+| F43 | Kafle radio a `aria-invalid` | `form-ui.ts` bez zmian: kontrolki błędnej grupy dostają `aria-invalid` i komunikat grupy w `aria-describedby` (tylko przy aktywnym błędzie), fokus idzie na pierwszy kafel; axe bez naruszeń w stanie błędów. Każde radio ma `required` — walidacja natywna działa bez JS |
+| F44 | Potwierdzenie zgłoszenia | treść ze specyfikacji formularza nie ma numeru telefonu — `FormFrame` pokazuje slot tylko wtedy, gdy teksty ramki mają zdanie, które do niego prowadzi (`doneCall`); `/kontakt/` bez zmian (HTML potwierdzenia ten sam, zrzut `kontakt-form-done` 0 różnic) |
+| F45 | Numery kroków | licznik CSS (dekoracja); drobny numer na telefonie (12 px) w odcieniu `--copper-text`, duży na desktopie w `--copper` jak w designie |
+| F46 | Kolejność i szerokość pól na desktopie | po przeniesieniu lokalizacji do bloku opcjonalnego (Q1) imię zajmuje cały wiersz (jak w formularzu kontaktowym), para e-mail / telefon — dwa pola w wierszu, blok opcjonalny — trzy pola w rzędzie + pole uwag |
+| F47 | Niestabilny zrzut `chrome-footer` (stan zastany) | na `webkit-iphone-14` pod obciążeniem równoległym WebKit rysuje czasem logo stopki w niższej jakości skalowania (różnica wyłącznie w prostokącie logo; 225 px wg Playwrighta przy progu 154 px). Pętla 12 przebiegów `chrome` + `kontakt` progiem 0: gałąź 2 / 12, **czysty main 1 / 12** — nie jest skutkiem PR 2; w izolacji zielony. Wpis w `docs/optional-todos.md` (utwardzenie speca bez zmiany baseline'ów) |
+
+### 11.3 Budżet (pomiar jak §12.5 analizy 4.2, `pnpm build:visual`)
+
+| Plik | Rola | brutto | gzip -9 |
+| --- | --- | --- | --- |
+| chrome (Navbar, Footer, `contact-details`, `site-config`) | pasek z progiem z wysokości hero: +70 B brutto wobec PR 1 | 8 205 B | 3 393 B |
+| `sprzedaj-z-nami.astro_…js` | skrypt strony (uzbrojenie formularzy, przypięcie `--svh`, bramka importu ruchu) | 618 B | 379 B |
+| `form-ui.*.js` | moduł formularzy — od PR 2 WSPÓLNY chunk dwóch widoków (w PR 1 siedział w skrypcie `/kontakt/`) | 5 802 B | 2 540 B |
+| `content-viewport.*.js` | przypięcie `--svh` — wspólny chunk „/" i „Sprzedaj" | 536 B | 354 B |
+| `preload-helper.*.js` | helper `import()` Vite (wspólny) | 1 254 B | 704 B |
+| `content-motion.*.js` + `sell-motion.*.js` | ruch: reveale i parallax — tylko przy `no-preference` | 1 320 B | 810 B |
+| **razem `script` na `/sprzedaj-z-nami/`** | | **17 735 B** | **8 180 B** |
+| `sprzedaj-z-nami.*.css` + `FormFrame.*.css` | widok + `content.css`; style formularzy (wspólny arkusz dwóch widoków) | 11 557 B | 3 235 B |
+| HTML `/sprzedaj-z-nami/` | | 30 192 B | 7 417 B |
+| skrypty inline | bramka ruchu 648 B, fade `BaseLayout` 1 077 B | | |
+| zdjęcie hero | kadr pionowy 18 190 B (poniżej 768 px), poziomy 30 150 B | | |
+
+**Skutek uboczny dla widoków spoza zakresu** — bundler wydziela moduły
+używane przez dwie strony do wspólnych plików, więc bajty i liczba żądań
+zmieniają się także tam, gdzie kod się nie zmienił:
+
+| Trasa | `script` brutto / gzip -9 po PR 2 | wobec stanu po PR 1 | żądania |
+| --- | --- | --- | --- |
+| „/" | 14 413 B / 6 773 B | +374 B / +475 B (osobne `content-viewport` i `content-motion`, pasek +70 B) | +2 |
+| `/kontakt/` | 14 049 B / 5 995 B | +123 B / −136 B (osobny `form-ui`) | +1 |
+| `/oferty/` (wyspa) | `SearchIsland` 38 653 B — co do bajta | bez zmian | 0 |
+
+Arkusz `/kontakt/` rośnie o style kafli i bloku opcjonalnego (wspólny
+`forms.css`): 11 715 B / 3 220 B wobec 9 745 B / 2 352 B.
+
+**LHCI lokalnie (1 przebieg, oba configi — asercje czyste na 10
+adresach):**
+
+| `/sprzedaj-z-nami/` | mobile | próg | desktop | próg |
+| --- | --- | --- | --- | --- |
+| `script` | 12 339 B (31 %) | 40 000 | 12 339 B (31 %) | 40 000 |
+| `total` | 169,1 KB (17 %) | 1 000 000 | 181,1 KB (15 %) | 1 200 000 |
+| w tym obrazy | 68,4 KB | | 80,3 KB | |
+| LCP | 2 114 ms | 3 200 | 529 ms | 1 800 |
+| element LCP | `h1` | | zdjęcie hero | |
+| TBT | 0 ms | 600 | 0 ms | 300 |
+| CLS | 0,000 | 0,05 | 0,007 | 0,05 |
+| wynik `performance` | 0,99 | 0,9 | 1,00 | 0,95 |
+| podmioty trzecie | 0 | | 0 | |
+
+Pozostałe trasy w tym samym przebiegu: „/" `script` 10 576 B (26 %
+bramki; po 4.4: 9 345 B — LHCI liczy transfer z nagłówkami, więc dwa
+dodatkowe żądania ważą więcej niż sam gzip), LCP mobile 2 111 ms,
+`total` desktop 845 KB (70 %); `/kontakt/` `script` 8 312 B (21 %; po
+PR 1: 7 829 B), LCP mobile 2 040 ms; `/oferty/` `script` 28 975 B (72 %).
+Prognoza z §6 (`script` ok. 8–8,5 KB gzip, LCP mobile = `h1`, desktop =
+zdjęcie) sprawdziła się. Margines LCP mobile ok. 1,09 s — poniżej
+regułowych 1,3 s, jak na „/" i `/kontakt/` (obserwacja). Progi
+nietknięte.
+
+### 11.4 Weryfikacja lokalna
+
+- format, lint, typecheck — czyste; unit 450 testów: 448 zielonych +
+  2 skip (38 plików; bez zmian — reguły zgłoszenia weszły w PR 1); build
+  89 stron; `test:dist` 6/6.
+- `pnpm test:e2e` na 6 profilach: **556 zielonych** (854 pominięcia
+  profili), 0 czerwonych; nowy `sprzedaj.spec.ts` = 23 testy (52
+  przebiegi na 3 profilach), `navigation.spec.ts` + 2 testy (wariant
+  paska na drugiej trasie, 6 profili); axe 0 naruszeń w trzech stanach formularza
+  po przejeździe strony (desktop i Pixel 5; allowlista PUSTA).
+- `test:visual`: **24 czerwone OCZEKIWANE** — nowe zrzuty bez baseline'u
+  (`sprzedaj-top`, `sprzedaj-full`, `sprzedaj-form-errors`,
+  `sprzedaj-form-done` × 6); pozostałe 157 zielone (`chrome`, `home`,
+  `kontakt`, `oferty`, `oferta`, `not-found` bez ruchu — chrome zmierzony
+  dodatkowo progiem 0, F39). Drugi przebieg `sprzedaj` na zapisanych
+  zrzutach: 24/24 stabilne (zrzuty robocze usunięte — baseline'y powstają
+  wg świętej kolejności). W jednym z pełnych przebiegów czerwony był też
+  `chrome-footer` na `webkit-iphone-14` — niestabilność zastana (F47).
+- `dist/index.html` po wydzieleniu `MotionGate`: bajt w bajt (F37).
+
+### 11.5 PLACEHOLDER (U9)
+
+`sell-copy.ts`: eyebrow, nagłówek (dwie frazy), akapit hero, „Wypełnij
+zgłoszenie", opis zdjęcia, trzy kroki (tytuł + zdanie).
+`forms-copy.ts` (`SPRZEDAJ_FORM_COPY`): akapit pod „Zgłoś nieruchomość",
+„Wolisz przez telefon?". Reszta tekstów formularza pochodzi ze
+specyfikacji w bazie wiedzy (etykiety, placeholdery, podpowiedź przy
+cenie, komunikaty, nota, potwierdzenie, błąd wysyłki).
+
+### 11.6 Co sprawdzić na `nowa.` i na fizycznym telefonie
+
+Lista z §8 (pkt 1–5, 7, 8) + po implementacji:
+
+1. **Hero na telefonie:** kadr zdjęcia (dłonie z podkładką widoczne nad
+   tekstem), czytelność eyebrow i akapitu na tle zdjęcia (gradient
+   mocniejszy niż w designie — F40), wysokość hero przy chowanym pasku
+   adresu Safari (hero nie może skakać).
+2. **Pasek nad hero:** jasne logo i kreski menu nad zdjęciem; przy
+   przewijaniu pasek przemalowuje się płynnie i jest PEŁNY, zanim zjedzie
+   pod niego jasna sekcja kroków (telefon: tuż przed końcem hero;
+   desktop: hero ma 66 % okna). Otwarcie menu na górze strony i po
+   przewinięciu nie zmienia stanu paska.
+3. **„Wypełnij zgłoszenie":** po dotknięciu nagłówek „Zgłoś
+   nieruchomość" staje pod paskiem (biała sekcja zaczyna się równo
+   z dolną krawędzią paska), treść nie zostaje pusta (reveal).
+4. **Kafle:** trafialność kciukiem (cały kafel jest celem), „Lokal
+   komercyjny" łamie się na dwie linie na wąskim ekranie — czy mieści się
+   w kaflu; brak zoomu strony po dotknięciu kafla.
+5. **Blok „Szczegóły nieruchomości":** rozwijanie i zwijanie, znak „+"
+   / „−"; klawiatura dla powierzchni (z przecinkiem) i ceny (cyfry);
+   wpisz w cenę tekst, zwiń blok i wyślij — blok ma się otworzyć,
+   a pole z błędem stanąć pod paskiem, nad klawiaturą.
+6. **Pusta wysyłka:** fokus na pierwszym kaflu, grupa „Typ nieruchomości"
+   z komunikatem widoczna pod paskiem (F36 — na iPhonie w Safari).
+7. **Reveale przy szybkim przewijaniu:** kroki i formularz nie zostają
+   puste; parallax zdjęcia hero nie szarpie przy chowaniu paska adresu
+   i zdjęcie nie „podskakuje" tuż po wczytaniu strony (F41).
+8. **Na dużym ekranie:** proporcja hero (66 % okna) i gradient skośny —
+   czy tekst po lewej jest czytelny na 13″ i na szerokim monitorze.
+9. DO kroku 5.1: wysyłka kończy się komunikatem błędu z numerem telefonu
+   (stan oczekiwany); potwierdzenie można zobaczyć tylko „za szybką"
+   wysyłką (poniżej 4 s od wejścia — pułapka pokazuje je bez żądania).
+
+### 11.7 Do decyzji / do wykonania poza kodem (Mateusz)
+
+1. Gradient hero na telefonie mocniejszy niż w designie (F40) — cena
+   kontrastu AA; alternatywą jest inny kolor eyebrow, nie jaśniejszy
+   gradient.
+2. Komentarz w skrypcie bramki ruchu (F37) — zostawiony dosłownie dla
+   porównania bajt w bajt; drobna korekta możliwa w dowolnym kolejnym
+   PR-ze (zmieni HTML „/" o kilkadziesiąt bajtów).
+3. Niestabilny `chrome-footer` (F47) — utwardzenie speca osobnym małym
+   PR-em albo w PR-ze porządkowym.
+4. Krok 5.1 (chmura) nadal przed nami — jak w §10.7.

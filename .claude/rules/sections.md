@@ -31,7 +31,9 @@ odziedziczone z szablonu projektu i stan chrome'u po Etapie 0.
   `js-motion` — triggery zawsze na scrollu DOKUMENTU. Wspólny moduł:
   `src/components/sections/content-motion.ts` (od 4.4 — opis w sekcji
   „Strona główna" niżej); strona treściowa dokłada tylko swoje wejście
-  chunku (`<widok>-motion.ts`) i bramkę inline w `<head>`.
+  chunku (`<widok>-motion.ts`) i bramkę inline w `<head>` — komponent
+  `src/components/MotionGate.astro` (`<MotionGate slot="head" />`; od 5A
+  używają go „/" i `/sprzedaj-z-nami/`).
 - **BEZ bibliotek ruchu i scrolla** — ruch sekcji to własne pętle rAF i
   `IntersectionObserver` (wzorzec `content-motion.ts`).
 - **`data-rv` tylko na blokach NIEinteraktywnych** (wrapper, nie link
@@ -62,21 +64,30 @@ odziedziczone z szablonu projektu i stan chrome'u po Etapie 0.
 
 - Pasek jest FIXED; treść stron odsuwa się o `var(--hdr-h)` (statyczny
   fallback w `global.css`, skrypt Navbara doprecyzowuje pomiarem).
-- Stany paska: `[data-scroll-nav]` + `[data-hero]` (SSR, WYŁĄCZNIE
-  `HOME_PATH` — wariant przezroczysty nad hero), `[data-solid]` (na „/"
-  po dojechaniu przemalowania do końca, na pozostałych trasach po
-  `NAV_SOLID_FALLBACK_PX`), `[data-open]` (otwarty sheet). Poza „/"
-  szklane tło jest widoczne zawsze. **Auto-hide paska NIE istnieje.**
-- **Wariant „/" to PRÓG SCROLLA, nie selektor hero:** postęp
-  `e = smoothstep((scrollY − 0,32·h) / (h − pasek − 0,32·h))`,
-  `h = innerHeight` (stałe `NAV_HOME_*` w `nav-config.ts`). Pętla rAF
+- Stany paska: `[data-scroll-nav]` + `[data-hero]` (SSR — wariant
+  przezroczysty „nad hero": strona główna oraz strony, które przekażą
+  paskowi prop `overHero`; od 5A `/sprzedaj-z-nami/`), `[data-solid]`
+  (w wariancie „nad hero" po dojechaniu przemalowania do końca, na
+  pozostałych trasach po `NAV_SOLID_FALLBACK_PX`), `[data-open]` (otwarty
+  sheet). Poza wariantem „nad hero" szklane tło jest widoczne zawsze.
+  **Auto-hide paska NIE istnieje.**
+- **Wariant „nad hero" to PRÓG SCROLLA liczony z wysokości hero:**
+  postęp `e = smoothstep((scrollY − 0,32·h) / (h − pasek − 0,32·h))`,
+  `h` = wysokość elementu `[data-nav-hero]` strony, a gdy strona go nie
+  oznaczy — `innerHeight` (strona główna: hero pełnoekranowe, bez
+  znacznika; `/sprzedaj-z-nami/`: hero 66 % okna na desktopie). Strona
+  z hero pod paskiem = `<Navbar overHero />` + `data-nav-hero` na
+  elemencie hero + hero zaczynające się od góry okna (własny
+  `padding-top` z `--hdr-h`). Stałe `NAV_HOME_*` w `nav-config.ts`
+  dotyczą całego wariantu. Tekst i logo paska stoją wtedy NAD zdjęciem —
+  kontrast linków paska wchodzi do pomiaru kontrastu hero (axe go nie
+  liczy). Pętla rAF
   dociąga wartość (reguła `scroll.md`) i pisze KILKA zmiennych CSS na
   nagłówku (`--nav-e`, `--nav-c`, `--nav-ch`, `--nav-sh`, `--nav-bar`);
   CSS konsumuje (szkło, scrim, crossfade logo jasne/ciemne, kolor
   linków i kresek burgera). Przy `reduce` — skok bez dociągania (to
   stan, nie animacja). Bez JS `<noscript>` przywraca pełny pasek.
-  Mechanizm `[data-navref]` z Etapu 0 nie istnieje — 4.4 nie potrzebuje
-  selektora hero (hero pełnoekranowe).
+  Mechanizm `[data-navref]` z Etapu 0 nie istnieje.
 - **Efekt liter** (`.hn-ch` z dwiema kopiami znaku, `.hn-sp` = spacja)
   generuje Astro z `mainNavItems` — zero JS; link ma `aria-label`
   w naturalnej pisowni, litery `aria-hidden`. Ruch liter WYŁĄCZNIE pod
@@ -416,7 +427,8 @@ true)`). **Akcja wymagająca przewinięcia strony („Napisz" → `#kontakt`)
   dwukolorowy, akapit, przycisk; kadr `.px-frame`; stany reveali) i
   `SectionHead.astro`. Style sekcji — scoped w komponentach; elementy z
   dziecka (`SectionHead`, kafel) przez `:global()`.
-- **Bramka ruchu:** skrypt `is:inline` w slocie `head` nadaje
+- **Bramka ruchu:** skrypt `is:inline` w slocie `head` (od 5A komponent
+  `MotionGate.astro` — HTML „/" po wydzieleniu bajt w bajt ten sam) nadaje
   `html.js-motion` przy `no-preference` PRZED malowaniem; skrypt strony
   ładuje `home-motion.ts` dynamicznym `import()`. Bezpieczniki, żeby
   treść nigdy nie została ukryta: `.catch` importu zdejmuje klasę, a
@@ -517,7 +529,27 @@ true)`). **Akcja wymagająca przewinięcia strony („Napisz" → `#kontakt`)
   przy polach OPCJONALNYCH, komunikat w HTML), `forms.css` (klasy
   `fm-*`, globalne), `forms-copy.ts` (teksty — importują je też testy),
   `form-config.ts` (endpoint, klucz Turnstile), `form-ui.ts` (mechanika,
-  ładowana ZAWSZE — to funkcja, nie dekoracja; strona woła `initForms()`).
+  ładowana ZAWSZE — to funkcja, nie dekoracja; strona woła `initForms()`),
+  `FormChoice.astro` (grupa radio: `fieldset` + `legend`, kafle
+  z natywnym `input`, komunikat pod grupą; `data-f` na fieldsecie),
+  `FormTel.astro` (slot telefonu w komunikatach — kotwica bez białych
+  znaków w środku; formatter rozbija ją na linie wszędzie, gdzie stoi
+  w wyrażeniu, a białe znaki w kotwicy są podkreślane).
+- **Kafle radio** niosą identyfikatory słownika CRM (`ESTATE_TYPES`,
+  `TRANSACTIONS` w `contact-form.ts` — wartości nie zmieniać; kolejność
+  i etykiety to interfejs). Radio nie ma pozycji startowej: brak
+  zaznaczenia = „nie wybrano". Każde radio grupy ma `required`
+  (walidacja natywna bez JS). Błąd grupy = klasa `.err` na fieldsecie;
+  fokus idzie na PIERWSZY kafel grupy, zmiana wyboru gasi błąd.
+- **Pola opcjonalne w `<details class="fm-more">`** (natywne — działa
+  bez JS): pola wewnątrz nie powtarzają dopisku „(opcjonalnie)" (niesie
+  go nagłówek bloku). Błąd pola w zwiniętym bloku — także zwrócony przez
+  serwer — otwiera blok przed fokusem (`focusFirstError`). Test, który
+  wypełnia pola bloku, najpierw go rozwija (pole w zwiniętym `<details>`
+  nie jest widoczne).
+- Potwierdzenie pokazuje numer telefonu tylko wtedy, gdy teksty ramki
+  mają zdanie, które do niego prowadzi (`doneCall` niepuste — kontakt);
+  zgłoszenie nieruchomości numeru w potwierdzeniu nie ma.
 - **Zero tekstów w JS.** Komunikaty walidacji siedzą w SSR i pokazuje je
   CSS przy klasie `.err` na BEZPOŚREDNIM opakowaniu (`.err > .fm-msg`);
   skrypt zapala tylko klasę. Etykieta przycisku w trakcie wysyłki
@@ -591,3 +623,42 @@ true)`). **Akcja wymagająca przewinięcia strony („Napisz" → `#kontakt`)
   `grid-template-areas` (DOM: telefon, e-mail, biuro, godziny).
 - Link „Otwórz w mapach" = `OFFICE_MAPS_URL` (zapytanie po adresie, ten
   sam cel co w stopce), zwykła kotwica otwierana po kliknięciu.
+
+## Sprzedaj z nami — stan po Etapie 5A / PR 2 (`docs/analiza-formularze-a.md` §11)
+
+- `src/pages/sprzedaj-z-nami.astro` + `sections/sell/`: `SellHero`,
+  `SellSteps`, `SellForm`; teksty w `sell-copy.ts` (PLACEHOLDER U9)
+  i `SPRZEDAJ_FORM_COPY` (`forms-copy.ts`), stałe w `sell-config.ts`,
+  wejście chunku ruchu `sell-motion.ts` (samo `initContentMotion()`).
+  Skrypt strony: `initForms()` zawsze, `armViewportPin`, dynamiczny
+  `import()` ruchu przy `no-preference`.
+- **Hero stoi POD przezroczystym paskiem** (`<Navbar overHero />`,
+  `data-nav-hero` na sekcji): telefon i tablet `min-height` = okno,
+  desktop 66 % okna — ułamek w zmiennej `--sh-r` (W PARZE
+  z `SELL_HERO_DESKTOP_RATIO`). Zdjęcie i `h1` to kandydaci LCP: `eager`,
+  `fetchpriority`, dwa `preload` z `media` na stronie, ŻADNEGO reveala
+  w hero. Kadr pionowy `sprzedaj-doradca-tall.webp` poniżej 768 px
+  (wycinek wokół pozycji 64 % — `object-position` jeden dla obu plików).
+- **Parallax hero ma pozycję startową w CSS** (reguła pod
+  `html.js-motion`, ten sam wzór co `content-motion.ts`, liczony
+  z `--sh-r` i `--px-a`): kadr pierwszego ekranu dostaje transform dopiero
+  po wczytaniu modułu ruchu, więc bez tej reguły zdjęcie przeskakiwało
+  o kilkanaście pikseli tuż po wejściu. Kolejny widok z parallaxem
+  w hero potrzebuje tego samego (e2e porównuje pozycję z CSS z tym, co
+  wpisuje moduł).
+- **Krycie gradientu hero jest z POMIARU kontrastu** (analiza §11.2):
+  środkowy stop na telefonie mocniejszy niż w designie (eyebrow na
+  niskich ekranach wypadał w jaśniejszej strefie). Zmiana krycia, koloru
+  tekstu albo zdjęcia = ponowny pomiar, razem z linkami paska.
+- Reveale: kroki (`li`, kaskada `--rvd`), nagłówek formularza,
+  opakowanie formularza jako `soft` (sam fade — bez `transform` nad
+  polami). Numery kroków to licznik CSS; drobny numer na telefonie ma
+  odcień `--copper-text`.
+- **Formularz „Zgłoś nieruchomość":** na wierzchu typ, transakcja, imię,
+  para e-mail / telefon; lokalizacja, powierzchnia, cena i uwagi w bloku
+  opcjonalnym (lokalizacja OPCJONALNA; pola „liczba pokoi" nie ma —
+  zestaw pól deklaruje polityka prywatności). Sekcja `#formularz` ma
+  `scroll-margin-top: var(--hdr-h)` — cel przycisku hero i powrotu po
+  wysyłce bez JS; e2e mierzy położenie po kliknięciu także na WebKicie.
+- „Wolisz przez telefon?" pod przyciskiem: slot `a[data-tel]`; bez JS
+  całe zdanie znika (`:has(> a[hidden])`).
