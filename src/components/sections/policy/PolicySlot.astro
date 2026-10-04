@@ -1,0 +1,18 @@
+---
+// Adres e-mail biura albo numer telefonu w treści polityki — slot
+// antyscrapingowy (`a[data-mail="biuro"]` / `a[data-tel]` wypełnia
+// fillContactSlots z Navbara; bez JS kotwica zostaje ukryta, a wiersz,
+// w którym stoi, znika — policy.css). Osobny komponent, bo kotwica nie
+// może mieć w środku białych znaków (byłyby podkreślone).
+import { CONTACT_PATH } from "@/lib/routes";
+
+interface Props {
+  kind: "mail" | "tel";
+}
+const { kind } = Astro.props;
+const attrs = kind === "mail" ? { "data-mail": "biuro" } : { "data-tel": "" };
+---
+
+<a class="pp-slot" {...attrs} href={CONTACT_PATH} hidden
+  ><span data-slot></span></a
+>

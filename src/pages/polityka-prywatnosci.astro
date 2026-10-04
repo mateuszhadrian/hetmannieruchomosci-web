@@ -1,10 +1,53 @@
 ---
-import SkeletonPage from "@/components/SkeletonPage.astro";
+// /polityka-prywatnosci/ (Etap 4.7, docs/analiza-polityka.md): nagłówek
+// z pasmem daty i wersji, spis treści na czystych kotwicach (`sticky` od
+// 1025 px), dwanaście sekcji, wyróżnione prawo sprzeciwu, pas „Pytania
+// o dane". Czysty Astro; pasek w wariancie stałym, widok bez ruchu (bez
+// bramki `js-motion`), bez wyspy i bez formularza.
+//
+// Treść to PROJEKT do przeglądu prawnika klientki (POLICY_DRAFT
+// w policy-config.ts). Dane administratora: nazwa rejestrowa, siedziba,
+// NIP i REGON stoją w statycznym HTML (dokument identyfikuje
+// administratora także bez JS); telefon i e-mail — przez sloty
+// antyscrapingowe.
+//
+// Kotwice działają natywnie (bez JS i bez `scroll-behavior: smooth`);
+// skrypt strony poprawia tylko pozycję po WEJŚCIU z kotwicą w adresie.
+import Footer from "@/components/Footer.astro";
+import Navbar from "@/components/navbar/Navbar.astro";
+import PolicyBody from "@/components/sections/policy/PolicyBody.astro";
+import PolicyContact from "@/components/sections/policy/PolicyContact.astro";
+import PolicyHead from "@/components/sections/policy/PolicyHead.astro";
+import PolicyToc from "@/components/sections/policy/PolicyToc.astro";
+import "@/components/sections/policy/policy.css";
 import { ui } from "@/i18n/ui";
+import BaseLayout from "@/layouts/BaseLayout.astro";
 ---
 
-<SkeletonPage
+<BaseLayout
   title={ui.pl["policyPage.title"]}
   description={ui.pl["policyPage.description"]}
-  heading="Polityka prywatności"
-/>
+>
+  <Navbar />
+
+  <main class="pp">
+    <div class="pp-in">
+      <PolicyHead />
+      <div class="pp-grid" data-policy-grid>
+        <PolicyToc />
+        <div class="pp-body" data-policy-body>
+          <PolicyBody />
+          <PolicyContact />
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<script>
+  import { armAnchorAlign } from "@/components/sections/content-anchor";
+
+  armAnchorAlign("[data-policy-section]");
+</script>

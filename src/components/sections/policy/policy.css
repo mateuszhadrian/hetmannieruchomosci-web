@@ -1,0 +1,553 @@
+/* /polityka-prywatnosci/ (Etap 4.7, docs/analiza-polityka.md). Design nie
+   ma tego widoku — układ wg wzorca z bazy wiedzy (pasmo daty i wersji,
+   spis treści na czystych kotwicach, `sticky` od progu, wyróżnione prawo
+   sprzeciwu), wygląd z tokenów i typografii pozostałych widoków
+   tekstowych. Klasy `pp-*` są globalne (arkusz importuje strona; treść
+   sekcji przychodzi slotem). Próg 1025 px W PARZE z POLICY_DESKTOP_MIN_PX.
+   Bez `scroll-behavior: smooth` — kotwice skaczą natywnie. */
+
+/* pasek chrome'u jest FIXED — treść startuje pod nim */
+.pp {
+  --pp-gap: 16px; /* odstęp sekcji od paska po skoku kotwicą */
+  --pp-toc-top: 24px; /* odstęp przyklejonego spisu od paska */
+  padding: calc(var(--hdr-h) + clamp(20px, 5.6vw, 32px))
+    max(var(--pad), calc((100% - 600px) / 2)) clamp(56px, 14vw, 88px);
+  background: var(--bg);
+  color: var(--slate);
+}
+
+/* ── nagłówek dokumentu ── */
+.pp-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(12px, 3.4vw, 16px);
+}
+.pp-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: clamp(12px, 3.3vw, 14px);
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--copper-text);
+}
+.pp-eyebrow::before {
+  content: "";
+  flex: none;
+  width: 18px;
+  height: 2px;
+  background: var(--copper);
+}
+.pp-h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(24px, 7.2vw, 42px);
+  line-height: 1.18;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--navy);
+  text-wrap: pretty;
+}
+.pp-lead {
+  margin: 0;
+  max-width: 62ch;
+  font-size: clamp(15px, 4.103vw, 18px);
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+.pp-draft {
+  box-sizing: border-box;
+  width: 100%;
+  margin: clamp(4px, 1.2vw, 8px) 0 0;
+  padding: 12px 16px;
+  border-left: 3px solid var(--copper);
+  background: rgba(201, 130, 54, 0.12);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* pasmo dokumentu: data obowiązywania, data zmiany, wersja */
+.pp-meta {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  box-sizing: border-box;
+  width: 100%;
+  margin: clamp(8px, 2.4vw, 12px) 0 0;
+  padding: 16px 0;
+  border-block: 1px solid var(--line);
+}
+.pp-meta dt,
+.pp-dl dt,
+.pp-contact-list dt,
+.pp-table thead th {
+  font-family: var(--font-label);
+  font-size: 12px;
+  line-height: 1.3;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--muted);
+}
+.pp-meta dd {
+  margin: 4px 0 0;
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+/* ── spis treści ── */
+.pp-grid {
+  display: block;
+  margin-top: clamp(24px, 6.5vw, 36px);
+}
+.pp-toc {
+  box-sizing: border-box;
+  padding: clamp(18px, 5vw, 24px);
+  background: var(--bg-card);
+  border-radius: 0 0 0 clamp(12px, 3.5vw, 16px);
+}
+.pp-toc-h {
+  margin: 0 0 8px;
+  font-family: var(--font-label);
+  font-size: 12px;
+  line-height: 1.3;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--copper-text);
+}
+.pp-toc-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: pp-toc;
+}
+.pp-toc-list li {
+  counter-increment: pp-toc;
+}
+.pp-toc-list a {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 10px 0;
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 500;
+  color: var(--navy);
+  text-decoration: none;
+}
+/* numer pozycji — dekoracja; kolejność niesie <ol> */
+.pp-toc-list a::before {
+  content: counter(pp-toc, decimal-leading-zero);
+  flex: none;
+  font-family: var(--font-label);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  color: var(--copper-text);
+}
+.pp-toc-list a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.pp-toc-list a:focus-visible,
+.pp-body a:focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: 2px;
+}
+
+/* ── treść ── */
+.pp-body {
+  margin-top: clamp(8px, 2.4vw, 16px);
+  counter-reset: pp-sec;
+  font-size: clamp(15px, 4.103vw, 17px);
+  line-height: 1.65;
+}
+.pp-sec {
+  counter-increment: pp-sec;
+  /* cel kotwicy staje POD stałym paskiem */
+  scroll-margin-top: calc(var(--hdr-h) + var(--pp-gap));
+  padding-block: clamp(28px, 7.5vw, 44px);
+  border-top: 1px solid var(--line);
+}
+.pp-sec:first-child {
+  border-top: 0;
+}
+.pp-h2 {
+  margin: 0 0 clamp(12px, 3.4vw, 18px);
+  font-family: var(--font-display);
+  font-size: clamp(20px, 5.6vw, 28px);
+  line-height: 1.22;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--navy);
+  text-wrap: pretty;
+}
+.pp-h2::before {
+  content: counter(pp-sec, decimal-leading-zero);
+  display: block;
+  margin-bottom: 8px;
+  font-family: var(--font-label);
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  font-weight: 600;
+  color: var(--copper-text);
+}
+.pp-body h3 {
+  margin: clamp(22px, 6vw, 30px) 0 8px;
+  font-family: var(--font-display);
+  font-size: clamp(16px, 4.4vw, 19px);
+  line-height: 1.3;
+  font-weight: 600;
+  color: var(--navy);
+  text-wrap: pretty;
+}
+.pp-body p {
+  margin: 0 0 12px;
+  max-width: 72ch;
+  text-wrap: pretty;
+}
+.pp-body p:last-child {
+  margin-bottom: 0;
+}
+.pp-body strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+.pp-body sup {
+  font-size: 0.7em;
+}
+/* odnośnik w bloku tekstu odróżnia podkreślenie, nie sam kolor */
+.pp-body a {
+  color: var(--navy);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+.pp-body a:hover {
+  color: var(--copper-text);
+}
+.pp-body a[hidden] {
+  display: none;
+}
+.pp-body q {
+  font-style: italic;
+  quotes: "„" "”";
+}
+
+/* preflight zeruje `list-style` — listy w tekście dostają znaczniki z powrotem */
+.pp-list {
+  margin: 0 0 12px;
+  padding-left: 1.3em;
+  max-width: 72ch;
+  list-style: disc;
+}
+.pp-list li {
+  margin-bottom: 6px;
+  padding-left: 0.2em;
+  text-wrap: pretty;
+}
+.pp-list li::marker {
+  color: var(--copper-text);
+}
+.pp-list--num {
+  padding-left: 1.6em;
+  list-style: decimal;
+}
+.pp-list--num li::marker {
+  font-family: var(--font-label);
+  font-weight: 600;
+}
+/* wiersz ze slotem ukrytym (bez JS) znika cały */
+.pp-row:has(a[hidden]) {
+  display: none;
+}
+.pp-nojs {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* karta grupy osób (sekcja „Po co…") */
+.pp-card {
+  box-sizing: border-box;
+  margin-top: 16px;
+  padding: clamp(18px, 5vw, 26px);
+  background: var(--bg-card);
+  border-radius: 0 0 0 clamp(12px, 3.5vw, 16px);
+}
+.pp-body .pp-card h3 {
+  margin-top: 0;
+}
+.pp-dl {
+  margin: 0;
+}
+.pp-dl dt {
+  margin-top: 14px;
+}
+.pp-dl dt:first-child {
+  margin-top: 0;
+}
+.pp-dl dd {
+  margin: 4px 0 0;
+  max-width: 72ch;
+  text-wrap: pretty;
+}
+/* lista odbiorców: nazwa → co i dlaczego */
+.pp-dl--list {
+  margin-bottom: 4px;
+}
+.pp-dl--list dt {
+  margin-top: 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-family: var(--font-body);
+  font-size: inherit;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+}
+.pp-dl--list dt:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+.pp-dl--list dd {
+  margin-bottom: 14px;
+}
+
+/* okresy przechowywania */
+.pp-table {
+  width: 100%;
+  margin: 4px 0 16px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.pp-table th,
+.pp-table td {
+  padding: 12px 12px 12px 0;
+  border-top: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: break-word;
+}
+.pp-table thead th {
+  border-top: 0;
+  padding-top: 0;
+}
+.pp-table tbody th {
+  font-weight: 600;
+  color: var(--ink);
+}
+.pp-table td:last-child,
+.pp-table th:last-child {
+  padding-right: 0;
+}
+.pp-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* znacznik niewiadomej w projekcie dokumentu (PolicyTodo.astro) */
+.pp-todo {
+  padding: 0 0.25em;
+  border-radius: 2px;
+  background: #f7e2c4;
+  color: var(--ink);
+  font-weight: 500;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* ── prawo sprzeciwu — wyróżnione (art. 21 ust. 4 RODO) ── */
+.pp-sec--objection {
+  margin-block: clamp(8px, 2.4vw, 12px);
+  padding: clamp(24px, 6.5vw, 36px) clamp(18px, 5vw, 32px);
+  border-top: 0;
+  border-left: 4px solid var(--copper);
+  border-radius: 0 0 0 clamp(12px, 3.5vw, 16px);
+  background: var(--navy);
+  color: rgba(255, 255, 255, 0.92);
+}
+.pp-sec--objection + .pp-sec {
+  border-top: 0;
+}
+.pp-sec--objection .pp-h2,
+.pp-body .pp-sec--objection strong,
+.pp-body .pp-sec--objection a {
+  color: #fff;
+}
+.pp-sec--objection .pp-h2::before {
+  color: var(--copper-light);
+}
+.pp-body .pp-sec--objection a:hover {
+  color: var(--copper-light);
+}
+.pp-body .pp-sec--objection a:focus-visible {
+  outline-color: #fff;
+}
+
+/* ── pas domykający „Pytania o dane" ── */
+.pp-contact {
+  box-sizing: border-box;
+  margin-top: clamp(8px, 2.4vw, 16px);
+  padding: clamp(22px, 6vw, 32px);
+  background: var(--bg-card);
+  border-radius: 0 0 0 clamp(12px, 3.5vw, 16px);
+}
+.pp-contact-h {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: clamp(18px, 5vw, 22px);
+  line-height: 1.25;
+  font-weight: 600;
+  color: var(--navy);
+}
+.pp-contact-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  margin: 16px 0 0;
+}
+.pp-contact-list dd {
+  margin: 4px 0 0;
+  color: var(--ink);
+}
+.pp-contact .pp-nojs {
+  margin-top: 14px;
+}
+
+/* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+@media (min-width: 1025px) {
+  .pp {
+    --pp-gap: 24px;
+    padding: calc(var(--hdr-h) + clamp(24px, 2.6vw, 48px)) var(--pad)
+      clamp(64px, 6vw, 96px);
+  }
+  .pp-in {
+    max-width: var(--col);
+    margin-inline: auto;
+  }
+  .pp-head {
+    gap: clamp(16px, 1.6vw, 22px);
+  }
+  .pp-h1 {
+    font-size: clamp(34px, 3.6vw, 54px);
+    line-height: 1.1;
+  }
+  .pp-lead {
+    font-size: clamp(16px, 1.25vw, 19px);
+  }
+  .pp-meta {
+    grid-template-columns: repeat(3, auto);
+    justify-content: start;
+    gap: clamp(32px, 4vw, 72px);
+  }
+  .pp-contact-list {
+    grid-template-columns: repeat(3, auto);
+    justify-content: start;
+    gap: clamp(32px, 4vw, 72px);
+  }
+
+  .pp-grid {
+    display: grid;
+    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+    /* `start`: rozciągnięty element siatki nie miałby po czym jechać */
+    align-items: start;
+    gap: clamp(40px, 5vw, 96px);
+    margin-top: clamp(40px, 4vw, 64px);
+  }
+  .pp-toc {
+    position: sticky;
+    top: calc(var(--hdr-h) + var(--pp-toc-top));
+    /* spis wyższy od okna (niski laptop) przewija się sam */
+    max-height: calc(100svh - var(--hdr-h) - 2 * var(--pp-toc-top));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .pp-toc-list a {
+    min-height: 0;
+    padding: 8px 0;
+    font-size: 14px;
+  }
+  .pp-body {
+    margin-top: 0;
+    font-size: clamp(16px, 1.15vw, 17px);
+  }
+  .pp-sec:first-child {
+    padding-top: 0;
+  }
+  .pp-table th:first-child {
+    width: 46%;
+  }
+}
+
+/* ════ DRUK — dokument bez chrome'u i spisu ════ */
+@media print {
+  .hdr,
+  .ft,
+  .pp-toc,
+  .pp-nojs {
+    display: none !important;
+  }
+  .pp {
+    padding: 0;
+    background: none;
+    color: #000;
+  }
+  .pp-grid {
+    display: block;
+    margin-top: 16pt;
+  }
+  .pp-body {
+    font-size: 10.5pt;
+    line-height: 1.5;
+  }
+  .pp-sec {
+    padding-block: 12pt;
+    break-inside: auto;
+  }
+  .pp-h2,
+  .pp-body h3 {
+    break-after: avoid;
+  }
+  .pp-card,
+  .pp-table tr {
+    break-inside: avoid;
+  }
+  .pp-card,
+  .pp-contact,
+  .pp-toc {
+    padding-inline: 0;
+    background: none;
+  }
+  /* tła nie są drukowane — ramka sprzeciwu dostaje obrys i ciemny tekst */
+  .pp-sec--objection {
+    border: 1.5pt solid #000;
+    background: none;
+    color: #000;
+  }
+  .pp-sec--objection .pp-h2,
+  .pp-body .pp-sec--objection strong,
+  .pp-body .pp-sec--objection a,
+  .pp-sec--objection .pp-h2::before {
+    color: #000;
+  }
+  .pp-todo {
+    background: none;
+    border: 0.75pt dashed #000;
+  }
+}

@@ -94,28 +94,29 @@ const ogAlt = ogImageAlt ?? SITE_TITLE;
         ),
       )
     }
+    {
+      /* Mikro-fade przy nawigacji WEWNĘTRZNEJ: wejście z zewnątrz (adres
+         odsyłający spoza serwisu albo jego brak) renderuje się bez żadnej
+         bramki — zero wpływu na LCP (LHCI i Playwright wchodzą na zimno).
+         Przy przejściach między stronami serwisu treść wjeżdża krótkim
+         fade'em zdejmowanym przez document.fonts.ready LUB twardy timeout
+         300 ms — strona nigdy nie zostaje ukryta (błąd JS/brak JS = brak
+         klasy nav-fade, czyli domyślnie widoczna).
+         Przejście wewnętrzne rozpoznajemy po document.referrer, NIE po
+         fladze w pamięci przeglądarki: strona niczego nie zapisuje
+         w urządzeniu odwiedzającego — tak deklaruje polityka prywatności.
+         Komentarz stoi POZA skryptem: `is:inline` wysyła treść skryptu
+         bez zmian, razem z komentarzami, na każdej stronie. */
+    }
     <script is:inline>
-      // Mikro-fade przy nawigacji WEWNĘTRZNEJ: pierwsza wizyta w karcie (brak flagi sessionStorage) renderuje
-      // się bez żadnej bramki — zero wpływu na LCP (LHCI i Playwright wchodzą
-      // na zimno). Przy kolejnych nawigacjach treść wjeżdża krótkim fade'em
-      // zdejmowanym przez document.fonts.ready LUB twardy timeout 300 ms —
-      // strona nigdy nie zostaje ukryta (błąd JS/brak JS = brak klasy
-      // nav-fade, czyli domyślnie widoczna).
       (() => {
-        try {
-          const KEY = "hm:visited";
-          const revisit = sessionStorage.getItem(KEY) === "1";
-          sessionStorage.setItem(KEY, "1");
-          if (!revisit) return;
-          const root = document.documentElement;
-          root.classList.add("nav-fade");
-          const reveal = () => root.classList.add("fonts-in");
-          setTimeout(reveal, 300);
-          if (document.fonts && document.fonts.ready)
-            document.fonts.ready.then(reveal, reveal);
-        } catch {
-          /* sessionStorage niedostępny (tryb prywatny) — bez fade */
-        }
+        if (!document.referrer.startsWith(location.origin + "/")) return;
+        const root = document.documentElement;
+        root.classList.add("nav-fade");
+        const reveal = () => root.classList.add("fonts-in");
+        setTimeout(reveal, 300);
+        if (document.fonts && document.fonts.ready)
+          document.fonts.ready.then(reveal, reveal);
       })();
     </script>
     <style is:global>

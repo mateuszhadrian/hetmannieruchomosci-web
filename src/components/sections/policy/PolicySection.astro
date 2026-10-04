@@ -1,0 +1,30 @@
+---
+// Sekcja polityki: `id` (kotwica spisu treści), `h2` z tytułem
+// z POLICY_SECTIONS, `aria-labelledby`. Numer sekcji to licznik CSS
+// (dekoracja — kolejność niosą spis `<ol>` i struktura nagłówków).
+// Sekcja „Prawo sprzeciwu" jest wyróżniona wizualnie (art. 21 ust. 4 RODO).
+import {
+  POLICY_OBJECTION_ID,
+  policyHeadingId,
+  policySectionTitle,
+  type PolicySectionId,
+} from "./policy-config";
+
+interface Props {
+  id: PolicySectionId;
+}
+const { id } = Astro.props;
+const headingId = policyHeadingId(id);
+const objection = id === POLICY_OBJECTION_ID;
+---
+
+<section
+  class:list={["pp-sec", objection && "pp-sec--objection"]}
+  id={id}
+  aria-labelledby={headingId}
+  data-policy-section
+  data-policy-objection={objection ? "" : undefined}
+>
+  <h2 class="pp-h2" id={headingId}>{policySectionTitle(id)}</h2>
+  <slot />
+</section>
