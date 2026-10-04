@@ -6,12 +6,13 @@
 // RUCH (reveale, parallax, film i zoom hero) siedzi w home-motion.ts,
 // ładowanym DYNAMICZNIE tylko przy prefers-reduced-motion: no-preference.
 // Stany startowe uzbraja klasa html.js-motion nadawana skryptem inline
-// PRZED malowaniem — bez JS i przy reduce strona jest w pełni statyczna
+// PRZED malowaniem (MotionGate.astro) — bez JS i przy reduce strona jest w pełni statyczna
 // i kompletna (.claude/rules/sections.md). Plakat hero to element LCP:
 // preload w <head>, żadnego reveala na nim.
 import posterTall from "@/assets/img/hero-poster-tall.webp";
 import poster from "@/assets/img/hero-poster.webp";
 import Footer from "@/components/Footer.astro";
+import MotionGate from "@/components/MotionGate.astro";
 import Navbar from "@/components/navbar/Navbar.astro";
 import "@/components/sections/content.css";
 import { HOME_POSTER_TALL_BELOW_PX } from "@/components/sections/home/home-config";
@@ -43,23 +44,8 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
     media={`(min-width: ${HOME_POSTER_TALL_BELOW_PX}px)`}
     fetchpriority="high"
   />
-  <script is:inline slot="head">
-    // PRZED malowaniem: ruch dozwolony → html.js-motion (uzbraja stany
-    // startowe reveali i zapas kadrów parallaxu; reszta w home-motion.ts).
-    // Bezpiecznik: gdyby moduł ruchu się nie wczytał (nie ustawi
-    // data-motion), klasa schodzi i treść NIE zostaje ukryta.
-    if (matchMedia("(prefers-reduced-motion: no-preference)").matches) {
-      const root = document.documentElement;
-      root.classList.add("js-motion");
-      addEventListener("load", () => {
-        setTimeout(() => {
-          if (!root.hasAttribute("data-motion")) {
-            root.classList.remove("js-motion");
-          }
-        }, 3000);
-      });
-    }
-  </script>
+  {/* bramka ruchu: html.js-motion PRZED malowaniem + bezpiecznik */}
+  <MotionGate slot="head" />
 
   <Navbar />
 
