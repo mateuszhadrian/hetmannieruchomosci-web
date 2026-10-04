@@ -38,6 +38,9 @@ module.exports = {
         // widok z formularzem (5A): mapa statyczna, moduł formularzy; Turnstile
         // ładuje się dopiero po focusie, więc nie wchodzi do pomiaru
         "/kontakt/",
+        // widok treściowy z formularzem (5A): hero ze zdjęciem pod paskiem
+        // (preload per kadr), reveale i parallax w chunku ruchu
+        "/sprzedaj-z-nami/",
         "/oferty/",
         // lista SSG z fixture'u (4.2 a): 2 karty, obniżka, plakietka Sprzedane
         "/oferty/mieszkanie-na-sprzedaz/",

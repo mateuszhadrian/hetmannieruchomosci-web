@@ -1,12 +1,17 @@
 // Nawigacja chrome'u: pasek fixed z sześcioma pozycjami na desktopie
-// (efekt liter za bramką reduced-motion), wariant strony głównej
-// przemalowywany pozycją scrolla (tylko „/”), menu mobilne jako bottom
-// sheet na overlay.ts (otwieranie, Esc, scrim, swipe-down, zamknięcie przy
-// przejściu na desktop), telefon i mail składane w JS (antyscraping),
-// stopka z kompletem danych firmy, kontrakt breakpointu projektu
-// (expectBreakpointFlip). Stan po Etapie 4.1 (docs/analiza-chrome.md).
+// (efekt liter za bramką reduced-motion), wariant „nad hero”
+// przemalowywany pozycją scrolla („/” oraz trasy z propem `overHero` —
+// /sprzedaj-z-nami/, próg z wysokości hero strony), menu mobilne jako
+// bottom sheet na overlay.ts (otwieranie, Esc, scrim, swipe-down,
+// zamknięcie przy przejściu na desktop), telefon i mail składane w JS
+// (antyscraping), stopka z kompletem danych firmy, kontrakt breakpointu
+// projektu (expectBreakpointFlip). Stan po Etapie 4.1
+// (docs/analiza-chrome.md) i 5A / PR 2 (docs/analiza-formularze-a.md §11).
 import { expect, test, type Page } from "@playwright/test";
-import { NAV_DESKTOP_MIN_PX } from "../../src/components/navbar/nav-config";
+import {
+  NAV_DESKTOP_MIN_PX,
+  NAV_HOME_FADE_START,
+} from "../../src/components/navbar/nav-config";
 import { footerNavItems, mainNavItems } from "../../src/i18n/nav";
 import {
   buildEmail,
@@ -14,7 +19,13 @@ import {
   buildPhoneHref,
 } from "../../src/lib/contact-details";
 import { BUSINESS } from "../../src/lib/jsonld";
-import { CONTACT_PATH, OFFERS_PATH, STATIC_PATHS } from "../../src/lib/routes";
+import {
+  CONTACT_PATH,
+  HOME_PATH,
+  OFFERS_PATH,
+  SELL_PATH,
+  STATIC_PATHS,
+} from "../../src/lib/routes";
 import { expectBreakpointFlip } from "../helpers/breakpoint";
 import {
   collectPageIssues,
@@ -174,6 +185,85 @@ test.describe("wariant strony głównej (data-scroll-nav)", () => {
     await settle(page, 400);
     await expect(root).not.toHaveAttribute("data-solid", "");
     await expect(bg).toHaveCSS("opacity", "0");
+  });
+});
+
+test.describe("wariant nad hero na drugiej trasie (prop overHero)", () => {
+  test("/sprzedaj-z-nami/: próg przemalowania z wysokości HERO strony, nie okna", async ({
+    page,
+  }) => {
+    await gotoReady(page, SELL_PATH);
+    const root = page.locator("[data-nav]");
+    const bg = page.locator(".hdr-bg");
+    await expect(root).toHaveAttribute("data-scroll-nav", "");
+    await expect(root).toHaveAttribute("data-hero", "");
+    await expect(root).not.toHaveAttribute("data-solid", "");
+    await expect(bg).toHaveCSS("opacity", "0");
+    await expect(page.locator(".hdr-logo-light")).toHaveCSS("opacity", "1");
+    await expect(page.locator(".hdr-logo-dark")).toHaveCSS("opacity", "0");
+    await expect(page.locator(".hdr-scrim")).toHaveCount(1);
+
+    // próg: start = 0,32 × h, koniec = h − pasek, h = wysokość elementu
+    // `[data-nav-hero]` (desktop: 66 % okna; telefon: całe okno)
+    const m = await page.evaluate(() => ({
+      hero: document.querySelector<HTMLElement>("[data-nav-hero]")!
+        .offsetHeight,
+      nav: document.querySelector<HTMLElement>("[data-nav]")!.offsetHeight,
+      vh: window.innerHeight,
+    }));
+    expect(m.hero).toBeGreaterThan(m.nav * 2);
+    const start = m.hero * NAV_HOME_FADE_START;
+    const end = m.hero - m.nav;
+
+    // w połowie drogi: stan pośredni
+    await scrollPageTo(page, (start + end) / 2);
+    await settle(page, 400);
+    const mid = parseFloat(
+      await bg.evaluate((el) => getComputedStyle(el).opacity),
+    );
+    expect(mid).toBeGreaterThan(0);
+    expect(mid).toBeLessThan(1);
+    await expect(root).not.toHaveAttribute("data-solid", "");
+
+    // koniec hero pod paskiem: pasek pełny. Na desktopie to pozycja, w
+    // której próg liczony z wysokości OKNA dałby dopiero stan pośredni
+    // (hero jest niższe od okna) — asercja odróżnia oba wzory.
+    await scrollPageTo(page, end + 1);
+    await settle(page, 400);
+    await expect(root).toHaveAttribute("data-solid", "");
+    await expect(bg).toHaveCSS("opacity", "1");
+    await expect(page.locator(".hdr-logo-light")).toHaveCSS("opacity", "0");
+    await expect(page.locator(".hdr-logo-dark")).toHaveCSS("opacity", "1");
+    if (m.hero < m.vh - 1) {
+      const windowBased =
+        (end + 1 - m.vh * NAV_HOME_FADE_START) /
+        (m.vh - m.nav - m.vh * NAV_HOME_FADE_START);
+      expect(windowBased).toBeLessThan(0.9);
+    }
+
+    // i z powrotem na górę
+    await scrollPageTo(page, 0);
+    await settle(page, 400);
+    await expect(root).not.toHaveAttribute("data-solid", "");
+    await expect(bg).toHaveCSS("opacity", "0");
+  });
+
+  test("bieżąca pozycja paska i trasy bez hero zostają bez wariantu", async ({
+    page,
+    isMobile,
+  }) => {
+    for (const path of STATIC_PATHS) {
+      const raw = await (await page.request.get(path)).text();
+      const header = raw.match(/<header[^>]*data-nav[^>]*>/)?.[0] ?? "";
+      expect(header.includes("data-scroll-nav"), path).toBe(
+        path === HOME_PATH || path === SELL_PATH,
+      );
+    }
+    test.skip(!!isMobile, "pozycje paska — układ desktop");
+    await gotoReady(page, SELL_PATH);
+    const current = page.locator('.hdr-nav .nav-link[aria-current="page"]');
+    await expect(current).toHaveCount(1);
+    await expect(current).toHaveAttribute("href", SELL_PATH);
   });
 });
 

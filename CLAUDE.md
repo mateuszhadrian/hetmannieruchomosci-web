@@ -938,11 +938,11 @@ offer-lightbox.ts` (chunk z dynamicznego `import()` w `offer-detail.ts`,
   3 200, do sprawdzenia przy najbliższym `lhci-measure.yml`).
 
 - **Etap 5 / 5A PR 1 (wspólna mechanika formularzy + `/kontakt/`) —
-  W TOKU** (2026-10-03, gałąź `feat/kontakt`, mini-analiza
-  `docs/analiza-formularze-a.md` zaakceptowana wg rekomendacji Q1–Q8;
-  kod i testy gotowe lokalnie, ZOSTAŁO: workflow baseline'ów linux,
-  baseline'y darwin, PR, merge, `prod-smoke`; potem PR 2
-  `/sprzedaj-z-nami/` na gałęzi `feat/sprzedaj`). Kroki w chmurze dla
+  WYKONANY** (2026-10-03, PR #25 zmergowany 21:30 UTC, commit `b1f70ed`;
+  checki PR-a oraz `ci.yml` i `prod-smoke` na main zielone; baseline'y
+  linux + darwin w PR; gałąź `feat/kontakt`, mini-analiza
+  `docs/analiza-formularze-a.md` zaakceptowana wg rekomendacji Q1–Q8).
+  Kroki w chmurze dla
   formularzy (klucz Resend, widget Turnstile, KV, zmienne Pages) NIE są
   jeszcze wykonane — kod i testy stoją na atrapach, `TURNSTILE_SITE_KEY`
   pusty, na `nowa.` wysyłka kończy się komunikatem błędu i nic nie
@@ -1008,7 +1008,77 @@ offer-lightbox.ts` (chunk z dynamicznego `import()` w `offer-detail.ts`,
   = 20 % bramki, `total` 181 KB mobile / 200 KB desktop, LCP mobile ok.
   2 040 ms (element LCP = mapa; margines ok. 1,16 s do 3 200 —
   obserwacja), desktop 475 ms, TBT 0, CLS ≤ 0,007, zero podmiotów
-  trzecich. Progi nietknięte.
+  trzecich. Progi nietknięte. Job `lighthouse` zielony na PR i na main;
+  liczb z runnera nie odczytano — LCP mobile `/kontakt/` (lokalnie ok.
+  2 040 ms przy progu 3 200) do sprawdzenia przy najbliższym
+  `lhci-measure.yml`.
+
+- **Etap 5 / 5A PR 2 (`/sprzedaj-z-nami/`) — W TOKU** (2026-10-04,
+  gałąź `feat/sprzedaj`, decyzje Q1–Q5 z `docs/analiza-formularze-a.md`,
+  uzupełnienia §11; kod i testy gotowe lokalnie, ZOSTAŁO: workflow
+  baseline'ów linux, baseline'y darwin, PR, merge, `prod-smoke`; potem
+  5B — zapytanie o ofertę i `/praca/`). Krok 5.1 (chmura dla formularzy)
+  nadal NIE jest wykonany — `TURNSTILE_SITE_KEY` pusty, na `nowa.` wysyłka
+  kończy się komunikatem błędu (stan oczekiwany).
+  `src/pages/sprzedaj-z-nami.astro` + `sections/sell/`: `SellHero` (hero
+  POD przezroczystym paskiem: telefon i tablet — całe okno, desktop —
+  66 % okna, ułamek w `--sh-r` W PARZE z `SELL_HERO_DESKTOP_RATIO`;
+  zdjęcie w `<picture>` z kadrem pionowym `sprzedaj-doradca-tall.webp`
+  720×816 poniżej 768 px, `eager`, `fetchpriority`, dwa `preload`
+  z `media`; hero BEZ reveala; parallax przez `.px-frame` z pozycją
+  startową policzoną w CSS — zdjęcie pierwszego ekranu nie przeskakuje po
+  wczytaniu modułu ruchu), `SellSteps` (3 kroki, numery jako licznik
+  CSS), `SellForm` (kafle radio z wartościami słownika CRM 1–4 i 131 /
+  132, etykieta „Lokal komercyjny", imię, para e-mail → telefon; blok
+  `<details>` „Szczegóły nieruchomości (opcjonalnie)": lokalizacja —
+  OPCJONALNA, powierzchnia, cena, uwagi; pola „liczba pokoi" nie ma),
+  `sell-copy.ts` (PLACEHOLDER U9; akapit hero bez deklaracji czasu
+  odpowiedzi), `sell-config.ts`, `sell-motion.ts`. Wspólne:
+  `src/components/MotionGate.astro` (bramka `js-motion` z bezpiecznikiem —
+  używają jej „/" i „Sprzedaj"; `dist/index.html` po wydzieleniu bajt
+  w bajt ten sam, porównanie na `build:visual` — zwykły `pnpm build`
+  wpisuje co przebieg inny znacznik `data-build-now`),
+  `forms/FormChoice.astro` (grupa radio: `fieldset` + `legend`),
+  `forms/FormTel.astro`, style kafli i bloku opcjonalnego w `forms.css`,
+  `SPRZEDAJ_FORM_COPY`; `FormFrame` pokazuje numer w potwierdzeniu tylko
+  przy niepustym `doneCall` (zgłoszenie go nie ma). CHROME (jedyna
+  zmiana, zakres Q3): `Navbar` dostał prop `overHero` (wariant
+  przezroczysty „nad hero" poza „/"), a próg przemalowania liczy się
+  z wysokości elementu `[data-nav-hero]` strony — bez znacznika
+  z wysokości okna, więc „/" działa jak dotąd; `overlay.ts`, sheet,
+  stopka bez zmian; zrzuty `chrome-*`, `home-top`, `kontakt-form-*`
+  zmierzone progiem 0 — 0 różnic, bez regeneracji. Rozstrzygnięcia
+  F37–F47 w analizie §11.2, w tym F40: kontrast tekstu hero z POMIARU —
+  środkowy stop gradientu na telefonie `.72` przy 46 % → `.80` przy 42 %
+  (eyebrow 4,46:1 → ≥ 5,3:1; akapit ≥ 8,0:1; linki paska nad zdjęciem
+  ≥ 7,5:1). Testy: e2e nowy `sprzedaj.spec.ts` (23 testy; treść
+  `chromium-1920`, hero, kotwica, formularz i ruch także
+  `chromium-pixel-5` i `webkit-iphone-14`), `navigation.spec` + 2
+  (wariant paska na drugiej trasie; `data-scroll-nav` tylko na „/"
+  i `/sprzedaj-z-nami/`); visual nowy `sprzedaj.spec.ts` (`sprzedaj-top`,
+  `sprzedaj-full`, `sprzedaj-form-errors`, `sprzedaj-form-done` × 6
+  profili = 24 PNG na platformę); `lighthouserc*.cjs` +
+  `/sprzedaj-z-nami/`. Weryfikacja lokalna: format/lint/typecheck, unit
+  450 (448 zielonych + 2 skip), build 89 stron, `test:dist` 6/6, e2e 556
+  (+854 skip profili) na 6 profilach — zielone, axe 0 naruszeń w trzech
+  stanach formularza; `test:visual` 24 czerwone OCZEKIWANE (nowe zrzuty
+  bez baseline'u), 157 zielonych. ZASTANA niestabilność (także na main):
+  `chrome-footer` na `webkit-iphone-14` pod obciążeniem równoległym bywa
+  czerwony ok. 1 na 10 przebiegów (jakość skalowania logo stopki
+  w WebKicie; w izolacji zielony) — wpis w `docs/optional-todos.md`.
+  BUDŻET (`build:visual`): `script` na `/sprzedaj-z-nami/` 17 735 B
+  brutto / 8 180 B gzip (chrome 8 205 + skrypt strony 618 + `form-ui`
+  5 802 + `content-viewport` 536 + helper `import()` 1 254 + ruch
+  1 320); moduły współdzielone przez dwie strony bundler wydzielił do
+  wspólnych plików, więc „/" ma teraz 14 413 / 6 773 B (+374 / +475,
+  dwa żądania więcej), `/kontakt/` 14 049 / 5 995 B (+123 / −136, jedno
+  żądanie więcej); wyspa listy co do bajta (38 653 B). LHCI lokalnie
+  (oba configi, asercje czyste na 10 adresach): `/sprzedaj-z-nami/`
+  `script` 12 339 B = 31 % bramki, `total` 169 KB mobile / 181 KB
+  desktop, LCP mobile 2 114 ms (element LCP = `h1`; margines ok. 1,09 s
+  do 3 200 — obserwacja), desktop 529 ms (element LCP = zdjęcie hero),
+  TBT 0, CLS ≤ 0,007, zero podmiotów trzecich; „/" `script` 10 576 B
+  (26 %), `/kontakt/` 8 312 B (21 %). Progi nietknięte.
 
 ## Dokumentacja
 

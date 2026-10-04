@@ -1,0 +1,42 @@
+---
+// Grupa wyboru jednej z kilku wartości: `fieldset` + `legend`, kafle
+// z natywnym `input[type=radio]` (wygląd z designu sprzedaj-z-nami.html),
+// komunikat błędu pod grupą (w HTML; pokazuje go CSS przy klasie `.err`
+// na fieldsecie — forms.css). `f` = nazwa pola z walidacji → `data-f`
+// grupy i `name` kontrolek. Wartości i etykiety przychodzą ze słowników
+// w lib/contact-form.ts (identyfikatory słownika CRM — nie zmieniać).
+// Radio nie ma pozycji startowej: brak zaznaczenia = „nie wybrano".
+import type { FieldName } from "@/lib/contact-form";
+
+interface Props {
+  /** Prefiks id kontrolek i komunikatu (unikalny na stronie). */
+  id: string;
+  f: Extract<FieldName, "type" | "transaction">;
+  legend: string;
+  options: readonly { value: string; label: string }[];
+  /** Komunikat „nie wybrano" (widoczny przy `.err`). */
+  error: string;
+}
+const { id, f, legend, options, error } = Astro.props;
+---
+
+<fieldset class="fm-choice" data-f={f}>
+  <legend class="fm-label">{legend}</legend>
+  <div class="fm-tiles" data-tiles={options.length}>
+    {
+      options.map((o) => (
+        <label class="fm-tile">
+          <input
+            type="radio"
+            id={`${id}-${o.value}`}
+            name={f}
+            value={o.value}
+            required
+          />
+          <span>{o.label}</span>
+        </label>
+      ))
+    }
+  </div>
+  <p class="fm-msg" id={`${id}-err`} data-msg>{error}</p>
+</fieldset>

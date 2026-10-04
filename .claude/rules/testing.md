@@ -4,6 +4,98 @@ Harness odziedziczony z szablonu projektu (konfiguracja
 Playwright/Vitest/axe/LHCI, 6 profili, helpery); liczby szablonu NIE
 obowiązują — baseline'y i budżety powstają od nowa w Etapie 3.
 
+STAN po Etapie 5A / PR 2 (`/sprzedaj-z-nami/`, wariant paska nad hero na
+drugiej trasie, bramka ruchu jako komponent): unit bez zmian (reguły
+i mail zgłoszenia nieruchomości weszły w PR 1). E2E `sprzedaj` (treść na
+`chromium-1920`; hero, kotwica, formularz i ruch także na
+`chromium-pixel-5` i `webkit-iphone-14`; teksty z `sell-copy.ts`
+i `SPRZEDAJ_FORM_COPY`; endpoint i Turnstile zaślepione jak w `kontakt`).
+Hero: `main h1` = tytuł + akcent, eyebrow, akapit BEZ deklaracji czasu
+odpowiedzi (`RESPONSE_TIME` pada tylko w potwierdzeniu), `a.sx-btn` →
+`#formularz`; `[data-sell-hero]` z `data-nav-hero`, górna krawędź 0,
+wysokość = okno × (`SELL_HERO_DESKTOP_RATIO` na desktopie, 1 poniżej
+progu) sub-pikselowo; `[data-sell-photo]` `eager`, `fetchpriority`,
+wymiary, `alt`, `opacity 1`, zero `[data-rv]` w hero; surowy HTML: dwa
+`link[rel=preload][as=image]` z `media` (kadr pionowy poniżej
+`SELL_HERO_TALL_BELOW_PX`), bramka `js-motion` w `<head>`; `currentSrc`
+przy 767 / 768. **Kotwica:** klik przycisku hero → adres z `#formularz`,
+górna krawędź `section#formularz` w odległości ≤ 1,5 px od dolnej
+krawędzi paska (poll), `h2` w oknie, `.sf-head` dochodzi do `opacity 1`
+— na trzech profilach, w tym WebKit. Treść: 3 kroki
+(`[data-sell-steps] ol > li`, `h2` + `p`), `h2` formularza,
+`aria-labelledby`. Pola: kafle `[data-f="type"] label.fm-tile` =
+`ESTATE_TYPES` (wartości `2, 1, 3, 4`, etykiety, `radio`, `required`,
+nic nie zaznaczone), `[data-f="transaction"]` = `TRANSACTIONS`
+(`131`, `132`), `fieldset > legend`; kolejność WSZYSTKICH kontrolek po
+id (`sf-type-*`, `sf-transaction-*`, `sf-name`, `sf-email`, `sf-phone`,
+`sf-location`, `sf-area`, `sf-price`, `sf-notes` — bez „liczby pokoi");
+`[data-sell-details]` bez `open`, `summary` = nagłówek + dopisek, pola
+bloku bez dopisku i bez `required`, `inputmode` decimal / numeric,
+podpowiedź ceny w `aria-describedby`; zgoda odznaczona i bez `required`;
+kolejność zgoda → nota → przycisk → `.sf-call`. Sloty: surowy `<main>`
+bez telefonu, maila, `tel:`, `mailto:`; DWIE puste kotwice
+z `<span data-slot>` (błąd wysyłki, „Wolisz przez telefon?"). Próg 1025:
+`expectBreakpointFlip` (`.ss-list` flex ↔ grid, `.ss-body` flex ↔
+contents) + liczba rzędów kafli (typ 2 ↔ 1), kolumny `.fm-row2` 1 ↔ 2
+i `.fm-row3` 1 ↔ 3, `--sh-r` 1 ↔ 0,66 (**czytaj `parseFloat` —
+minifikator zapisuje `.66`**). Surowy HTML: `method`/`action`, komplet
+`name`, `required` na radio i imieniu, brak `novalidate`, `<details>`
+bez `open`, `<noscript>`, wszystkie komunikaty błędów, brak hosta
+Turnstile. Bez JS: brak `js-motion`, każdy `[data-rv]` `opacity 1`,
+`.fm-nojs` widoczne, `.sf-call` ukryte, `<details>` rozwija się
+natywnie, `.hdr-bg` `opacity 1`. Formularz: pusta wysyłka → `.err` na
+`type`, `transaction`, `name`, `contact` (nie na `email`, `phone`,
+`area`, `price`), blok opcjonalny zostaje zwinięty, fokus na
+`#sf-type-2`, `aria-describedby` = `sf-type-err` tylko przy błędzie,
+fieldset ≥ `FORM_SCROLL_GAP_PX` pod paskiem i w oknie, zero żądań, wybór
+kafla gasi błąd grupy; **błąd w ZWINIĘTYM bloku** (pola wypełnione, blok
+zamknięty z powrotem) → `details[open]`, `.err` na `area` i `price`,
+fokus na `#sf-area` pod paskiem, `aria-describedby` ceny = podpowiedź +
+komunikat; minimum (typ, transakcja, imię, telefon) → jedno żądanie
+(`form=sprzedaj`, `type`, `transaction`, puste pola opcjonalne, bez
+`marketing`), potwierdzenie z `RESPONSE_TIME` i BEZ `a[data-tel]`,
+„kolejne zgłoszenie" → nic nie zaznaczone; komplet + zgoda → żądanie
+niesie `location`, `area`, `price`, `notes`, `marketing=1`; antyspam;
+Turnstile po focusie na KAFLU; 400 z `fields: ["price"]` otwiera blok,
+500 → `[data-form-error]` ze slotem; `font-size` kontrolek TEKSTOWYCH
+≥ 16 px (selektor bez radio — radio dziedziczy rozmiar etykiety kafla),
+kafle i `summary` ≥ 48 px, checkbox ≥ 24 px; zero hostów trzecich po
+`revealSweep`; axe po `revealSweep` w trzech stanach (wyjściowy; błędy
+z rozwiniętym blokiem; potwierdzenie — **przed skanem potwierdzenia
+`page.mouse.move(0, 0)` + `settle(400)`**: przycisk „kolejne zgłoszenie"
+ląduje pod kursorem zostawionym na przycisku wysyłki i axe trafiał
+w środek przejścia hover, czyli w kolory pośrednie; czerwony tylko pod
+obciążeniem, 1 na kilka przebiegów). Ruch: `js-motion`, `data-motion`,
+`.sf-head[data-rv]` `opacity 0` → `.is-in` (kroki na szerokim ekranie
+widać od razu — blokiem „spod zgięcia" jest nagłówek formularza), żaden
+`[data-rv]` nie jest linkiem, przyciskiem, polem ani etykietą; **sonda
+parallaxu hero**: zapas ≥ `PX_AMT_*` × wysokość kadru, przesunięcie
+wpisane przez moduł przy scrollu 0 = wzór (± 0,2 px) ORAZ pozycja
+startowa z CSS (po zdjęciu stylu inline) = wzór (± 1 px), obraz zakrywa
+kadr w sześciu pozycjach; **PUNKTOWA emulacja `reduce` z komentarzem**
+(trzeci dozwolony wyjątek): brak `js-motion`, treść widoczna,
+`[data-px]` `transform: none`, formularz uzbrojony (`novalidate`);
+scroll natywny. `navigation`: wariant „nad hero" na `/sprzedaj-z-nami/`
+— przezroczysty na górze, stan pośredni w połowie drogi, `data-solid`
+przy `hero − pasek` (na desktopie pozycja, w której wzór z wysokości
+OKNA dawałby jeszcze stan pośredni — asercja odróżnia wzory); surowy
+HTML ośmiu tras: `data-scroll-nav` ma wyłącznie „/" i `/sprzedaj-z-nami/`.
+Visual `sprzedaj` (`useVisualFixtureGuard`): `sprzedaj-top` (okno
+startowe), `sprzedaj-full` (fullPage po `revealSweep`, `<details>`
+otwarte przez `open = true` PRZED przejazdem, próg 0,001),
+`sprzedaj-form-errors` i `sprzedaj-form-done` (element
+`section#formularz` po `revealSweep`; pasek fixed schowany) × 6 profili
+= 24 PNG na platformę. Zrzuty chrome'u zmierzone progiem 0 po zmianie
+paska: `chrome-bar`, `chrome-sheet`, `chrome-home-top`,
+`chrome-home-solid`, `chrome-footer` — 0 różnic (bez regeneracji).
+**Znana niestabilność (stan zastany, także na main):** `chrome-footer`
+na `webkit-iphone-14` pod obciążeniem równoległym bywa czerwony w ok.
+1 na 10 przebiegów — WebKit rysuje wtedy logo stopki w niższej jakości
+skalowania (różnica wyłącznie w prostokącie logo, 225 px wg Playwrighta);
+w izolacji zielony. Czerwony `chrome-footer` bez zmiany stopki = powtórz
+spec w izolacji, zanim uznasz to za regres. LHCI mierzy dodatkowo
+`/sprzedaj-z-nami/`.
+
 STAN po Etapie 5A / PR 1 (wspólna mechanika formularzy + `/kontakt/`):
 unit `contact-form` (PRZEPISANY: rodzaje formularzy; `isBotTrap`;
 `validateForm` per formularz — dwa osobne pola kontaktowe, błąd pary
@@ -432,22 +524,23 @@ spec otwierający trasy ofert), `useChromium1920Only`, `collectPageIssues`.
 
 ## Co zmieniasz → co uruchamiasz
 
-| Zmiana                                                                                                                                                                                                                        | Warstwa (komenda)                                                                                                                                                                                                                                                                                                                                            |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `scripts/sync/**`, `src/lib/offers/**` (allow-lista, schemat, parser)                                                                                                                                                         | `pnpm test:unit` (kontrakt danych)                                                                                                                                                                                                                                                                                                                           |
-| `src/lib/img.ts`, `MEDIA_BASE`, `IMG_VARIANTS`                                                                                                                                                                                | `pnpm test:unit` (`img`, `media-r2`)                                                                                                                                                                                                                                                                                                                         |
-| `src/lib/offers/data.ts`, `redirects.ts`, integracje, `[...path].astro`                                                                                                                                                       | `pnpm test:unit && pnpm build && pnpm test:dist`                                                                                                                                                                                                                                                                                                             |
-| `scripts/sync/pipeline.ts`, `index.ts`, `fixtures.ts`, `sync.yml`                                                                                                                                                             | `pnpm test:unit` (`sync-index`, `sync-fixtures`); workflow NIE uruchamiać w sesji                                                                                                                                                                                                                                                                            |
-| `src/i18n/**`, `src/lib/*.ts` (img, routes, contact-form, jsonld, …)                                                                                                                                                          | `pnpm test:unit`                                                                                                                                                                                                                                                                                                                                             |
-| `scripts/subset-fonts.mjs`, `src/styles/fonts.css`                                                                                                                                                                            | `pnpm test:unit` (kontrakt subsetów)                                                                                                                                                                                                                                                                                                                         |
-| `src/scripts/**`, navbar, stopka, wyszukiwarka, galeria, formularze                                                                                                                                                           | `pnpm build && pnpm test:e2e`                                                                                                                                                                                                                                                                                                                                |
-| `src/lib/offers/{filters,index-entry,location-path,locations-ui,offers-ui,text,enums}.ts`, `src/components/offers/**` (w tym wyspa `SearchIsland.tsx`, sheety `sheets.tsx`), `src/pages/oferty/**`                            | `pnpm test:unit && pnpm build && pnpm test:dist && pnpm test:e2e` (+ warstwa wizualna przy zmianie wyglądu; po zmianie wyspy także pomiar budżetu — `docs/analiza-oferty.md` §12.5; sheety = profile mobilne `oferty-mobile`)                                                                                                                                |
-| `src/lib/offers/{details-rows,detail-meta}.ts`, `src/lib/jsonld.ts`, `src/components/offers/{OfferDetailPage,LightboxShell}.astro`, `offer-detail.css`, `src/scripts/{offer-detail,offer-lightbox}.ts`, `src/pages/404.astro` | `pnpm test:unit && pnpm build && pnpm test:e2e tests/e2e/oferta.spec.ts tests/e2e/not-found.spec.ts tests/e2e/a11y.spec.ts tests/e2e/seo.spec.ts` (+ `build:visual && test:visual tests/visual/oferta.spec.ts tests/visual/not-found.spec.ts` przy zmianie wyglądu; budżet `script` detalu i chunk lightboxa — `docs/analiza-oferta.md` §5 i §11)            |
-| `src/lib/contact-form.ts`, `functions/api/**`, `src/components/forms/**`, `src/components/sections/contact/**`, `src/pages/kontakt.astro`                                                                                     | `pnpm test:unit && pnpm build && pnpm test:e2e tests/e2e/kontakt.spec.ts tests/e2e/a11y.spec.ts tests/e2e/navigation.spec.ts` (+ `build:visual && test:visual tests/visual/kontakt.spec.ts tests/visual/chrome.spec.ts` przy zmianie wyglądu — `chrome.spec` stoi na `/kontakt/`); endpoint i Turnstile tylko jako atrapy, NIC nie wysyłać na skrzynkę biura |
-| `tests/helpers/**`, `lighthouserc*.cjs`, `.github/workflows/*.yml`                                                                                                                                                            | `pnpm test:unit` (helpery) + warstwa, której spec używa helpera; workflow NIE uruchamiać w sesji                                                                                                                                                                                                                                                             |
-| `src/pages/index.astro`, `src/components/sections/**` (sekcje strony głównej, moduły ruchu, `content.css`), `src/lib/offers/home-offers.ts`, `public/video/**`                                                                | `pnpm test:unit && pnpm build && pnpm test:e2e tests/e2e/home.spec.ts tests/e2e/navigation.spec.ts tests/e2e/a11y.spec.ts` (+ `build:visual && test:visual tests/visual/home.spec.ts tests/visual/chrome.spec.ts` przy zmianie wyglądu; wideo → `total` desktop w LHCI, szkło i kolory hero → pomiar kontrastu: `docs/analiza-home.md` §6, §10.2)            |
-| Każda zmiana wyglądu                                                                                                                                                                                                          | `pnpm build:visual && pnpm test:visual`                                                                                                                                                                                                                                                                                                                      |
-| Przed release                                                                                                                                                                                                                 | pełne `pnpm test` + `/release-check`                                                                                                                                                                                                                                                                                                                         |
+| Zmiana                                                                                                                                                                                                                        | Warstwa (komenda)                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/sync/**`, `src/lib/offers/**` (allow-lista, schemat, parser)                                                                                                                                                         | `pnpm test:unit` (kontrakt danych)                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `src/lib/img.ts`, `MEDIA_BASE`, `IMG_VARIANTS`                                                                                                                                                                                | `pnpm test:unit` (`img`, `media-r2`)                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `src/lib/offers/data.ts`, `redirects.ts`, integracje, `[...path].astro`                                                                                                                                                       | `pnpm test:unit && pnpm build && pnpm test:dist`                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `scripts/sync/pipeline.ts`, `index.ts`, `fixtures.ts`, `sync.yml`                                                                                                                                                             | `pnpm test:unit` (`sync-index`, `sync-fixtures`); workflow NIE uruchamiać w sesji                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `src/i18n/**`, `src/lib/*.ts` (img, routes, contact-form, jsonld, …)                                                                                                                                                          | `pnpm test:unit`                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `scripts/subset-fonts.mjs`, `src/styles/fonts.css`                                                                                                                                                                            | `pnpm test:unit` (kontrakt subsetów)                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `src/scripts/**`, navbar, stopka, wyszukiwarka, galeria, formularze                                                                                                                                                           | `pnpm build && pnpm test:e2e`                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `src/lib/offers/{filters,index-entry,location-path,locations-ui,offers-ui,text,enums}.ts`, `src/components/offers/**` (w tym wyspa `SearchIsland.tsx`, sheety `sheets.tsx`), `src/pages/oferty/**`                            | `pnpm test:unit && pnpm build && pnpm test:dist && pnpm test:e2e` (+ warstwa wizualna przy zmianie wyglądu; po zmianie wyspy także pomiar budżetu — `docs/analiza-oferty.md` §12.5; sheety = profile mobilne `oferty-mobile`)                                                                                                                                                                                                                                                                 |
+| `src/lib/offers/{details-rows,detail-meta}.ts`, `src/lib/jsonld.ts`, `src/components/offers/{OfferDetailPage,LightboxShell}.astro`, `offer-detail.css`, `src/scripts/{offer-detail,offer-lightbox}.ts`, `src/pages/404.astro` | `pnpm test:unit && pnpm build && pnpm test:e2e tests/e2e/oferta.spec.ts tests/e2e/not-found.spec.ts tests/e2e/a11y.spec.ts tests/e2e/seo.spec.ts` (+ `build:visual && test:visual tests/visual/oferta.spec.ts tests/visual/not-found.spec.ts` przy zmianie wyglądu; budżet `script` detalu i chunk lightboxa — `docs/analiza-oferta.md` §5 i §11)                                                                                                                                             |
+| `src/lib/contact-form.ts`, `functions/api/**`, `src/components/forms/**`, `src/components/sections/contact/**`, `src/pages/kontakt.astro`                                                                                     | `pnpm test:unit && pnpm build && pnpm test:e2e tests/e2e/kontakt.spec.ts tests/e2e/a11y.spec.ts tests/e2e/navigation.spec.ts` (+ `build:visual && test:visual tests/visual/kontakt.spec.ts tests/visual/chrome.spec.ts` przy zmianie wyglądu — `chrome.spec` stoi na `/kontakt/`); endpoint i Turnstile tylko jako atrapy, NIC nie wysyłać na skrzynkę biura                                                                                                                                  |
+| `src/pages/sprzedaj-z-nami.astro`, `src/components/sections/sell/**`, `src/components/forms/FormChoice.astro`, `src/components/MotionGate.astro`, `src/components/navbar/**` (wariant „nad hero")                             | `pnpm build && pnpm test:e2e tests/e2e/sprzedaj.spec.ts tests/e2e/navigation.spec.ts tests/e2e/home.spec.ts tests/e2e/kontakt.spec.ts tests/e2e/a11y.spec.ts` (+ `build:visual && test:visual tests/visual/sprzedaj.spec.ts tests/visual/chrome.spec.ts tests/visual/home.spec.ts tests/visual/kontakt.spec.ts` przy zmianie wyglądu; zmiana paska = pomiar `chrome-*` progiem 0; krycie gradientu, kolory tekstu albo zdjęcie hero = pomiar kontrastu: `docs/analiza-formularze-a.md` §11.2) |
+| `tests/helpers/**`, `lighthouserc*.cjs`, `.github/workflows/*.yml`                                                                                                                                                            | `pnpm test:unit` (helpery) + warstwa, której spec używa helpera; workflow NIE uruchamiać w sesji                                                                                                                                                                                                                                                                                                                                                                                              |
+| `src/pages/index.astro`, `src/components/sections/**` (sekcje strony głównej, moduły ruchu, `content.css`), `src/lib/offers/home-offers.ts`, `public/video/**`                                                                | `pnpm test:unit && pnpm build && pnpm test:e2e tests/e2e/home.spec.ts tests/e2e/navigation.spec.ts tests/e2e/a11y.spec.ts` (+ `build:visual && test:visual tests/visual/home.spec.ts tests/visual/chrome.spec.ts` przy zmianie wyglądu; wideo → `total` desktop w LHCI, szkło i kolory hero → pomiar kontrastu: `docs/analiza-home.md` §6, §10.2)                                                                                                                                             |
+| Każda zmiana wyglądu                                                                                                                                                                                                          | `pnpm build:visual && pnpm test:visual`                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Przed release                                                                                                                                                                                                                 | pełne `pnpm test` + `/release-check`                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 ## Zasady twarde
 
@@ -530,7 +623,8 @@ spec otwierający trasy ofert), `useChromium1920Only`, `collectPageIssues`.
 - NIE emuluj `prefers-reduced-motion: reduce` (bramka ruchu = testy
   „przechodzą" na martwej stronie); świadome, punktowe wyjątki per test
   weryfikujące ścieżkę reduce są dozwolone — oznaczaj je komentarzem
-  (dziś dwa: litery paska w `navigation`, hero i reveale w `home`).
+  (dziś trzy: litery paska w `navigation`, hero i reveale w `home`,
+  reveale i parallax w `sprzedaj`).
 - a11y (axe): allowlista znanych naruszeń w `tests/e2e/a11y.spec.ts` to
   RATCHET — startujemy od PUSTEJ; wpis wolno usunąć po realnej poprawie;
   nowych nie dopisuj bez decyzji Mateusza.

@@ -25,4 +25,5 @@
 | Przepięcie hosta mediów `MEDIA_BASE` na domenę klientki (dziś host tymczasowy) | Etap 8                                     |
 | Rozdzielenie arkuszy listy rodzaju i detalu oferty (jedna trasa `[...path]` linkuje CSS obu widoków na obu) | porządkowy PR domknięcia Etapów 4 + 5 — do rozważenia razem z przeglądem budżetów |
 | Przycisk wstecz systemu przy otwartej nakładce (lightbox, sheety): dziś opuszcza stronę, bo `overlay.ts` nie obsługuje `popstate` | po teście na fizycznym telefonie po 4.3 (b); zmiana = osobna decyzja o `overlay.ts` |
+| Niestabilny zrzut `chrome-footer` na `webkit-iphone-14` pod obciążeniem równoległym: WebKit rysuje czasem logo stopki w niższej jakości skalowania (ok. 1 na 10 przebiegów lokalnie, także na main sprzed 5A PR 2; w izolacji zielony) | porządkowy PR domknięcia Etapów 4 + 5 — utwardzenie speca bez zmiany baseline'ów; do tego czasu czerwony `chrome-footer` bez zmiany stopki = powtórka speca w izolacji |
 | Panel treści, blog, przełącznik „Praca" w panelu          | faza 2 — poza zakresem tej budowy               |

@@ -1,0 +1,194 @@
+---
+// Hero /sprzedaj-z-nami/ (5A, docs/analiza-formularze-a.md §1.2, F15–F17).
+// Zdjęcie pod treścią: telefon i tablet — całe okno, desktop — 66 % okna.
+// Pasek chrome'u stoi NAD hero w wariancie przezroczystym (`overHero`
+// w Navbarze); `data-nav-hero` oznacza element, z którego wysokości pasek
+// liczy próg przemalowania.
+//
+// Zdjęcie i `h1` to kandydaci LCP: `eager`, `fetchpriority`, preload na
+// stronie, ŻADNEGO reveala. Parallax zdjęcia przez `.px-frame` (wspólny
+// content-motion.ts). Kadr pionowy poniżej 768 px (para:
+// SELL_HERO_TALL_BELOW_PX) — wycinek wokół pozycji 64 %, więc
+// `object-position` jest jeden dla obu plików.
+//
+// Krycie gradientu pochodzi z POMIARU kontrastu tekstu nad zdjęciem
+// (analiza §11; axe zwraca dla tekstu nad obrazem „incomplete") — zmiana
+// krycia, koloru tekstu albo zdjęcia wymaga ponownego pomiaru.
+import heroTall from "@/assets/img/sprzedaj-doradca-tall.webp";
+import hero from "@/assets/img/sprzedaj-doradca.webp";
+import { SELL_FORM_ID, SELL_HERO_TALL_BELOW_PX } from "./sell-config";
+import { SELL_COPY as t } from "./sell-copy";
+---
+
+<section class="sh" data-sell-hero data-nav-hero>
+  <div class="sh-media px-frame">
+    <picture>
+      <source
+        media={`(max-width: ${SELL_HERO_TALL_BELOW_PX - 1}px)`}
+        srcset={heroTall.src}
+        width={heroTall.width}
+        height={heroTall.height}
+      />
+      <img
+        class="sh-photo"
+        data-px
+        data-sell-photo
+        src={hero.src}
+        width={hero.width}
+        height={hero.height}
+        alt={t.imageAlt}
+        loading="eager"
+        fetchpriority="high"
+        decoding="async"
+      />
+    </picture>
+    <span class="sh-shade" aria-hidden="true"></span>
+  </div>
+
+  <div class="sh-in">
+    <div class="sh-text">
+      <p class="sx-eyebrow sh-eyebrow">{t.eyebrow}</p>
+      <h1 class="sh-h1">{t.title} <span>{t.accent}</span></h1>
+      <p class="sh-lead">{t.lead}</p>
+      <a class="sx-btn sh-btn" href={`#${SELL_FORM_ID}`}>{t.cta}</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .sh {
+    /* wysokość hero jako ułamek okna (para: SELL_HERO_DESKTOP_RATIO) */
+    --sh-r: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    box-sizing: border-box;
+    min-height: calc(var(--svh, 100svh) * var(--sh-r));
+    padding: calc(var(--hdr-h) + clamp(19.6px, 5.641vw, 29.3px)) var(--pad)
+      clamp(32px, 9vw, 44px);
+    overflow: clip;
+    color: #fff;
+    background: var(--navy-deep);
+  }
+
+  /* ── zdjęcie + gradient ── */
+  .sh-media,
+  .sh-shade {
+    position: absolute;
+    inset: 0;
+  }
+  .sh-photo {
+    object-position: 64% 50%;
+  }
+  /* Pozycja startowa parallaxu (scroll 0) policzona w CSS, tym samym
+     wzorem co content-motion.ts: kadr o wysokości r × okno, stojący na
+     samej górze strony, ma postęp p = 1 / (1 + r), a obraz przesunięcie
+     (0,5 − p) × 2 × amplituda × wysokość kadru. Bez tego zdjęcie
+     przeskakiwałoby o kilkanaście pikseli w chwili wczytania modułu ruchu
+     (hero jest pierwszym ekranem). Procent liczy się od wysokości obrazu,
+     czyli kadru powiększonego o zapas (1 + 2 × amplituda). */
+  :global(html.js-motion) .sh-photo {
+    transform: translate3d(
+      0,
+      calc(
+        (0.5 - 1 / (1 + var(--sh-r))) * 2 * var(--px-a) /
+          (1 + 2 * var(--px-a)) * 100%
+      ),
+      0
+    );
+  }
+  /* Środkowy stop mocniejszy niż w designie (.72 przy 46 %): na niskich
+     telefonach eyebrow wypada w środkowej strefie gradientu i miał
+     4,46:1 (320 px); z tym stopem najsłabszy pomiar to 5,3:1. */
+  .sh-shade {
+    background: linear-gradient(
+      rgba(14, 32, 60, 0.42) 0%,
+      rgba(14, 32, 60, 0.8) 42%,
+      rgba(14, 32, 60, 0.94) 100%
+    );
+  }
+
+  /* ── treść ── */
+  .sh-in {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    margin-inline: auto;
+  }
+  .sh-text {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(12px, 3.4vw, 16px);
+  }
+  .sh-eyebrow {
+    color: var(--copper-light);
+  }
+  .sh-h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(28px, 8.2vw, 46px);
+    line-height: 1.14;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: #fff;
+    text-wrap: pretty;
+  }
+  .sh-h1 span {
+    color: var(--copper-light);
+  }
+  .sh-lead {
+    margin: 0;
+    max-width: 34ch;
+    font-size: clamp(15px, 4.103vw, 20px);
+    line-height: 1.55;
+    color: #dbe3ef;
+    text-wrap: pretty;
+  }
+  .sh-btn {
+    margin-top: clamp(6px, 2vw, 10px);
+  }
+  .sh-btn:focus-visible {
+    outline-color: #fff;
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .sh {
+      --sh-r: 0.66;
+      padding: calc(var(--hdr-h) + clamp(24px, 2.6vw, 48px)) var(--pad)
+        clamp(56px, 5.4vw, 88px);
+    }
+    .sh-shade {
+      background: linear-gradient(
+        100deg,
+        rgba(14, 32, 60, 0.94) 0%,
+        rgba(14, 32, 60, 0.62) 58%,
+        rgba(14, 32, 60, 0.3) 100%
+      );
+    }
+    .sh-in {
+      max-width: var(--col);
+    }
+    .sh-text {
+      align-items: flex-start;
+      gap: clamp(16px, 1.6vw, 22px);
+      max-width: 56ch;
+    }
+    .sh-h1 {
+      font-size: clamp(36px, 3.8vw, 58px);
+      line-height: 1.1;
+    }
+    .sh-lead {
+      max-width: 50ch;
+      font-size: clamp(17px, 1.3vw, 20px);
+      line-height: 1.6;
+    }
+    .sh-btn {
+      min-height: 56px;
+      margin-top: clamp(6px, 0.8vw, 12px);
+      padding: 0 clamp(28px, 2.8vw, 40px);
+      border-radius: 0 0 0 clamp(14px, 1.4vw, 20px);
+    }
+  }
+</style>
