@@ -1,7 +1,8 @@
 // Logika formularzy (src/lib/contact-form.ts) — pułapki na boty,
 // walidacja per formularz (dwa osobne pola kontaktowe, wymagane co
-// najmniej jedno), słowniki zgłoszenia nieruchomości i treść maili A i B
-// (Etap 5A, docs/analiza-formularze-a.md §5). Dane wyłącznie syntetyczne.
+// najmniej jedno), słowniki zgłoszenia nieruchomości i treść maili A, B
+// i D (Etap 5: docs/analiza-formularze-a.md §5, analiza-formularze-b.md
+// §4). Dane wyłącznie syntetyczne.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
@@ -16,10 +17,13 @@ import {
   formatMailPrice,
   isActiveFormKind,
   isBotTrap,
+  isFormPagePath,
   LOCATION_MAX,
   MARKETING_CONSENT,
   MESSAGE_MAX,
   NAME_MAX,
+  OFFER_NOT_IN_INDEX,
+  OFFER_NUMBER_RE,
   parseArea,
   parsePrice,
   stripNewlines,
@@ -27,9 +31,11 @@ import {
   validateForm,
   type FormRaw,
   type KontaktData,
+  type OfertaData,
   type SprzedajData,
 } from "../../src/lib/contact-form";
-import { CONTACT_PATH, SELL_PATH } from "../../src/lib/routes";
+import { CONTACT_PATH, OFFERS_PATH, SELL_PATH } from "../../src/lib/routes";
+import { offerRoutesFromData, readOffersTyped } from "../helpers/offers";
 
 const kontaktRaw: FormRaw = {
   form: "kontakt",
@@ -71,16 +77,68 @@ const sprzedajData: SprzedajData = {
   notes: "Trzecie piętro, do odświeżenia.",
 };
 
+// zapytanie o ofertę — numer i adres SYNTETYCZNE
+const ofertaRaw: FormRaw = {
+  form: "oferta",
+  offer: "XX000111",
+  name: "Ewa Zielińska",
+  email: "ewa@example.com",
+  phone: "",
+  message: "Jestem zainteresowana tą ofertą. Proszę o kontakt.",
+};
+
+const ofertaData: OfertaData = {
+  form: "oferta",
+  offer: "XX000111",
+  name: "Ewa Zielińska",
+  email: "ewa@example.com",
+  phone: "",
+  marketing: false,
+  message: "Jestem zainteresowana tą ofertą. Proszę o kontakt.",
+};
+
+const OFFER_PATH = "/oferty/mieszkanie-na-sprzedaz/poznan-testowo/xx000111/";
+const MAIL_OFFER = {
+  title: "Mieszkanie testowe 2 pokoje",
+  place: "Poznań, Testowo · ul. Próbna",
+  path: OFFER_PATH,
+};
+
 const CTX = { sentAt: "3 paź 2026, 12:00", origin: "https://podglad.example" };
 
 describe("formularze: rodzaje", () => {
-  it("endpoint zna cztery rodzaje, w 5A obsługuje dwa", () => {
+  it("endpoint zna cztery rodzaje, obsługuje trzy (praca w 5B / PR 2)", () => {
     expect(FORM_KINDS).toEqual(["kontakt", "sprzedaj", "oferta", "praca"]);
-    expect(ACTIVE_FORM_KINDS).toEqual(["kontakt", "sprzedaj"]);
-    expect(isActiveFormKind("kontakt")).toBe(true);
-    expect(isActiveFormKind("sprzedaj")).toBe(true);
-    for (const other of ["oferta", "praca", "", "KONTAKT", "inny"]) {
+    expect(ACTIVE_FORM_KINDS).toEqual(["kontakt", "sprzedaj", "oferta"]);
+    for (const kind of ACTIVE_FORM_KINDS) {
+      expect(isActiveFormKind(kind), kind).toBe(true);
+    }
+    for (const other of ["praca", "", "KONTAKT", "inny"]) {
       expect(isActiveFormKind(other), other).toBe(false);
+    }
+  });
+
+  it("cel powrotu bez JS: strony formularzy i detale ofert, nic więcej", () => {
+    for (const path of [CONTACT_PATH, SELL_PATH, OFFER_PATH]) {
+      expect(isFormPagePath(path), path).toBe(true);
+    }
+    for (const path of [
+      "/",
+      OFFERS_PATH,
+      "/oferty/mieszkanie-na-sprzedaz/",
+      "/oferty/mieszkanie-na-sprzedaz/poznan/",
+      "/oferty/index.json",
+      "/oferty/a/b/xx000111/dalej/",
+      "/kontakt",
+      "//obcy.example/oferty/a/b/xx1/",
+    ]) {
+      expect(isFormPagePath(path), path).toBe(false);
+    }
+  });
+
+  it("każdy adres detalu z danych jest celem powrotu (skip bez danych)", () => {
+    for (const path of offerRoutesFromData().details) {
+      expect(isFormPagePath(path), path).toBe(true);
     }
   });
 
@@ -226,6 +284,74 @@ describe("formularz kontaktowy: validateForm", () => {
       name: "Anna\r\nBcc: spam@evil.example",
     });
     expect(r.ok && r.data.name).toBe("Anna Bcc: spam@evil.example");
+  });
+});
+
+describe("zapytanie o ofertę: validateForm", () => {
+  it("poprawne zgłoszenie niesie numer, wiadomość i dane kontaktowe", () => {
+    const res = validateForm("oferta", {
+      ...ofertaRaw,
+      name: "  Ewa Zielińska ",
+    });
+    expect(res).toEqual({ ok: true, data: ofertaData });
+  });
+
+  it("numer jest normalizowany do wielkich liter", () => {
+    const res = validateForm("oferta", { ...ofertaRaw, offer: " xx000111 " });
+    expect(res.ok && res.data.form === "oferta" && res.data.offer).toBe(
+      "XX000111",
+    );
+  });
+
+  it("numer pusty albo o złym kształcie → pole `offer` (pierwsze na liście)", () => {
+    for (const offer of [
+      undefined,
+      "",
+      "000111",
+      "XX",
+      "XX 000111",
+      "XX000111;DROP",
+      "XX000111\nBcc: x@example.com",
+      "<b>XX1</b>",
+    ]) {
+      const res = validateForm("oferta", { ...ofertaRaw, offer, name: "" });
+      expect(res, String(offer)).toEqual({
+        ok: false,
+        fields: ["offer", "name"],
+      });
+    }
+  });
+
+  it("kształt numeru obejmuje każdy numer z danych (skip bez danych)", () => {
+    for (const source of ["data", "fixture"] as const) {
+      for (const o of readOffersTyped(source)) {
+        expect(OFFER_NUMBER_RE.test(o.number), o.number).toBe(true);
+      }
+    }
+  });
+
+  it("para kontaktowa i wiadomość jak w formularzu kontaktowym", () => {
+    expect(
+      validateForm("oferta", { ...ofertaRaw, email: "", phone: "600 100 200" })
+        .ok,
+    ).toBe(true);
+    expect(
+      validateForm("oferta", { ...ofertaRaw, email: "", message: " " }),
+    ).toEqual({ ok: false, fields: ["contact", "message"] });
+    expect(validateForm("oferta", { ...ofertaRaw, email: "ewa@" })).toEqual({
+      ok: false,
+      fields: ["email"],
+    });
+  });
+
+  it("zgoda marketingowa: domyślnie NIE; pola typu i transakcji nie dotyczą", () => {
+    const res = validateForm("oferta", { ...ofertaRaw, marketing: "1" });
+    expect(res.ok && res.data.marketing).toBe(true);
+  });
+
+  it("numer oferty nie jest polem pozostałych formularzy", () => {
+    const res = validateForm("kontakt", { ...kontaktRaw, offer: "XX000111" });
+    expect(res.ok && res.data).not.toHaveProperty("offer");
   });
 });
 
@@ -523,6 +649,112 @@ describe("mail B — zgłoszenie nieruchomości", () => {
 
   it("stopka wskazuje stronę zgłoszenia na hoście żądania", () => {
     expect(mail.text).toContain(`Strona: ${CTX.origin}${SELL_PATH}`);
+  });
+});
+
+describe("mail D — zapytanie o ofertę", () => {
+  const mail = buildMail(ofertaData, { ...CTX, offer: MAIL_OFFER });
+  const url = `${CTX.origin}${OFFER_PATH}`;
+
+  it("temat: dotychczasowy prefiks zapytania do agenta + numer oferty", () => {
+    expect(mail.subject).toBe(
+      "Zapytanie do agenta ze strony www hetmannieruchomosci.com — oferta XX000111",
+    );
+    expect(mail.subject).not.toMatch(/[\r\n]/);
+    expect(mail.subject).not.toContain("Ewa");
+  });
+
+  it("nagłówek z numerem, pod nim adres oferty oraz tytuł · lokalizacja", () => {
+    const lines = mail.text.split("\n");
+    expect(lines[0]).toBe(
+      "ZAPYTANIE WYSŁANE ZE STRONY WWW DO OFERTY NR XX000111",
+    );
+    expect(lines[1]).toBe(url);
+    expect(lines[2]).toBe(
+      "Mieszkanie testowe 2 pokoje · Poznań, Testowo · ul. Próbna",
+    );
+    expect(mail.html).toContain(
+      `do oferty nr <a href="${url}" style="color:#083870">XX000111</a>`,
+    );
+    expect(mail.html).toContain("Mieszkanie testowe 2 pokoje · Poznań");
+  });
+
+  it("etykiety stoją w ustalonej kolejności", () => {
+    const order = [
+      "Treść wiadomości:",
+      "Dane kontaktowe:",
+      "Imię i nazwisko:",
+      "Adres e-mail:",
+      "Numer telefonu:",
+      "Zgoda na oferty i informacje handlowe: Nie",
+      "Brzmienie zgody:",
+      "Wysłano:",
+      "Strona:",
+    ];
+    let at = -1;
+    for (const label of order) {
+      const next = mail.text.indexOf(label, at + 1);
+      expect(next, label).toBeGreaterThan(at);
+      at = next;
+    }
+    expect(mail.text).toContain(MARKETING_CONSENT);
+  });
+
+  it("stopka wskazuje adres oferty na hoście żądania", () => {
+    expect(mail.text).toContain(`Strona: ${url}`);
+    expect(mail.text).toContain("odpowiadając, piszesz do klienta");
+  });
+
+  it("wartości z indeksu są escapowane w HTML", () => {
+    const m = buildMail(ofertaData, {
+      ...CTX,
+      offer: {
+        title: 'Lokal "A&B" <script>x</script>',
+        place: "Testowo <i>",
+        path: OFFER_PATH,
+      },
+    });
+    expect(m.html).not.toContain("<script>");
+    expect(m.html).not.toContain("<i>");
+    expect(m.html).toContain("Lokal &quot;A&amp;B&quot; &lt;script&gt;");
+    expect(m.text).toContain('Lokal "A&B" <script>x</script> · Testowo <i>');
+  });
+
+  it("numer spoza indeksu: dopisek zamiast tytułu i linku, zgłoszenie kompletne", () => {
+    for (const offer of [null, undefined]) {
+      const m = buildMail(ofertaData, { ...CTX, offer });
+      expect(m.subject).toMatch(/— oferta XX000111$/);
+      expect(m.text.split("\n")[1]).toBe(OFFER_NOT_IN_INDEX);
+      expect(m.html).toContain(escapeHtml(OFFER_NOT_IN_INDEX));
+      expect(m.html).not.toContain("<a ");
+      expect(m.text).toContain(`Strona: ${CTX.origin}${OFFERS_PATH}`);
+      expect(m.text).toContain("Jestem zainteresowana tą ofertą.");
+      expect(m.text).toContain("ewa@example.com");
+    }
+  });
+
+  it("dane oferty z kontekstu nie przeciekają do maili A i B", () => {
+    for (const data of [kontaktData, sprzedajData]) {
+      const m = buildMail(data, { ...CTX, offer: MAIL_OFFER });
+      expect(m.text).not.toContain("Mieszkanie testowe");
+      expect(m.text).not.toContain(OFFER_PATH);
+      expect(m.subject).not.toContain("do agenta");
+    }
+  });
+});
+
+describe("maile A i B po dodaniu maila D", () => {
+  it("układ początku wiadomości bez zmian: nagłówek, pusta linia, etykieta", () => {
+    expect(buildMail(kontaktData, CTX).text.split("\n").slice(0, 3)).toEqual([
+      "KONTAKT ZE STRONY",
+      "",
+      "Treść:",
+    ]);
+    expect(buildMail(sprzedajData, CTX).text.split("\n").slice(0, 3)).toEqual([
+      "ZGŁOSZONA OFERTA",
+      "",
+      "Typ transakcji:",
+    ]);
   });
 });
 

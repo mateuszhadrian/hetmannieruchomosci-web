@@ -6,7 +6,8 @@
 // (warianty wg obecności filmu/spaceru/mapy), tabela = `detailRows()`
 // (ten sam moduł, te same dane), opis z „Czytaj więcej", film i spacer
 // jako linki — iframe DOPIERO po kliknięciu, mapa statyczna, kontakt
-// (sloty antyscrapingowe, miejsce na formularz 5B), panel boczny
+// (sloty antyscrapingowe; formularz zapytania ma własny spec:
+// oferta-zapytanie.spec.ts), panel boczny
 // (desktop) / pasek dolny (mobile), okruszki, meta/OG/JSON-LD, zero
 // żądań do podmiotów trzecich. Treść na chromium-1920; gesty i pasek
 // dolny na profilach mobilnych.
@@ -498,7 +499,7 @@ test.describe("detal oferty — treść (chromium-1920)", () => {
     await expect(page.locator('[data-anchor="mapa"]')).toHaveCount(0);
   });
 
-  test("kontakt: karta agenta, sloty (surowy HTML bez kontaktów poza opisem z CRM), miejsce na formularz, powrót do listy", async ({
+  test("kontakt: karta agenta, sloty (surowy HTML bez kontaktów poza opisem z CRM), formularz zapytania, powrót do listy", async ({
     page,
     request,
   }) => {
@@ -523,7 +524,7 @@ test.describe("detal oferty — treść (chromium-1920)", () => {
     await expect(contact.locator(".od-agent-role")).toContainText(
       AGENT.licenseNo,
     );
-    await expect(contact.locator("a[data-tel]")).toHaveAttribute(
+    await expect(contact.locator("a.od-contact-row[data-tel]")).toHaveAttribute(
       "href",
       buildPhoneHref(),
     );
@@ -534,8 +535,11 @@ test.describe("detal oferty — treść (chromium-1920)", () => {
     await expect(contact.locator('a[data-mail="joanna"]')).toContainText(
       buildEmail("joanna"),
     );
+    // formularz zapytania (5B) — kontrakty w oferta-zapytanie.spec.ts
     await expect(page.locator("[data-offer-inquiry]")).toHaveCount(1);
-    await expect(page.locator("[data-offer-inquiry]")).toBeEmpty();
+    await expect(
+      page.locator('[data-offer-inquiry] form[data-form="oferta"]'),
+    ).toBeVisible();
     const back = contact.locator(".od-back");
     await expect(back).toHaveAttribute(
       "href",
@@ -1033,7 +1037,7 @@ test.describe("detal oferty — lightbox i druk (chromium-1920)", () => {
       AGENT.name,
     );
     await expect(
-      page.locator("[data-offer-contact] a[data-tel]"),
+      page.locator("[data-offer-contact] a.od-contact-row[data-tel]"),
     ).toBeVisible();
   });
 });
