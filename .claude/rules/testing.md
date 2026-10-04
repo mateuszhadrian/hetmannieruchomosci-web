@@ -4,6 +4,82 @@ Harness odziedziczony z szablonu projektu (konfiguracja
 Playwright/Vitest/axe/LHCI, 6 profili, helpery); liczby szablonu NIE
 obowiązują — baseline'y i budżety powstają od nowa w Etapie 3.
 
+STAN po Etapie 5B / PR 1 (formularz zapytania przy ofercie): unit
+`contact-form` (+ rodzaj `oferta`: numer wg `OFFER_NUMBER_RE` —
+normalizacja do wielkich liter, zły kształt = pole `offer` PIERWSZE na
+liście; kształt obejmuje każdy numer z `data/` i fixture'u; para
+kontaktowa i wiadomość jak w kontakcie; `isFormPagePath` — strony
+formularzy i adresy DETALI, nic więcej, także każdy detal z danych;
+**mail D**: temat = prefiks zapytania do agenta + numer, linie 1–3 tekstu
+= nagłówek, adres z hosta żądania, „tytuł · lokalizacja", numer
+w nagłówku HTML jako link, escapowanie wartości z indeksu, wariant
+`OFFER_NOT_IN_INDEX` bez linku; dane oferty z kontekstu nie przeciekają
+do maili A i B; początek maili A i B bez zmian) i `contact-endpoint`
+(atrapa bindingu `ASSETS` serwująca indeks; dane SYNTETYCZNE — numer
+`XX000111`): numer z indeksu → tytuł, lokalizacja i adres Z INDEKSU;
+**pola `title` / `url` / `path` dosłane przez klienta nie trafiają do
+maila**; numer małymi literami; numer spoza indeksu, indeks 500 /
+nie-JSON / zły kształt, brak bindingu, wyjątek bindingu → 200 i mail
+z dopiskiem (log bez numeru i danych klienta); wpis z adresem spoza
+`/oferty/` pomijany; zły kształt numeru → 400 `fields: ["offer"]` bez
+czytania indeksu; indeks czytany dopiero PO pułapce, walidacji,
+sekretach, Turnstile i liczniku; **brak / nieliczbowy `Content-Length`
+→ 411 i `formData()` NIE wołane** (szpieg), 413 też bez czytania;
+303 z Refererem detalu wraca na TEN detal, Referer listy ofert albo obcy
+→ strona kontaktu. **Pomocnik `post()` ustawia `content-length` jawnie**
+(obiekt `Request` w Node nie dokłada go sam) — `null` = żądanie bez
+deklaracji. E2E `oferta-zapytanie` (nowy spec; treść `chromium-1920`,
+formularz także `chromium-pixel-5` i `webkit-iphone-14`; dane
+produkcyjne — pierwsza oferta z `readOffersTyped()`, skip przy zerze
+ofert; `useMediaStub`; endpoint i Turnstile zaślepione): formularz
+w `[data-offer-inquiry]#formularz`, ramka `.fm-frame--dark`,
+`aria-labelledby="od-h-contact"` i rola `form` z nazwą
+`DETAIL.contactHeading`; pola ukryte = DOKŁADNIE `form` i `offer`
+(= numer oferty), komplet `name` formularza (`form`, `offer`, `name`,
+`email`, `phone`, `message`, `marketing`, `firma`), kolejność kontrolek
+`of-name`, `of-email`, `of-phone`, `of-message`; `#of-message` =
+`OFERTA_FORM_COPY.message.value` (bez numeru oferty); zgoda odznaczona
+bez `required` = `MARKETING_CONSENT`, link polityki podkreślony;
+kolejność dzieci `.od-contact-in`: `od-contact-col`, `od-inquiry`,
+`od-back`; surowy HTML: `method` / `action`, brak `novalidate`,
+`name="offer" value="{numer}"`, komunikaty w HTML, `<noscript>`, brak
+hosta Turnstile, w formularzu brak `tel:` i `mailto:`; próg 1025:
+`.od-contact-in` flex ↔ grid, formularz pod kartą ↔ w prawej kolumnie,
+link powrotu pod formularzem ↔ pod kartą, `.fm-row2` 1 ↔ 2; bez JS
+(`javaScriptEnabled: false`): `.fm-nojs` widoczne (locator po klasie).
+Formularz: wysyłka bez imienia i kontaktu → `.err` na `name` i `contact`
+(NIE na `message` — ma treść startową), fokus na `#of-name`,
+**opakowanie pola ≥ `FORM_SCROLL_GAP_PX` pod dolną krawędzią PASKA
+KOTWIC** (kotwice stoją pod nagłówkiem; helper `placeUnderBars`)
+i w oknie, zero żądań; wyczyszczona wiadomość → `message`; imię +
+telefon → jedno żądanie, KOMPLET kluczy żądania (nic o ofercie poza
+`offer`), `message` = treść startowa, bez `marketing`; potwierdzenie
+z `RESPONSE_TIME` i slotem telefonu pod paskami; „kolejna wiadomość"
+przywraca treść startową (`form.reset()`); zgoda → `marketing=1`;
+antyspam; Turnstile: zero skryptów po wejściu i po przewinięciu do
+formularza, po focusie jeden; 400 `fields: ["email"]` → `.err`;
+**400 `fields: ["offer"]` (pole bez opakowania) → `[data-form-error]`
+ze slotem telefonu** — to samo przy numerze zepsutym w DOM (walidacja
+kliencka, zero żądań); 500 i przerwane żądanie; stan wysyłania;
+`font-size` ≥ 16 px, checkbox ≥ 24 px, przycisk ≥ 48 px; axe
+`.include("[data-offer-contact]")` w trzech stanach (przed skanem
+potwierdzenia `mouse.move(0, 0)` + `settle(400)`). Mobile: „Napisz"
+paska → `#kontakt` pod paskami (poll); **`[data-offer-bar]` ukryty przy
+fokusie w polu, w wiadomości i na przycisku wysyłki, widoczny po
+przejściu fokusu na `.od-back`**. `oferta.spec`: slot telefonu sekcji to
+`a.od-contact-row[data-tel]` (w sekcji są teraz też sloty komunikatów
+formularza — sam `a[data-tel]` łamie tryb strict). Visual `oferta`:
+cztery zrzuty pełnej strony niosą formularz (regeneracja na 6 profilach
+= 24 PNG), nowe `oferta-form-errors` i `oferta-form-done` (element
+`[data-offer-contact]`; `.hdr`, `[data-offer-anchors]` i `.od-bar-host`
+schowane na czas zrzutu; fokus zdjęty, kursor w `0,0`) × 6 = 12 PNG na
+platformę. Zmierzone progiem 0 po zmianie `forms.css` i `form-ui.ts`:
+`oferta-druk`, `oferta-lightbox`, `kontakt-*`, `sprzedaj-*`, `oferty-*`,
+`chrome-*` — 0 różnic (poza znanym `chrome-footer` na `webkit-iphone-14`
+pod obciążeniem). **Pomiar kontrastu ciemnego wariantu** (axe nie liczy
+tekstu nad zdjęciem): metoda i liczby w `docs/analiza-formularze-b.md`
+§10 — powtórz po zmianie kryć, gradientu sekcji albo zdjęcia tła.
+
 STAN po Etapie 5A / PR 2 (`/sprzedaj-z-nami/`, wariant paska nad hero na
 drugiej trasie, bramka ruchu jako komponent): unit bez zmian (reguły
 i mail zgłoszenia nieruchomości weszły w PR 1). E2E `sprzedaj` (treść na
@@ -535,7 +611,8 @@ spec otwierający trasy ofert), `useChromium1920Only`, `collectPageIssues`.
 | `src/scripts/**`, navbar, stopka, wyszukiwarka, galeria, formularze                                                                                                                                                           | `pnpm build && pnpm test:e2e`                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `src/lib/offers/{filters,index-entry,location-path,locations-ui,offers-ui,text,enums}.ts`, `src/components/offers/**` (w tym wyspa `SearchIsland.tsx`, sheety `sheets.tsx`), `src/pages/oferty/**`                            | `pnpm test:unit && pnpm build && pnpm test:dist && pnpm test:e2e` (+ warstwa wizualna przy zmianie wyglądu; po zmianie wyspy także pomiar budżetu — `docs/analiza-oferty.md` §12.5; sheety = profile mobilne `oferty-mobile`)                                                                                                                                                                                                                                                                 |
 | `src/lib/offers/{details-rows,detail-meta}.ts`, `src/lib/jsonld.ts`, `src/components/offers/{OfferDetailPage,LightboxShell}.astro`, `offer-detail.css`, `src/scripts/{offer-detail,offer-lightbox}.ts`, `src/pages/404.astro` | `pnpm test:unit && pnpm build && pnpm test:e2e tests/e2e/oferta.spec.ts tests/e2e/not-found.spec.ts tests/e2e/a11y.spec.ts tests/e2e/seo.spec.ts` (+ `build:visual && test:visual tests/visual/oferta.spec.ts tests/visual/not-found.spec.ts` przy zmianie wyglądu; budżet `script` detalu i chunk lightboxa — `docs/analiza-oferta.md` §5 i §11)                                                                                                                                             |
-| `src/lib/contact-form.ts`, `functions/api/**`, `src/components/forms/**`, `src/components/sections/contact/**`, `src/pages/kontakt.astro`                                                                                     | `pnpm test:unit && pnpm build && pnpm test:e2e tests/e2e/kontakt.spec.ts tests/e2e/a11y.spec.ts tests/e2e/navigation.spec.ts` (+ `build:visual && test:visual tests/visual/kontakt.spec.ts tests/visual/chrome.spec.ts` przy zmianie wyglądu — `chrome.spec` stoi na `/kontakt/`); endpoint i Turnstile tylko jako atrapy, NIC nie wysyłać na skrzynkę biura                                                                                                                                  |
+| `src/lib/contact-form.ts`, `functions/api/**`, `src/components/forms/**`, `src/components/sections/contact/**`, `src/pages/kontakt.astro`                                                                                     | `pnpm test:unit && pnpm build && pnpm test:e2e tests/e2e/kontakt.spec.ts tests/e2e/sprzedaj.spec.ts tests/e2e/oferta-zapytanie.spec.ts tests/e2e/a11y.spec.ts tests/e2e/navigation.spec.ts` (+ `build:visual && test:visual tests/visual/kontakt.spec.ts tests/visual/chrome.spec.ts` przy zmianie wyglądu — `chrome.spec` stoi na `/kontakt/`); endpoint i Turnstile tylko jako atrapy, NIC nie wysyłać na skrzynkę biura                                                                    |
+| `src/components/offers/OfferInquiry.astro`, sekcja kontaktu w `OfferDetailPage.astro` / `offer-detail.css`, wariant ciemny w `forms.css`, `lookupOffer` w `functions/api/kontakt.ts`                                          | `pnpm test:unit && pnpm build && pnpm test:e2e tests/e2e/oferta-zapytanie.spec.ts tests/e2e/oferta.spec.ts tests/e2e/a11y.spec.ts` (+ `build:visual && test:visual tests/visual/oferta.spec.ts` przy zmianie wyglądu; krycia tekstu albo tło sekcji = pomiar kontrastu, `forms.css` = pomiar LCP list rodzaju i detali: `docs/analiza-formularze-b.md` §10)                                                                                                                                   |
 | `src/pages/sprzedaj-z-nami.astro`, `src/components/sections/sell/**`, `src/components/forms/FormChoice.astro`, `src/components/MotionGate.astro`, `src/components/navbar/**` (wariant „nad hero")                             | `pnpm build && pnpm test:e2e tests/e2e/sprzedaj.spec.ts tests/e2e/navigation.spec.ts tests/e2e/home.spec.ts tests/e2e/kontakt.spec.ts tests/e2e/a11y.spec.ts` (+ `build:visual && test:visual tests/visual/sprzedaj.spec.ts tests/visual/chrome.spec.ts tests/visual/home.spec.ts tests/visual/kontakt.spec.ts` przy zmianie wyglądu; zmiana paska = pomiar `chrome-*` progiem 0; krycie gradientu, kolory tekstu albo zdjęcie hero = pomiar kontrastu: `docs/analiza-formularze-a.md` §11.2) |
 | `tests/helpers/**`, `lighthouserc*.cjs`, `.github/workflows/*.yml`                                                                                                                                                            | `pnpm test:unit` (helpery) + warstwa, której spec używa helpera; workflow NIE uruchamiać w sesji                                                                                                                                                                                                                                                                                                                                                                                              |
 | `src/pages/index.astro`, `src/components/sections/**` (sekcje strony głównej, moduły ruchu, `content.css`), `src/lib/offers/home-offers.ts`, `public/video/**`                                                                | `pnpm test:unit && pnpm build && pnpm test:e2e tests/e2e/home.spec.ts tests/e2e/navigation.spec.ts tests/e2e/a11y.spec.ts` (+ `build:visual && test:visual tests/visual/home.spec.ts tests/visual/chrome.spec.ts` przy zmianie wyglądu; wideo → `total` desktop w LHCI, szkło i kolory hero → pomiar kontrastu: `docs/analiza-home.md` §6, §10.2)                                                                                                                                             |

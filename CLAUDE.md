@@ -1013,11 +1013,22 @@ offer-lightbox.ts` (chunk z dynamicznego `import()` w `offer-detail.ts`,
   2 040 ms przy progu 3 200) do sprawdzenia przy najbliższym
   `lhci-measure.yml`.
 
-- **Etap 5 / 5A PR 2 (`/sprzedaj-z-nami/`) — W TOKU** (2026-10-04,
+- **Etap 5 / 5A PR 2 (`/sprzedaj-z-nami/`) — WYKONANY** (2026-10-04,
+  PR #26 zmergowany 09:20 UTC, commit `60f9a7c`; checki PR-a
+  i `prod-smoke` na main zielone; `ci.yml` na main (bieg 37191856382) zielony — `quality`, `e2e`,
+  `lighthouse`;
+  baseline'y linux + darwin w PR: 48 PNG, żaden inny baseline nietknięty;
   gałąź `feat/sprzedaj`, decyzje Q1–Q5 z `docs/analiza-formularze-a.md`,
-  uzupełnienia §11; kod i testy gotowe lokalnie, ZOSTAŁO: workflow
-  baseline'ów linux, baseline'y darwin, PR, merge, `prod-smoke`; potem
-  5B — zapytanie o ofertę i `/praca/`). Krok 5.1 (chmura dla formularzy)
+  uzupełnienia §11; potem 5B — zapytanie o ofertę i `/praca/`). Pierwszy
+  bieg CI na PR miał czerwony `e2e` WYŁĄCZNIE z braku baseline'ów linux
+  (stan oczekiwany przed workflowem; `quality` i `lighthouse` zielone);
+  bieg na commicie bota (37189956994) zakończył się bez jobów — to nie
+  jest czerwony check. Job `lighthouse` zielony na PR, liczb z runnera
+  nie odczytano — LCP mobile `/sprzedaj-z-nami/` (lokalnie 2 114 ms przy
+  progu 3 200) do sprawdzenia przy najbliższym `lhci-measure.yml`. Strona
+  na `nowa.` odpowiada 200 z `x-robots-tag: noindex`. **Tym samym CAŁE
+  5A (wspólna mechanika, `/kontakt/`, `/sprzedaj-z-nami/`) jest WYKONANE**
+  (PR #25, #26). Krok 5.1 (chmura dla formularzy)
   nadal NIE jest wykonany — `TURNSTILE_SITE_KEY` pusty, na `nowa.` wysyłka
   kończy się komunikatem błędu (stan oczekiwany).
   `src/pages/sprzedaj-z-nami.astro` + `sections/sell/`: `SellHero` (hero
@@ -1079,6 +1090,75 @@ offer-lightbox.ts` (chunk z dynamicznego `import()` w `offer-detail.ts`,
   do 3 200 — obserwacja), desktop 529 ms (element LCP = zdjęcie hero),
   TBT 0, CLS ≤ 0,007, zero podmiotów trzecich; „/" `script` 10 576 B
   (26 %), `/kontakt/` 8 312 B (21 %). Progi nietknięte.
+
+- **Etap 5 / 5B PR 1 (formularz zapytania przy ofercie) — W TOKU**
+  (2026-10-04, gałąź `feat/oferta-zapytanie`, mini-analiza
+  `docs/analiza-formularze-b.md` zaakceptowana wg rekomendacji Q1–Q8,
+  uzupełnienia §10; kod i testy gotowe lokalnie, ZOSTAŁO: workflow
+  baseline'ów linux, baseline'y darwin, PR, merge, `prod-smoke`; potem
+  PR 2 — `/praca/` z CV, który CZEKA na wynik kroku 5.2: limit CV 2 MB
+  albo 1 MB; bez pomiaru następną sesją jest 4.5 `/o-nas/`). Kroki 5.1 (chmura) i 5.2 (pomiar CPU)
+  nadal NIE są wykonane — `TURNSTILE_SITE_KEY` pusty, na `nowa.` wysyłka
+  kończy się komunikatem błędu (stan oczekiwany).
+  `src/lib/contact-form.ts`: rodzaj `oferta` aktywny (`ACTIVE_FORM_KINDS`
+  = `kontakt`, `sprzedaj`, `oferta`), `OFFER_NUMBER_RE` (W PARZE
+  z `OfferSchema.number`), pole `offer` w `validateForm`, `isFormPagePath`
+  (strony formularzy + adresy detali), mail D w `buildMail` (temat
+  z numerem; pod nagłówkiem adres oferty z hosta żądania oraz „tytuł ·
+  lokalizacja"; wariant `OFFER_NOT_IN_INDEX`). `functions/api/kontakt.ts`:
+  `lookupOffer` — z formularza przychodzi WYŁĄCZNIE numer, tytuł,
+  lokalizację i adres funkcja czyta z `/oferty/index.json`
+  (`OFFERS_INDEX_PATH` w `routes.ts`) przez binding `ASSETS`, dopiero po
+  pułapce, walidacji, Turnstile i liczniku; numer spoza indeksu albo
+  nieczytelny indeks NIE odrzuca zgłoszenia (mail z dopiskiem zamiast
+  tytułu i linku); żądanie bez `Content-Length` → 411 bez czytania
+  treści; powrót 303 także na adres detalu. `src/components/forms/`:
+  `FormFrame` + propy `tone="dark"` (klasa `fm-frame--dark` w `forms.css`
+  — pola białe bez obrysu, teksty jasne, token `--error-light`),
+  `labelledby`, `under` (drugi pasek sticky przy dosuwaniu pola
+  i potwierdzenia); `FormField` + prop `value`; `form-ui.ts`: błąd pola
+  bez opakowania (ukryty numer) kończy się komunikatem błędu wysyłki;
+  `OFERTA_FORM_COPY` (treść startowa wiadomości z dotychczasowej strony;
+  teksty ramki PLACEHOLDER U9). Detal: `OfferInquiry.astro`
+  w `[data-offer-inquiry]` (`id="formularz"`), nazwa formularza z `h2`
+  sekcji, kolejność DOM karta agenta → formularz → powrót do listy
+  (siatka od 1025 px), `initForms(root)` w `offer-detail.ts`, pasek dolny
+  znika na czas fokusu w formularzu (`:has(:focus-within)`), wygląd
+  przycisku wysyłki w `offer-detail.css` (arkusz `sx-btn` nie jest
+  ładowany na trasie ofert). Rozstrzygnięcia F48–F80 w analizie §2
+  i §10.2, w tym F78: kontrast tekstu na ciemnym tle z POMIARU (najgorszy
+  wynik 6,6:1 — link do polityki). Testy: unit `contact-form` (63, +17)
+  i `contact-endpoint` (29, +10; atrapa `ASSETS`, pomocnik `post()`
+  z jawnym `content-length`); e2e nowy `oferta-zapytanie.spec.ts` (15
+  testów; treść `chromium-1920`, formularz także `chromium-pixel-5`
+  i `webkit-iphone-14`), `oferta.spec` — locator slotu telefonu sekcji
+  `a.od-contact-row[data-tel]`; visual `oferta.spec` + `oferta-form-errors`
+  i `oferta-form-done` (element sekcji; pasek, kotwice i pasek dolny
+  schowane) × 6 profili. Weryfikacja lokalna: format/lint/typecheck, unit
+  477 (475 zielonych + 2 skip), build 89 stron, `test:dist` 6/6, e2e 591
+  (+909 skip profili) na 6 profilach — zielone, axe 0 naruszeń w trzech
+  stanach formularza; `test:visual` 36 czerwonych OCZEKIWANYCH (24
+  zrzuty pełnej strony detalu × formularz + 12 nowych bez baseline'u),
+  157 zielonych; progiem 0 bez różnic: `oferta-druk`, `oferta-lightbox`,
+  `kontakt-*`, `sprzedaj-*`, `oferty-*`, `chrome-*` (poza zastanym
+  niestabilnym `chrome-footer` na `webkit-iphone-14`). BUDŻET
+  (`build:visual`, baza = main): `script` detalu 21 843 B brutto / 9 309 B
+  gzip (+6 181 / +2 701 — wspólny `form-ui`, +1 żądanie); `form-ui`
+  6 131 B (+329 B, także na `/kontakt/` i `/sprzedaj-z-nami/`); wyspa
+  listy co do bajta (38 653 B); **CSS trasy `[...path]` 90 678 / 19 616 B
+  w 4 arkuszach (+7 802 / +1 987 B, +1 arkusz blokujący — arkusz
+  formularzy ładuje się także na listach rodzaju)**. LHCI lokalnie (oba
+  configi, asercje czyste na 10 adresach): detale `script` 12 039 B =
+  30 % bramki (było 22 %), LCP mobile 2 185–2 721 ms, TBT 0, CLS 0;
+  porównanie main ↔ PR (3 przebiegi mobile): detal FCP +70–80 ms, LCP
+  +60–80 ms, lista rodzaju w szumie, detal działki dwumodalny na obu
+  buildach (najgorszy przebieg 2 788 ms przy progu 3 200) — obserwacja.
+  DECYZJE 2026-10-04 (wg rekomendacji): Q8 — koszt arkusza przyjęty,
+  rozdzielenie arkuszy listy i detalu w PR porządkowym (wcześniej tylko
+  przy czerwonym `lighthouse` na LCP detalu); etykieta `ubuntu-latest`
+  zmienia wersję systemu od 2026-10-19 — workflowy z przeglądarkami
+  i pomiarem dostają `ubuntu-24.04` osobnym małym PR-em
+  (`chore/ci-pin-runner`, `docs/optional-todos.md`). Progi nietknięte.
 
 ## Dokumentacja
 

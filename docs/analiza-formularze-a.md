@@ -3,8 +3,9 @@
 > **Status:** ZAAKCEPTOWANA 2026-10-03 (wszystkie rekomendacje Q1–Q8
 > z §9). PR 1 (`feat/kontakt`: wspólna mechanika + `/kontakt/`)
 > ZMERGOWANY (PR #25, 2026-10-03) — uzupełnienia w §10; PR 2
-> (`feat/sprzedaj`: `/sprzedaj-z-nami/`) w toku — kod i testy gotowe
-> lokalnie 2026-10-04, uzupełnienia w §11.
+> (`feat/sprzedaj`: `/sprzedaj-z-nami/`) ZMERGOWANY (PR #26, 2026-10-04)
+> — uzupełnienia w §11. Część 5A zamknięta; ciąg dalszy (zapytanie
+> o ofertę, `/praca/`): `analiza-formularze-b.md`.
 > Część 5A Etapu 5 wg instrukcji wykonawczej (dokument lokalny,
 > `docs/plan/`):
 > kroki 5.3 (kod wspólny), tabela 5A, 5.4 (testy); prompt §5A
@@ -744,3 +745,6 @@ Lista z §8 (pkt 1–5, 7, 8) + po implementacji:
 3. Niestabilny `chrome-footer` (F47) — utwardzenie speca osobnym małym
    PR-em albo w PR-ze porządkowym.
 4. Krok 5.1 (chmura) nadal przed nami — jak w §10.7.
+
+Decyzje 2026-10-04 (wg rekomendacji): gradient z pkt 1 zostaje; pkt 2
+i 3 — w PR porządkowym domknięcia Etapów 4 + 5.
