@@ -1,10 +1,85 @@
 ---
-import SkeletonPage from "@/components/SkeletonPage.astro";
+// /o-nas/ (Etap 4.5, docs/analiza-o-nas.md): hero ze zdjęciem pod
+// przezroczystym paskiem, historia, specjalizacja i wejście na kontakt.
+// Czysty Astro, bez wyspy i bez formularza.
+//
+// RUCH (reveale sekcji 02–04, parallax zdjęć) siedzi w about-motion.ts,
+// ładowanym DYNAMICZNIE tylko przy prefers-reduced-motion: no-preference;
+// stany startowe uzbraja html.js-motion (MotionGate.astro). Bez JS i przy
+// reduce strona jest statyczna i kompletna. Zdjęcie hero i `h1` to
+// kandydaci LCP: preload w <head>, żadnego reveala.
+import heroSmall from "@/assets/img/onas-hero-m.webp";
+import hero from "@/assets/img/onas-hero.webp";
+import Footer from "@/components/Footer.astro";
+import MotionGate from "@/components/MotionGate.astro";
+import Navbar from "@/components/navbar/Navbar.astro";
+import AboutContact from "@/components/sections/about/AboutContact.astro";
+import AboutFocus from "@/components/sections/about/AboutFocus.astro";
+import AboutHero from "@/components/sections/about/AboutHero.astro";
+import AboutHistory from "@/components/sections/about/AboutHistory.astro";
+import { ABOUT_HERO_SMALL_BELOW_PX } from "@/components/sections/about/about-config";
+import "@/components/sections/content.css";
 import { ui } from "@/i18n/ui";
+import BaseLayout from "@/layouts/BaseLayout.astro";
 ---
 
-<SkeletonPage
+<BaseLayout
   title={ui.pl["aboutPage.title"]}
   description={ui.pl["aboutPage.description"]}
-  heading="O nas"
-/>
+>
+  {/* zdjęcie hero: jeden preload per plik (jak <picture> w AboutHero) */}
+  <link
+    slot="head"
+    rel="preload"
+    as="image"
+    href={heroSmall.src}
+    media={`(max-width: ${ABOUT_HERO_SMALL_BELOW_PX - 1}px)`}
+    fetchpriority="high"
+  />
+  <link
+    slot="head"
+    rel="preload"
+    as="image"
+    href={hero.src}
+    media={`(min-width: ${ABOUT_HERO_SMALL_BELOW_PX}px)`}
+    fetchpriority="high"
+  />
+  {/* bramka ruchu: html.js-motion PRZED malowaniem + bezpiecznik */}
+  <MotionGate slot="head" />
+
+  {/* hero stoi POD paskiem — wariant przezroczysty, próg z kadru zdjęcia */}
+  <Navbar overHero />
+
+  <main class="about">
+    <AboutHero />
+    <AboutHistory />
+    <AboutFocus />
+    <AboutContact />
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<script>
+  import { armViewportPin } from "@/components/sections/content-viewport";
+
+  // stabilna wysokość sekcji liczonych z okna — układ, nie dekoracja,
+  // więc poza bramką ruchu
+  const about = document.querySelector<HTMLElement>("main.about");
+  if (about) armViewportPin(about);
+
+  if (matchMedia("(prefers-reduced-motion: no-preference)").matches) {
+    import("@/components/sections/about/about-motion").catch(() => {
+      document.documentElement.classList.remove("js-motion");
+    });
+  }
+</script>
+
+<style>
+  /* `--svh` przypina content-viewport.ts dopiero wtedy, gdy przeglądarka
+     rusza wysokością okna bez zmiany szerokości; domyślnie czysty CSS */
+  .about {
+    --svh: 100svh;
+    background: var(--bg);
+  }
+</style>

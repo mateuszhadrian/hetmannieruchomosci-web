@@ -1,12 +1,13 @@
 // Nawigacja chrome'u: pasek fixed z sześcioma pozycjami na desktopie
 // (efekt liter za bramką reduced-motion), wariant „nad hero”
 // przemalowywany pozycją scrolla („/” oraz trasy z propem `overHero` —
-// /sprzedaj-z-nami/, próg z wysokości hero strony), menu mobilne jako
-// bottom sheet na overlay.ts (otwieranie, Esc, scrim, swipe-down,
+// /sprzedaj-z-nami/ i /o-nas/, próg z wysokości hero strony), menu mobilne
+// jako bottom sheet na overlay.ts (otwieranie, Esc, scrim, swipe-down,
 // zamknięcie przy przejściu na desktop), telefon i mail składane w JS
 // (antyscraping), stopka z kompletem danych firmy, kontrakt breakpointu
 // projektu (expectBreakpointFlip). Stan po Etapie 4.1
-// (docs/analiza-chrome.md) i 5A / PR 2 (docs/analiza-formularze-a.md §11).
+// (docs/analiza-chrome.md), 5A / PR 2 (docs/analiza-formularze-a.md §11)
+// i 4.5 (docs/analiza-o-nas.md A10).
 import { expect, test, type Page } from "@playwright/test";
 import {
   NAV_DESKTOP_MIN_PX,
@@ -20,6 +21,7 @@ import {
 } from "../../src/lib/contact-details";
 import { BUSINESS } from "../../src/lib/jsonld";
 import {
+  ABOUT_PATH,
   CONTACT_PATH,
   HOME_PATH,
   OFFERS_PATH,
@@ -188,11 +190,23 @@ test.describe("wariant strony głównej (data-scroll-nav)", () => {
   });
 });
 
-test.describe("wariant nad hero na drugiej trasie (prop overHero)", () => {
-  test("/sprzedaj-z-nami/: próg przemalowania z wysokości HERO strony, nie okna", async ({
-    page,
-  }) => {
-    await gotoReady(page, SELL_PATH);
+/** Trasy z hero pod paskiem (prop `overHero`) poza stroną główną. Na
+ *  /sprzedaj-z-nami/ znacznik `data-nav-hero` niesie sekcja hero (desktop:
+ *  66 % okna), na /o-nas/ — kadr zdjęcia (telefon: samo zdjęcie, niższe
+ *  od okna; desktop: cała sekcja). */
+const OVER_HERO_PATHS: string[] = [SELL_PATH, ABOUT_PATH];
+
+test.describe("wariant nad hero na kolejnych trasach (prop overHero)", () => {
+  for (const heroPath of OVER_HERO_PATHS) {
+    test(`${heroPath}: próg przemalowania z wysokości HERO strony, nie okna`, async ({
+      page,
+    }) => {
+      await overHeroContract(page, heroPath);
+    });
+  }
+
+  async function overHeroContract(page: Page, heroPath: string) {
+    await gotoReady(page, heroPath);
     const root = page.locator("[data-nav]");
     const bg = page.locator(".hdr-bg");
     await expect(root).toHaveAttribute("data-scroll-nav", "");
@@ -246,7 +260,7 @@ test.describe("wariant nad hero na drugiej trasie (prop overHero)", () => {
     await settle(page, 400);
     await expect(root).not.toHaveAttribute("data-solid", "");
     await expect(bg).toHaveCSS("opacity", "0");
-  });
+  }
 
   test("bieżąca pozycja paska i trasy bez hero zostają bez wariantu", async ({
     page,
@@ -256,7 +270,7 @@ test.describe("wariant nad hero na drugiej trasie (prop overHero)", () => {
       const raw = await (await page.request.get(path)).text();
       const header = raw.match(/<header[^>]*data-nav[^>]*>/)?.[0] ?? "";
       expect(header.includes("data-scroll-nav"), path).toBe(
-        path === HOME_PATH || path === SELL_PATH,
+        path === HOME_PATH || OVER_HERO_PATHS.includes(path),
       );
     }
     test.skip(!!isMobile, "pozycje paska — układ desktop");
