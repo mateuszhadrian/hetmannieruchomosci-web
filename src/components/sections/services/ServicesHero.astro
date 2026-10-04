@@ -1,0 +1,404 @@
+---
+// Hero /uslugi/ (4.6, docs/analiza-uslugi.md §1, SV1, SV9, SV12).
+// Telefon i tablet: blok tekstu (eyebrow, `h1`, akapit) na jednolitym
+// granacie, pod nim pole zdjęcia wypełniające resztę okna z trzema
+// wejściami do sekcji u dołu. Desktop: zdjęcie na całe okno, szklana karta
+// z tekstem, u dołu pas trzech kafli-wejść.
+//
+// Jeden markup: kadr zdjęcia leży w „scenie" (`.uh-stage`) — poniżej
+// 1025 px scena jest jego kontenerem, od 1025 px scena jest statyczna
+// i kadr wypełnia całą sekcję.
+//
+// Wejścia to zwykłe kotwice do sekcji strony (`#sprzedaje`, `#kupuje`,
+// `#pomoc-prawna`) — działają bez JS. Trzecie wejście: jedno brzmienie,
+// na telefonie lżejszy, podkreślony link z samym tytułem (analiza Q1).
+//
+// Zdjęcie i `h1` to kandydaci LCP: `eager`, `fetchpriority`, preload na
+// stronie, ŻADNEGO reveala. Parallax: `data-px="top"` — przesunięcie 0
+// przy scrollu 0 na obu progach (kadr pierwszego ekranu).
+//
+// Krycia szkła, gradientu i tekstu pochodzą z POMIARU kontrastu (analiza
+// §10; axe zwraca dla tekstu nad obrazem „incomplete") — zmiana krycia,
+// koloru tekstu albo zdjęcia wymaga ponownego pomiaru, razem z logo
+// i linkami paska nad zdjęciem.
+import heroTall from "@/assets/img/uslugi-hero-tall.webp";
+import hero from "@/assets/img/uslugi-hero.webp";
+import { SERVICES_HERO_TALL_BELOW_PX } from "./services-config";
+import { SERVICES_COPY } from "./services-copy";
+
+const t = SERVICES_COPY.hero;
+---
+
+<section class="uh" data-services="hero" data-services-hero data-nav-hero>
+  <div class="uh-text">
+    <div class="uh-card">
+      <p class="sx-eyebrow uh-eyebrow">{t.eyebrow}</p>
+      <h1 class="uh-h1">{t.title} <span>{t.accent}</span></h1>
+      <p class="uh-lead">{t.lead}</p>
+    </div>
+  </div>
+
+  <div class="uh-stage">
+    <div class="uh-media px-frame">
+      <picture>
+        <source
+          media={`(max-width: ${SERVICES_HERO_TALL_BELOW_PX - 1}px)`}
+          srcset={heroTall.src}
+          width={heroTall.width}
+          height={heroTall.height}
+        />
+        <img
+          class="uh-photo"
+          data-px="top"
+          data-services-photo
+          src={hero.src}
+          width={hero.width}
+          height={hero.height}
+          alt=""
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+        />
+      </picture>
+      <span class="uh-shade" aria-hidden="true"></span>
+    </div>
+
+    <nav class="uh-entries" data-services-entries aria-label={t.entriesLabel}>
+      {
+        t.entries.map((entry, i) => (
+          <a
+            class:list={[
+              "uh-entry",
+              i === t.entries.length - 1 && "uh-entry--plain",
+            ]}
+            href={entry.href}
+          >
+            <span class="uh-entry-t">
+              <span class="uh-kicker">{entry.kicker}</span>
+              <span class="uh-name">{entry.title}</span>
+            </span>
+            <span class="uh-arrow" aria-hidden="true">
+              →
+            </span>
+          </a>
+        ))
+      }
+    </nav>
+  </div>
+</section>
+
+<style>
+  .uh {
+    /* Jasna miedź wejść (design: #ffd6a8) i szkło. Krycia z POMIARU
+       kontrastu (analiza §10): kafle telefonu — design .26 (nadtytuł nad
+       jasnym dokumentem 1,7:1); karta desktopu — design granat .24 (fraza
+       `h1` 2,5:1); pas wejść desktopu — design srebro .16 nad zdjęciem bez
+       gradientu (nadtytuł 1,3:1) → ciemne szkło. */
+    --uh-peach: #ffd6a8;
+    --uh-tile: rgba(233, 233, 230, 0.16);
+    --uh-glass: rgba(9, 18, 36, 0.68);
+    --uh-band: rgba(9, 18, 36, 0.68);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    min-height: var(--svh, 100svh);
+    color: #fff;
+    background: var(--navy-deep);
+  }
+
+  /* ── tekst (telefon: na jednolitym granacie) ── */
+  .uh-text {
+    position: relative;
+    z-index: 1;
+    padding: calc(var(--hdr-h) + clamp(19.6px, 5.641vw, 29.3px))
+      max(var(--pad), calc((100% - 600px) / 2)) clamp(28px, 8vw, 40px);
+  }
+  .uh-card {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(12px, 3.4vw, 16px);
+  }
+  .uh-eyebrow {
+    color: var(--copper-light);
+  }
+  .uh-eyebrow::before {
+    background: var(--copper-light);
+  }
+  .uh-h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(26px, 7.7vw, 44px);
+    line-height: 1.15;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: #fff;
+    text-wrap: pretty;
+  }
+  .uh-h1 span {
+    color: var(--copper);
+    white-space: nowrap;
+  }
+  .uh-lead {
+    margin: 0;
+    max-width: 34ch;
+    font-size: clamp(15px, 4.103vw, 20px);
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.86);
+    text-wrap: pretty;
+  }
+
+  /* ── scena: pole zdjęcia z wejściami u dołu ── */
+  .uh-stage {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    box-sizing: border-box;
+    padding: clamp(120px, 34vw, 160px) max(var(--pad), calc((100% - 600px) / 2))
+      clamp(28px, 8vw, 44px);
+    overflow: clip;
+    border-radius: clamp(48px, 14vw, 72px) 0 0 0;
+  }
+  .uh-media {
+    position: absolute;
+    inset: 0;
+  }
+  .uh-photo {
+    object-position: 50% 35%;
+  }
+  .uh-shade {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      rgba(14, 32, 60, 0) 0%,
+      rgba(14, 32, 60, 0.25) 45%,
+      rgba(14, 32, 60, 0.85) 100%
+    );
+  }
+
+  /* ── wejścia ── */
+  .uh-entries {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(10px, 2.8vw, 14px);
+  }
+  /* przyciemnienie zdjęcia POD wejściami (telefon): zakotwiczone do
+     wejść, nie do procentu pola — na niskim ekranie wejścia zajmują
+     większość pola zdjęcia */
+  .uh-entries::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    top: -96px;
+    bottom: calc(-1 * clamp(28px, 8vw, 44px));
+    left: 50%;
+    width: 100vw;
+    transform: translateX(-50%);
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      rgba(14, 32, 60, 0) 0,
+      rgba(14, 32, 60, 0.72) 96px,
+      rgba(14, 32, 60, 0.88) 100%
+    );
+  }
+  .uh-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    box-sizing: border-box;
+    min-height: 72px;
+    padding: clamp(14px, 4vw, 18px) clamp(16px, 4.6vw, 20px);
+    background: var(--uh-tile);
+    border: 1px solid rgba(221, 221, 221, 0.3);
+    color: #fff;
+    text-decoration: none;
+    transition: background 0.3s ease;
+  }
+  .uh-entry:hover {
+    background: rgba(201, 130, 54, 0.22);
+  }
+  .uh-entry:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+  }
+  .uh-entry-t {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .uh-kicker {
+    font-size: clamp(11px, 3vw, 12px);
+    line-height: 1.2;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--uh-peach);
+  }
+  .uh-name {
+    font-size: clamp(17px, 4.6vw, 20px);
+    line-height: 1.25;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+  }
+  .uh-arrow {
+    flex: none;
+    font-size: 24px;
+    line-height: 1;
+    color: var(--uh-peach);
+  }
+
+  @media (max-width: 1024.98px) {
+    /* trzecie wejście: lżejszy link z samym tytułem (design telefonu) */
+    .uh-entry--plain {
+      align-self: flex-start;
+      min-height: 44px;
+      padding: 0;
+      background: none;
+      border: 0;
+    }
+    .uh-entry--plain:hover {
+      background: none;
+    }
+    .uh-entry--plain .uh-kicker,
+    .uh-entry--plain .uh-arrow {
+      display: none;
+    }
+    .uh-entry--plain .uh-name {
+      font-size: clamp(14px, 3.8vw, 16px);
+      font-weight: 400;
+      letter-spacing: 0;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+      text-decoration-color: var(--copper-light);
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .uh {
+      overflow: clip;
+    }
+    .uh-text {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      /* odstępy pionowe ograniczone wysokością okna (`svh`): na niskim
+         oknie laptopa karta i pas wejść mieszczą się w pierwszym ekranie */
+      padding: calc(var(--hdr-h) + min(clamp(24px, 2.6vw, 48px), 3svh))
+        var(--pad) min(clamp(40px, 4vw, 64px), 4svh);
+    }
+    .uh-card {
+      box-sizing: border-box;
+      max-width: 760px;
+      gap: min(clamp(20px, 1.8vw, 26px), 2.6svh);
+      padding: min(clamp(28px, 3.2vw, 52px), 5svh) clamp(32px, 3.6vw, 60px);
+      background: var(--uh-glass);
+      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(221, 221, 221, 0.14);
+      border-radius: 3px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+    }
+    .uh-eyebrow::before {
+      background: var(--copper);
+    }
+    .uh-h1 {
+      font-size: min(clamp(38px, 4.1vw, 60px), 6.6svh);
+      line-height: 1.08;
+      color: var(--silver);
+      text-shadow: 1px 2px 11px rgba(0, 0, 0, 0.35);
+      text-wrap: balance;
+    }
+    .uh-lead {
+      max-width: 46ch;
+      font-size: clamp(16px, 1.25vw, 19px);
+      line-height: 1.6;
+      color: rgba(221, 221, 221, 0.88);
+    }
+
+    /* scena przestaje być kontenerem kadru: zdjęcie wypełnia sekcję */
+    .uh-stage {
+      position: static;
+      flex: none;
+      display: block;
+      padding: 0;
+      overflow: visible;
+      border-radius: 0;
+    }
+    .uh-photo {
+      object-position: 50% 40%;
+    }
+    /* design: zdjęcie bez gradientu. Górny pas pod paskiem przyciemniony
+       z pomiaru — jasne logo nad jasnym fragmentem kadru (mankiet) miało
+       1,9:1; poniżej paska gaśnie */
+    .uh-shade {
+      background: linear-gradient(
+        180deg,
+        rgba(9, 18, 36, 0.5) 0,
+        rgba(9, 18, 36, 0.36) var(--hdr-h),
+        rgba(9, 18, 36, 0) calc(var(--hdr-h) + 72px)
+      );
+    }
+
+    .uh-entries {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0;
+      border-top: 1px solid rgba(221, 221, 221, 0.18);
+      background: var(--uh-band);
+      -webkit-backdrop-filter: blur(22px);
+      backdrop-filter: blur(22px);
+    }
+    .uh-entries::before {
+      content: none;
+    }
+    .uh-entry {
+      gap: 24px;
+      min-height: min(120px, 14svh);
+      padding: min(clamp(22px, 2.2vw, 32px), 3svh) clamp(28px, 3vw, 44px);
+      background: none;
+      border: 0;
+      border-left: 1px solid rgba(221, 221, 221, 0.18);
+    }
+    .uh-entry:first-child {
+      padding-left: var(--pad);
+      border-left: 0;
+    }
+    .uh-entry:focus-visible {
+      outline-offset: -4px;
+    }
+    .uh-entry-t {
+      gap: 10px;
+    }
+    .uh-kicker {
+      font-family: var(--font-label);
+      font-size: 12px;
+      line-height: 1;
+      letter-spacing: 0.16em;
+      font-weight: 500;
+    }
+    .uh-name {
+      font-size: clamp(18px, 1.5vw, 22px);
+      text-shadow: none;
+    }
+    .uh-arrow {
+      font-size: 26px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .uh-entry {
+      transition: none;
+    }
+  }
+</style>

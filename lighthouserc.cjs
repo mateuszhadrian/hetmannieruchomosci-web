@@ -47,6 +47,9 @@ module.exports = {
         // widok treściowy (4.5): hero ze zdjęciem pod paskiem (preload per
         // plik), reveale i parallax w chunku ruchu, bez formularza
         "/o-nas/",
+        // widok treściowy (4.6): hero ze zdjęciem pod paskiem (preload per
+        // kadr), trzy listy usług, osiem zdjęć, reveale i parallax w chunku ruchu
+        "/uslugi/",
         "/oferty/",
         // lista SSG z fixture'u (4.2 a): 2 karty, obniżka, plakietka Sprzedane
         "/oferty/mieszkanie-na-sprzedaz/",

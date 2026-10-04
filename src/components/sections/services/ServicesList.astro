@@ -1,0 +1,185 @@
+---
+// Lista numerowana usług (4.6, docs/analiza-uslugi.md §1, SV11): numer,
+// `h3`, opis. Telefon i tablet — jeden układ dla wszystkich sekcji; od
+// 1025 px trzy układy z designu: `rows` (wiersze z liniami — „Sprzedaję"),
+// `wide` (numer · tytuł · opis w jednym wierszu — „Kupuję"), `cols` (dwie
+// kolumny — „Pomoc prawna"). Numery 01–06 to licznik CSS (dekoracja;
+// kolejność niesie <ol>). Lista jest JEDNYM blokiem reveala.
+import type { ServiceItem } from "./services-copy";
+
+interface Props {
+  items: readonly ServiceItem[];
+  layout: "rows" | "wide" | "cols";
+  dark?: boolean;
+  /** Opóźnienie kaskady reveala (desktop), w sekundach. */
+  delay?: number;
+}
+const { items, layout, dark = false, delay = 0 } = Astro.props;
+---
+
+<ol
+  class:list={["sl", `sl--${layout}`, dark && "sl--dark"]}
+  data-services-list
+  data-rv
+  style={delay ? `--rvd: ${delay.toFixed(2)}s` : undefined}
+>
+  {
+    items.map((item) => (
+      <li>
+        <div class="sl-body">
+          <h3>{item.title}</h3>
+          <p>{item.text}</p>
+        </div>
+      </li>
+    ))
+  }
+</ol>
+
+<style>
+  .sl {
+    --sl-num: rgba(201, 130, 54, 0.42);
+    --sl-title: var(--navy);
+    --sl-text: var(--slate);
+    --sl-line: rgba(var(--glow), 0.14);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(22px, 6.2vw, 30px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: usluga;
+  }
+  /* krycia tekstu na ciemnej sekcji z pomiaru kontrastu (analiza §10) */
+  .sl--dark {
+    --sl-num: rgba(224, 168, 106, 0.5);
+    --sl-title: #fff;
+    --sl-text: rgba(255, 255, 255, 0.82);
+    --sl-line: rgba(221, 221, 221, 0.18);
+  }
+  .sl li {
+    display: grid;
+    grid-template-columns: clamp(50px, 14vw, 64px) minmax(0, 1fr);
+    gap: clamp(12px, 3.4vw, 16px);
+    align-items: start;
+    counter-increment: usluga;
+  }
+  .sl li::before {
+    content: counter(usluga, decimal-leading-zero);
+    font-family: var(--font-label);
+    font-size: clamp(38px, 11vw, 48px);
+    font-weight: 400;
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    color: var(--sl-num);
+  }
+  .sl-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .sl h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(17px, 4.6vw, 21px);
+    line-height: 1.25;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--sl-title);
+    text-wrap: pretty;
+  }
+  .sl p {
+    margin: 0;
+    max-width: 32ch;
+    font-size: clamp(15px, 4.103vw, 18px);
+    line-height: 1.55;
+    color: var(--sl-text);
+    text-wrap: pretty;
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .sl {
+      gap: 0;
+    }
+    .sl li {
+      border-top: 1px solid var(--sl-line);
+    }
+
+    /* wiersze z liniami */
+    .sl--rows li {
+      grid-template-columns: clamp(56px, 5vw, 76px) minmax(0, 1fr);
+      gap: clamp(16px, 1.6vw, 24px);
+      padding: clamp(20px, 2vw, 28px) 0;
+    }
+    .sl--rows li::before {
+      font-size: clamp(32px, 3vw, 44px);
+    }
+    .sl--rows .sl-body {
+      gap: 8px;
+    }
+    .sl--rows h3 {
+      font-size: clamp(17px, 1.35vw, 20px);
+      line-height: 1.28;
+    }
+    .sl--rows p {
+      max-width: 56ch;
+      font-size: clamp(14px, 1.05vw, 16px);
+      line-height: 1.58;
+    }
+
+    /* numer · tytuł · opis na jednej linii bazowej */
+    .sl--wide li {
+      grid-template-columns:
+        clamp(64px, 6vw, 90px) minmax(0, 4fr)
+        minmax(0, 6.5fr);
+      gap: clamp(16px, 1.6vw, 32px);
+      align-items: baseline;
+      padding: clamp(18px, 1.8vw, 26px) 0;
+    }
+    .sl--wide li::before {
+      font-size: clamp(30px, 2.8vw, 40px);
+    }
+    .sl--wide .sl-body {
+      display: contents;
+    }
+    .sl--wide h3 {
+      font-size: clamp(17px, 1.4vw, 21px);
+      line-height: 1.26;
+    }
+    .sl--wide p {
+      max-width: none;
+      font-size: clamp(14px, 1.08vw, 16px);
+      line-height: 1.58;
+    }
+
+    /* dwie kolumny */
+    .sl--cols {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: clamp(32px, 3.2vw, 56px);
+    }
+    .sl--cols li {
+      grid-template-columns: clamp(46px, 4vw, 58px) minmax(0, 1fr);
+      gap: clamp(12px, 1.2vw, 18px);
+      padding: clamp(18px, 1.8vw, 24px) 0;
+    }
+    .sl--cols li::before {
+      font-size: clamp(26px, 2.3vw, 34px);
+    }
+    .sl--cols .sl-body {
+      gap: 7px;
+    }
+    .sl--cols h3 {
+      font-size: clamp(16px, 1.25vw, 19px);
+      line-height: 1.28;
+    }
+    .sl--cols p {
+      max-width: none;
+      font-size: clamp(13.5px, 1vw, 15px);
+    }
+    .sl--cols.sl--dark {
+      --sl-num: rgba(224, 168, 106, 0.55);
+      --sl-text: rgba(221, 221, 221, 0.74);
+    }
+  }
+</style>

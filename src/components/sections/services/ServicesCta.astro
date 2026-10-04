@@ -1,0 +1,337 @@
+---
+// Pas CTA sekcji „Sprzedaję" i „Kupuję" (4.6, docs/analiza-uslugi.md
+// SV2–SV5). Jeden markup: blok jest ostatnim dzieckiem sekcji — poniżej
+// 1025 px stoi w kolumnie treści (zdjęcie tła + gradient), od 1025 px
+// wychodzi na całą szerokość okna (eyebrow i akapit · dwa przyciski).
+//
+// Przycisk pierwszy: miedziany (`sx-btn`). Z `tel` jest slotem
+// antyscrapingowym `a[data-tel][data-fill="href"]` — etykieta stała, JS
+// podmienia WYŁĄCZNIE cel; bez JS link prowadzi na /kontakt/. Przycisk
+// drugi: szklany, opcjonalnie z nadtytułem.
+//
+// Zdjęcie tła jest opcjonalne i może występować tylko poniżej 1025 px
+// (`bgBelowDesktop` — `display: none` + `lazy`: desktop go nie pobiera).
+// Krycia szkła i gradientów z POMIARU kontrastu (analiza §10).
+import type { ImageMetadata } from "astro";
+import { CONTACT_PATH } from "@/lib/routes";
+
+interface Props {
+  eyebrow: string;
+  text: string;
+  primary: { label: string; href?: string; tel?: boolean };
+  secondary: { label: string; href: string; kicker?: string };
+  bg?: { full: ImageMetadata; small: ImageMetadata; position: string };
+  bgBelowDesktop?: boolean;
+  /** Wariant gradientu desktopu bez zdjęcia (pas „Kupuję"). */
+  plain?: boolean;
+}
+const {
+  eyebrow,
+  text,
+  primary,
+  secondary,
+  bg,
+  bgBelowDesktop = false,
+  plain = false,
+} = Astro.props;
+---
+
+<div class:list={["uc", plain && "uc--plain"]} data-services-cta>
+  {
+    bg && (
+      <div
+        class:list={["px-frame", "uc-bg", bgBelowDesktop && "uc-bg--below"]}
+        data-services-extra={bgBelowDesktop ? "below" : undefined}
+        aria-hidden="true"
+      >
+        <img
+          data-px
+          src={bgBelowDesktop ? bg.small.src : bg.full.src}
+          srcset={
+            bgBelowDesktop
+              ? undefined
+              : `${bg.small.src} ${bg.small.width}w, ${bg.full.src} ${bg.full.width}w`
+          }
+          sizes={
+            bgBelowDesktop
+              ? undefined
+              : "(min-width: 1025px) 100vw, (min-width: 640px) 600px, 90vw"
+          }
+          width={bgBelowDesktop ? bg.small.width : bg.full.width}
+          height={bgBelowDesktop ? bg.small.height : bg.full.height}
+          alt=""
+          loading="lazy"
+          fetchpriority="low"
+          decoding="async"
+          style={`object-position: ${bg.position}`}
+        />
+      </div>
+    )
+  }
+  <span class="uc-shade" aria-hidden="true"></span>
+
+  <div class="uc-in" data-rv="d">
+    <div class="uc-copy">
+      <p class="sx-eyebrow uc-eyebrow">{eyebrow}</p>
+      <p class="uc-text">{text}</p>
+    </div>
+    <div class="uc-actions">
+      {
+        primary.tel ? (
+          <a
+            class="sx-btn uc-btn"
+            data-tel
+            data-fill="href"
+            href={CONTACT_PATH}
+          >
+            {primary.label}
+          </a>
+        ) : (
+          <a class="sx-btn uc-btn" href={primary.href}>
+            {primary.label}
+          </a>
+        )
+      }
+      <a
+        class:list={["uc-ghost", secondary.kicker && "uc-ghost--tile"]}
+        href={secondary.href}
+      >
+        <span class="uc-ghost-t">
+          {
+            secondary.kicker && (
+              <span class="uc-kicker">{secondary.kicker}</span>
+            )
+          }
+          <span class="uc-name">{secondary.label}</span>
+        </span>
+        <span class="uc-arrow" aria-hidden="true"> → </span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<style>
+  .uc {
+    --uc-peach: #ffd6a8;
+    /* szkło przycisku z pomiaru kontrastu (analiza §10): design .39
+       (telefon) i .16 (desktop) — nadtytuł 11–12 px miał 3,9–4,0:1 */
+    --uc-glass: rgba(221, 221, 221, 0.28);
+    --uc-glass-line: rgba(255, 255, 255, 0.28);
+    position: relative;
+    box-sizing: border-box;
+    margin: clamp(24px, 7vw, 40px) max(var(--pad), calc((100% - 600px) / 2))
+      clamp(48px, 13vw, 80px);
+    padding: clamp(24px, 6.5vw, 32px);
+    overflow: clip;
+    color: #fff;
+    background: var(--navy-deep);
+  }
+  .uc-bg,
+  .uc-shade {
+    position: absolute;
+    inset: 0;
+  }
+  .uc-shade {
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      rgba(14, 32, 60, 0.8),
+      rgba(14, 32, 60, 0.92)
+    );
+  }
+  .uc-in {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(16px, 4.4vw, 20px);
+  }
+  .uc-copy {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(12px, 3.4vw, 16px);
+  }
+  .uc-eyebrow {
+    color: var(--copper-light);
+  }
+  .uc-eyebrow::before {
+    background: var(--copper-light);
+  }
+  .uc-text {
+    margin: 0;
+    max-width: 30ch;
+    font-size: clamp(15px, 4.103vw, 20px);
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.86);
+    text-wrap: pretty;
+  }
+  .uc-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: clamp(10px, 2.8vw, 12px);
+    width: fit-content;
+    max-width: 100%;
+  }
+  .uc-btn {
+    justify-content: flex-start;
+  }
+  .uc-btn:focus-visible,
+  .uc-ghost:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+  }
+
+  /* ── przycisk szklany ── */
+  .uc-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: clamp(14px, 4vw, 18px);
+    box-sizing: border-box;
+    min-height: 52px;
+    padding: 0 clamp(20px, 5.4vw, 26px);
+    background: var(--uc-glass);
+    -webkit-backdrop-filter: blur(22px);
+    backdrop-filter: blur(22px);
+    border: 1px solid var(--uc-glass-line);
+    border-radius: 0 0 0 clamp(12px, 3.5vw, 16px);
+    color: #fff;
+    text-decoration: none;
+    transition: background 0.3s ease;
+  }
+  .uc-ghost--tile {
+    min-height: 64px;
+    padding-block: clamp(10px, 2.8vw, 12px);
+  }
+  .uc-ghost:hover {
+    background: rgba(201, 130, 54, 0.32);
+  }
+  .uc-ghost-t {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .uc-kicker {
+    font-size: clamp(11px, 3vw, 12px);
+    line-height: 1.2;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--uc-peach);
+  }
+  .uc-name {
+    font-size: clamp(15px, 4.103vw, 18px);
+    line-height: 1.2;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+  .uc-arrow {
+    flex: none;
+    font-size: 20px;
+    line-height: 1;
+    color: var(--uc-peach);
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .uc {
+      --uc-glass: rgba(221, 221, 221, 0.1);
+      --uc-glass-line: rgba(221, 221, 221, 0.22);
+      display: flex;
+      align-items: center;
+      min-height: 440px;
+      margin: 0;
+      padding: clamp(48px, 4.6vw, 72px) var(--pad);
+    }
+    .uc-bg--below {
+      display: none;
+    }
+    .uc-shade {
+      background: linear-gradient(
+        90deg,
+        rgba(9, 18, 36, 0.9) 0%,
+        rgba(9, 18, 36, 0.7) 52%,
+        rgba(9, 18, 36, 0.68) 100%
+      );
+    }
+    .uc--plain .uc-shade {
+      background: linear-gradient(
+        90deg,
+        rgba(9, 18, 36, 0.9) 0%,
+        rgba(14, 32, 60, 0.72) 52%,
+        rgba(24, 58, 107, 0.5) 100%
+      );
+    }
+    .uc-in {
+      display: grid;
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      gap: clamp(32px, 3.4vw, 56px);
+      align-items: center;
+      width: 100%;
+      max-width: var(--col);
+      margin-inline: auto;
+    }
+    .uc-copy {
+      gap: clamp(16px, 1.6vw, 22px);
+    }
+    .uc-eyebrow::before {
+      background: var(--copper);
+    }
+    .uc-text {
+      max-width: 44ch;
+      font-size: clamp(19px, 1.8vw, 26px);
+      line-height: 1.4;
+      font-weight: 500;
+      color: #fff;
+    }
+    .uc-actions {
+      gap: clamp(12px, 1.2vw, 16px);
+      width: auto;
+    }
+    .uc-btn {
+      justify-content: center;
+      min-height: 56px;
+      padding: 0 clamp(28px, 2.8vw, 40px);
+      border-radius: 0 0 0 clamp(14px, 1.4vw, 20px);
+    }
+    .uc-ghost {
+      display: flex;
+      gap: 20px;
+      min-height: 60px;
+      padding: 0 clamp(22px, 2.2vw, 30px);
+      border-radius: 0 0 0 clamp(14px, 1.4vw, 20px);
+    }
+    .uc-ghost:not(.uc-ghost--tile) {
+      justify-content: center;
+      gap: 12px;
+    }
+    .uc-ghost--tile {
+      min-height: 76px;
+    }
+    .uc-ghost:hover {
+      background: rgba(201, 130, 54, 0.22);
+    }
+    .uc-ghost-t {
+      gap: 6px;
+    }
+    .uc-kicker {
+      font-family: var(--font-label);
+      font-size: 11px;
+      line-height: 1;
+      letter-spacing: 0.16em;
+      font-weight: 500;
+    }
+    .uc-name {
+      font-size: clamp(15px, 1.2vw, 18px);
+    }
+    .uc-arrow {
+      font-size: 22px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .uc-ghost {
+      transition: none;
+    }
+  }
+</style>

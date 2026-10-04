@@ -66,8 +66,7 @@ export const HOME_COPY = {
     accent: "Od pierwszego dokumentu do klucza w drzwiach.",
     text: "Sprzedajesz, kupujesz czy utknąłeś w papierach — wybierz swoją ścieżkę i zobacz, co robimy za Ciebie.",
     more: "Zobacz",
-    // kotwice powstaną z widokiem /uslugi/ (4.6) — do tego czasu link
-    // ląduje na górze strony
+    // kotwice sekcji /uslugi/ (SERVICES_ANCHORS w services-config.ts)
     items: [
       {
         title: "Sprzedaję lub wynajmuję",

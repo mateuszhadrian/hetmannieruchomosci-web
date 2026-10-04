@@ -1,0 +1,360 @@
+---
+// 04 Pomoc prawna (4.6, docs/analiza-uslugi.md §1, SV5, SV6, SV7, SV14):
+// ciemna sekcja — nagłówek, akapit, lista sześciu pozycji, zdjęcia i blok
+// zamykający z wejściem na /kontakt/.
+//
+// DOM w układzie desktopu (lewa kolumna: nagłówek, akapit, lista; prawa:
+// zdjęcie i szklana karta). Poniżej 1025 px kolumny są `display: contents`,
+// a zdjęcia wchodzą między akapit i listę przez `order` — jedyny element
+// interaktywny (przycisk) jest ostatni w DOM i na ekranie, więc kolejność
+// fokusu się nie zmienia.
+//
+// Zdjęcie „prawne 3" zmienia rodzica między progami (tło całej sekcji od
+// 1025 px, tło bloku zamykającego poniżej), a „prawne 2" występuje tylko
+// poniżej progu — warianty ukryte są `lazy` i nie są pobierane.
+// Krycia tekstu i gradientów z POMIARU kontrastu (analiza §10).
+import firstM from "@/assets/img/uslugi-prawne1-m.webp";
+import first from "@/assets/img/uslugi-prawne1.webp";
+import secondM from "@/assets/img/uslugi-prawne2-m.webp";
+import bgM from "@/assets/img/uslugi-prawne3-m.webp";
+import bg from "@/assets/img/uslugi-prawne3.webp";
+import SectionHead from "../SectionHead.astro";
+import ServicesList from "./ServicesList.astro";
+import { SERVICES_ANCHORS } from "./services-config";
+import { SERVICES_COPY } from "./services-copy";
+
+const t = SERVICES_COPY.legal;
+---
+
+<section
+  class="sx-sec sx-sec--dark ul"
+  id={SERVICES_ANCHORS.legal}
+  data-services="pomoc-prawna"
+  aria-labelledby="uslugi-pomoc-prawna-h"
+>
+  <div class="px-frame ul-bg" data-services-extra="desktop" aria-hidden="true">
+    <img
+      data-px
+      src={bg.src}
+      width={bg.width}
+      height={bg.height}
+      alt=""
+      loading="lazy"
+      fetchpriority="low"
+      decoding="async"
+    />
+  </div>
+  <span class="ul-shade" aria-hidden="true"></span>
+
+  <div class="sx-in ul-in">
+    <div class="ul-main">
+      <div class="ul-head" data-rv>
+        <SectionHead
+          id="uslugi-pomoc-prawna-h"
+          eyebrow={t.eyebrow}
+          title={t.title}
+          accent={t.accent}
+        />
+      </div>
+      <p class="sx-text ul-text" data-rv style="--rvd: 0.07s">{t.text}</p>
+      <ServicesList items={t.items} layout="cols" dark delay={0.14} />
+    </div>
+
+    <div class="ul-side">
+      <div class="ul-photos" data-rv="soft" style="--rvd: 0.07s">
+        <div class="px-frame ul-frame ul-frame--first">
+          <img
+            data-px
+            src={first.src}
+            srcset={`${firstM.src} ${firstM.width}w, ${first.src} ${first.width}w`}
+            sizes="(min-width: 1025px) 34vw, (min-width: 640px) 294px, 44vw"
+            width={first.width}
+            height={first.height}
+            alt={t.firstAlt}
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+        <div
+          class="px-frame ul-frame ul-frame--second"
+          data-services-extra="below"
+        >
+          <img
+            data-px="-1"
+            src={secondM.src}
+            width={secondM.width}
+            height={secondM.height}
+            alt={t.secondAlt}
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+      </div>
+
+      <div class="ul-close" data-rv="d" style="--rvd: 0.14s">
+        <div
+          class="px-frame ul-close-bg"
+          data-services-extra="below"
+          aria-hidden="true"
+        >
+          <img
+            data-px
+            src={bgM.src}
+            width={bgM.width}
+            height={bgM.height}
+            alt=""
+            loading="lazy"
+            fetchpriority="low"
+            decoding="async"
+          />
+        </div>
+        <span class="ul-close-shade" aria-hidden="true"></span>
+        <div class="ul-close-in">
+          <p class="sx-eyebrow ul-close-eyebrow">{t.cta.eyebrow}</p>
+          <p class="ul-close-text">{t.cta.text}</p>
+          <a class="sx-btn ul-btn" href={t.cta.contactHref}>{t.cta.contact}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .ul {
+    /* szkło karty i przycisku — krycia z pomiaru kontrastu */
+    --ul-glass: rgba(9, 18, 36, 0.24);
+    --ul-btn-glass: rgba(233, 233, 230, 0.24);
+    scroll-margin-top: var(--hdr-h);
+  }
+  .ul-bg {
+    display: none;
+  }
+  .ul-shade {
+    display: none;
+  }
+
+  /* telefon i tablet: kolumny znikają z układu, zdjęcia wchodzą między
+     akapit i listę */
+  .ul-in {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(24px, 7vw, 40px);
+  }
+  .ul-main,
+  .ul-side {
+    display: contents;
+  }
+  .ul-head {
+    order: 1;
+  }
+  .ul-text {
+    order: 2;
+  }
+  .ul-photos {
+    order: 3;
+  }
+  .ul-main :global([data-services-list]) {
+    order: 4;
+  }
+  .ul-close {
+    order: 5;
+  }
+
+  .ul .ul-text {
+    color: rgba(255, 255, 255, 0.82);
+  }
+  .ul-photos {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(8px, 2.3vw, 12px);
+    align-items: start;
+  }
+  .ul-frame {
+    aspect-ratio: 4 / 5;
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .ul-frame--first {
+    border-radius: 0 0 0 clamp(36px, 10vw, 56px);
+  }
+  .ul-frame--first img {
+    object-position: 45% 55%;
+  }
+  .ul-frame--second {
+    margin-top: clamp(24px, 7vw, 40px);
+  }
+  .ul-frame--second img {
+    object-position: 50% 52%;
+  }
+
+  /* ── blok zamykający (telefon: zdjęcie tła + gradient) ── */
+  .ul-close {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    box-sizing: border-box;
+    min-height: clamp(320px, 88vw, 380px);
+    overflow: clip;
+    border-radius: clamp(48px, 14vw, 72px) 0 0 0;
+  }
+  .ul-close-bg,
+  .ul-close-shade {
+    position: absolute;
+    inset: 0;
+  }
+  .ul-close-bg img {
+    object-position: 50% 45%;
+  }
+  .ul-close-shade {
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      rgba(14, 32, 60, 0) 25%,
+      rgba(14, 32, 60, 0.9) 100%
+    );
+  }
+  /* tekst stoi na własnym przyciemnieniu, zakotwiczonym do treści (nie
+     do procentu bloku): eyebrow nad jasnym fragmentem zdjęcia miał przy
+     samym gradiencie bloku 1,0:1 (z pomiaru) */
+  .ul-close-in {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: clamp(16px, 4.4vw, 20px);
+    box-sizing: border-box;
+    width: 100%;
+    padding: 72px clamp(24px, 6.5vw, 32px) clamp(24px, 6.5vw, 32px);
+    background: linear-gradient(
+      180deg,
+      rgba(14, 32, 60, 0) 0,
+      rgba(14, 32, 60, 0.86) 56px,
+      rgba(14, 32, 60, 0.92) 100%
+    );
+  }
+  .ul-close-text {
+    margin: 0;
+    max-width: 32ch;
+    font-size: clamp(15px, 4.103vw, 20px);
+    line-height: 1.55;
+    color: #fff;
+    text-wrap: pretty;
+  }
+  /* telefon: przycisk szklany (design); desktop: miedziany */
+  .ul-btn {
+    background: var(--ul-btn-glass);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+  }
+  .ul-btn:hover {
+    background: rgba(201, 130, 54, 0.32);
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .ul {
+      scroll-margin-top: 0;
+      min-height: var(--svh, 100svh);
+      padding: calc(var(--hdr-h) + clamp(24px, 2.6vw, 48px)) var(--pad)
+        clamp(56px, 5.4vw, 80px);
+    }
+    .ul-bg,
+    .ul-shade {
+      display: block;
+      position: absolute;
+      inset: 0;
+    }
+    .ul-bg img {
+      object-position: 50% 45%;
+    }
+    .ul-shade {
+      pointer-events: none;
+      background: linear-gradient(
+        115deg,
+        rgba(14, 32, 60, 0.94) 0%,
+        rgba(14, 32, 60, 0.84) 50%,
+        rgba(14, 32, 60, 0.94) 100%
+      );
+    }
+    .ul-in {
+      display: grid;
+      grid-template-columns: minmax(0, 7fr) minmax(0, 4.6fr);
+      gap: clamp(40px, 4vw, 72px);
+      align-items: start;
+    }
+    .ul-main,
+    .ul-side {
+      display: flex;
+      flex-direction: column;
+    }
+    .ul-main {
+      gap: clamp(18px, 1.8vw, 26px);
+    }
+    .ul-side {
+      gap: clamp(20px, 2vw, 28px);
+    }
+    .ul-head :global(.sx-head) {
+      gap: clamp(18px, 1.8vw, 26px);
+    }
+    .ul-head :global(.sx-h2) {
+      font-size: clamp(28px, 2.9vw, 42px);
+      line-height: 1.14;
+    }
+    .ul .ul-text {
+      max-width: 56ch;
+      font-size: clamp(15px, 1.15vw, 17px);
+      line-height: 1.62;
+      color: rgba(221, 221, 221, 0.82);
+    }
+    .ul-photos {
+      display: block;
+    }
+    .ul-frame--first {
+      aspect-ratio: 3 / 4;
+      border-radius: 0 0 0 clamp(36px, 3.8vw, 56px);
+    }
+    .ul-frame--second {
+      display: none;
+    }
+
+    /* blok zamykający jako szklana karta */
+    .ul-close {
+      display: block;
+      min-height: 0;
+      overflow: visible;
+      border: 1px solid rgba(221, 221, 221, 0.14);
+      border-radius: 3px;
+      background: var(--ul-glass);
+      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(14px);
+    }
+    .ul-close-bg,
+    .ul-close-shade {
+      display: none;
+    }
+    .ul-close-in {
+      gap: clamp(16px, 1.6vw, 22px);
+      padding: clamp(24px, 2.6vw, 34px);
+      background: none;
+    }
+    .ul-close-eyebrow::before {
+      background: var(--copper);
+    }
+    .ul-close-text {
+      max-width: 30ch;
+      font-size: clamp(19px, 1.8vw, 26px);
+      line-height: 1.4;
+      font-weight: 500;
+    }
+    .ul-btn {
+      min-height: 56px;
+      padding: 0 clamp(28px, 2.8vw, 40px);
+      background: var(--copper);
+      border: 0;
+      border-radius: 0 0 0 clamp(14px, 1.4vw, 20px);
+      color: var(--ink);
+    }
+    .ul-btn:hover {
+      background: var(--copper-hover);
+    }
+  }
+</style>

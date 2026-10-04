@@ -1,13 +1,14 @@
 // Nawigacja chrome'u: pasek fixed z sześcioma pozycjami na desktopie
 // (efekt liter za bramką reduced-motion), wariant „nad hero”
 // przemalowywany pozycją scrolla („/” oraz trasy z propem `overHero` —
-// /sprzedaj-z-nami/ i /o-nas/, próg z wysokości hero strony), menu mobilne
+// /sprzedaj-z-nami/, /o-nas/ i /uslugi/, próg z wysokości hero strony),
+// menu mobilne
 // jako bottom sheet na overlay.ts (otwieranie, Esc, scrim, swipe-down,
 // zamknięcie przy przejściu na desktop), telefon i mail składane w JS
 // (antyscraping), stopka z kompletem danych firmy, kontrakt breakpointu
 // projektu (expectBreakpointFlip). Stan po Etapie 4.1
-// (docs/analiza-chrome.md), 5A / PR 2 (docs/analiza-formularze-a.md §11)
-// i 4.5 (docs/analiza-o-nas.md A10).
+// (docs/analiza-chrome.md), 5A / PR 2 (docs/analiza-formularze-a.md §11),
+// 4.5 (docs/analiza-o-nas.md A10) i 4.6 (docs/analiza-uslugi.md).
 import { expect, test, type Page } from "@playwright/test";
 import {
   NAV_DESKTOP_MIN_PX,
@@ -26,6 +27,7 @@ import {
   HOME_PATH,
   OFFERS_PATH,
   SELL_PATH,
+  SERVICES_PATH,
   STATIC_PATHS,
 } from "../../src/lib/routes";
 import { expectBreakpointFlip } from "../helpers/breakpoint";
@@ -193,8 +195,9 @@ test.describe("wariant strony głównej (data-scroll-nav)", () => {
 /** Trasy z hero pod paskiem (prop `overHero`) poza stroną główną. Na
  *  /sprzedaj-z-nami/ znacznik `data-nav-hero` niesie sekcja hero (desktop:
  *  66 % okna), na /o-nas/ — kadr zdjęcia (telefon: samo zdjęcie, niższe
- *  od okna; desktop: cała sekcja). */
-const OVER_HERO_PATHS: string[] = [SELL_PATH, ABOUT_PATH];
+ *  od okna; desktop: cała sekcja), na /uslugi/ — sekcja hero (co najmniej
+ *  całe okno; na niskim ekranie wyższa od okna). */
+const OVER_HERO_PATHS: string[] = [SELL_PATH, ABOUT_PATH, SERVICES_PATH];
 
 test.describe("wariant nad hero na kolejnych trasach (prop overHero)", () => {
   for (const heroPath of OVER_HERO_PATHS) {
