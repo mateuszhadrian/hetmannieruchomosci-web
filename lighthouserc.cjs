@@ -41,6 +41,9 @@ module.exports = {
         // widok treściowy z formularzem (5A): hero ze zdjęciem pod paskiem
         // (preload per kadr), reveale i parallax w chunku ruchu
         "/sprzedaj-z-nami/",
+        // widok z formularzem i polem pliku (5B): zdjęcie hero z preloadem
+        // per plik, moduł formularzy + moduł pola pliku
+        "/praca/",
         "/oferty/",
         // lista SSG z fixture'u (4.2 a): 2 karty, obniżka, plakietka Sprzedane
         "/oferty/mieszkanie-na-sprzedaz/",

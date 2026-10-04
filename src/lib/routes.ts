@@ -1,6 +1,8 @@
 // Ścieżki stron hetmannieruchomosci.com (PL-only) — jedno źródło prawdy dla
 // Navbara, stopki, sekcji, plików w src/pages i testów. Osiem tras
 // statycznych + strona 404.
+import { SHOW_PRACA } from "./site-config";
+
 export const HOME_PATH = "/";
 export const OFFERS_PATH = "/oferty/";
 export const SELL_PATH = "/sprzedaj-z-nami/";
@@ -21,6 +23,18 @@ export const STATIC_PATHS = [
   CONTACT_PATH,
   POLICY_PATH,
 ] as const;
+
+/** Czy adres wchodzi do sitemapy: wszystko poza stroną 404 i — przy
+ *  wyłączonym SHOW_PRACA — podstroną „Praca" (trasa wtedy zostaje, ale
+ *  jest poza indeksem i nie przyjmuje zgłoszeń). Filtr integracji sitemapy
+ *  w astro.config.mjs. */
+export function isSitemapPath(
+  pathname: string,
+  showPraca: boolean = SHOW_PRACA,
+): boolean {
+  if (/\/404\/?$/.test(pathname)) return false;
+  return showPraca || pathname !== JOBS_PATH;
+}
 
 // ── Trasy ofert (wzorzec adresów) ───────────────────────────────────────
 //   /oferty/{typ}-na-{transakcja}/                        lista

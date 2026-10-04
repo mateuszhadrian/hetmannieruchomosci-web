@@ -1,0 +1,213 @@
+---
+// Pole pliku (CV — formularz „Praca", docs/analiza-formularze-b.md §3.3
+// i §11): etykieta + strefa z przyciskiem „Wybierz plik", nazwą pliku
+// i dopiskiem typów oraz limitu. NATYWNY `input type="file"` leży NA
+// strefie (pełna powierzchnia, przezroczysty): jest w kolejności Tab,
+// klik i dotyk w dowolnym miejscu strefy otwierają okno wyboru,
+// a upuszczenie pliku działa także bez JS. Pole ma JEDNĄ etykietę
+// (`<label>`), dopisek typów i limitu jest jego opisem; napisy strefy
+// dublujące natywną kontrolkę są ukryte przed czytnikami. Fokus
+// z klawiatury pokazuje obrys strefy (`:has(:focus-visible)`, forms.css).
+//
+// Trzy komunikaty błędu siedzą w HTML jako ZAGNIEŻDŻONE opakowania
+// `data-f` (`cv` ⊃ `cv-type` ⊃ `cv-size`), tak jak para kontaktowa:
+// mechanika `.err` i `aria-describedby` z form-ui.ts działa bez zmian,
+// a zmiana pliku gasi błąd (zdarzenie `change` idzie przez wszystkie trzy).
+// Komunikat o za dużym pliku kończy się adresem e-mail biura (slot) —
+// kandydat z większym plikiem nie może trafić w ślepy zaułek.
+// Nazwa i rozmiar wybranego pliku, podświetlenie przy przeciąganiu:
+// form-file.ts.
+import { cvAccept } from "@/lib/cv-file";
+import FormMail from "./FormMail.astro";
+
+interface Props {
+  id: string;
+  label: string;
+  /** Napis przycisku w strefie. */
+  pick: string;
+  /** Dopisek o przeciąganiu (widoczny od 1025 px). */
+  drag: string;
+  /** Tekst w miejscu nazwy pliku, gdy nic nie wybrano. */
+  idle: string;
+  /** Dopisek typów i limitu — opis pola. */
+  hint: string;
+  errors: { missing: string; type: string; size: string };
+}
+const { id, label, pick, drag, idle, hint, errors } = Astro.props;
+const hintId = `${id}-hint`;
+---
+
+<div class="fm-field fm-file" data-f="cv" data-file>
+  <label class="fm-label" for={id}>{label}</label>
+  <div class="fm-file-w" data-f="cv-type">
+    <div class="fm-file-w" data-f="cv-size">
+      <div class="fm-zone" data-file-zone>
+        <span class="fm-zone-btn" aria-hidden="true">{pick}</span>
+        <span class="fm-zone-drag">{drag}</span>
+        <span class="fm-zone-file" aria-hidden="true">
+          <span class="fm-zone-name" data-file-name>{idle}</span>
+          <span class="fm-zone-size" data-file-size></span>
+        </span>
+        <span class="fm-zone-hint" id={hintId}>{hint}</span>
+        <input
+          class="fm-file-input"
+          id={id}
+          name="cv"
+          type="file"
+          accept={cvAccept()}
+          required
+          aria-describedby={hintId}
+          data-desc={hintId}
+        />
+      </div>
+      <p class="fm-msg" id={`${id}-size-err`} data-msg>
+        {`${errors.size} `}
+        <FormMail />
+      </p>
+    </div>
+    <p class="fm-msg" id={`${id}-type-err`} data-msg>{errors.type}</p>
+  </div>
+  <p class="fm-msg" id={`${id}-err`} data-msg>{errors.missing}</p>
+</div>
+
+<style>
+  /* Style pola pliku żyją TUTAJ (nie w forms.css): wspólny arkusz
+     formularzy ładuje się też na trasach bez pola pliku. Wygląd strefy
+     z designu (praca.html); stany błędu, fokusu i przeciągania —
+     docs/analiza-formularze-b.md §11. Próg 1025 px W PARZE
+     z DESKTOP_MIN_PX. */
+  .fm-file-w {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+  /* telefon i tablet: przycisk z lewej, obok nazwa pliku nad dopiskiem */
+  .fm-zone {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 3px 14px;
+    box-sizing: border-box;
+    min-height: 72px;
+    padding: 12px 14px;
+    border: 1px dashed rgba(var(--glow), 0.42);
+    background: var(--bg-card);
+    transition:
+      border-color 0.2s ease,
+      background 0.2s ease;
+  }
+  .fm-zone-btn {
+    grid-row: 1 / span 2;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 16px;
+    background: var(--navy);
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+  }
+  .fm-zone-drag {
+    display: none;
+  }
+  .fm-zone-file {
+    display: flex;
+    align-self: end;
+    gap: 8px;
+    min-width: 0;
+    font-size: 14px;
+    line-height: 1.4;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  /* długa nazwa nie rozpycha strefy */
+  .fm-zone-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .fm-zone-size {
+    flex: none;
+    font-weight: 400;
+    color: var(--muted);
+  }
+  .fm-zone-size:empty {
+    display: none;
+  }
+  .fm-zone-hint {
+    align-self: start;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--muted);
+  }
+  /* natywne pole na całej strefie: przezroczyste, ale klikalne,
+     fokusowalne i przyjmujące upuszczony plik */
+  .fm-file-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .fm-file-input::file-selector-button {
+    cursor: pointer;
+  }
+  .fm-zone:hover,
+  .fm-zone[data-drag] {
+    border-color: var(--copper);
+  }
+  .fm-zone[data-drag] {
+    background: rgba(201, 130, 54, 0.07);
+  }
+  .fm-zone:has(.fm-file-input:focus-visible) {
+    outline: 2px solid var(--navy);
+    outline-offset: 3px;
+  }
+  .fm-file.err .fm-zone,
+  .fm-file .err .fm-zone {
+    border-color: var(--error);
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .fm-zone {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      justify-content: center;
+      gap: 10px;
+      min-height: 150px;
+      padding: 24px;
+      text-align: center;
+    }
+    .fm-zone-btn {
+      padding: 0 20px;
+    }
+    .fm-zone-drag {
+      display: block;
+      font-size: 14px;
+      line-height: 1.4;
+      color: var(--slate);
+    }
+    .fm-zone-file {
+      align-self: center;
+      max-width: 100%;
+    }
+    .fm-zone-hint {
+      align-self: center;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fm-zone {
+      transition: none;
+    }
+  }
+</style>

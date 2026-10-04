@@ -7,6 +7,7 @@ import tailwindcss from "@tailwindcss/vite";
 
 import fixtureMedia from "./src/integrations/fixture-media";
 import redirects from "./src/integrations/redirects";
+import { isSitemapPath } from "./src/lib/routes";
 
 // https://astro.build/config
 export default defineConfig({
@@ -14,15 +15,17 @@ export default defineConfig({
   // podgląd chroni przed indeksacją nagłówek noindex z public/_headers.
   site: "https://hetmannieruchomosci.com",
   output: "static",
-  // Sitemapa: wszystkie trasy poza stroną 404 (filtr jawny — nie polegamy
-  // na zachowaniu domyślnym integracji). Trasy druku dojdą tu w Etapie 7.
+  // Sitemapa: wszystkie trasy poza stroną 404 i — przy wyłączonym
+  // SHOW_PRACA — podstroną „Praca" (filtr jawny w src/lib/routes.ts — nie
+  // polegamy na zachowaniu domyślnym integracji). Trasy druku dojdą tu
+  // w Etapie 7.
   integrations: [
     // Jedyna wyspa projektu (4.2): karta oferty `OfferCard.tsx` renderuje
     // się w SSG; wyspa wyszukiwarki (4.2 b) hydratuje ją na kliencie.
     // Bez dyrektywy `client:*` komponent Preact nie wysyła żadnego JS.
     preact(),
     sitemap({
-      filter: (page) => !/\/404\/?$/.test(new URL(page).pathname),
+      filter: (page) => isSitemapPath(new URL(page).pathname),
     }),
     // `dist/_redirects` z danych ofert (OFFERS_DATA_DIR) — po buildzie.
     redirects(),

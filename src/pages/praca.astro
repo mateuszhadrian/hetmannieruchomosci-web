@@ -1,10 +1,108 @@
 ---
-import SkeletonPage from "@/components/SkeletonPage.astro";
+// /praca/ (Etap 5B / PR 2, docs/analiza-formularze-b.md): zdjęcie
+// z nagłówkiem i formularz rekrutacyjny z CV jako załącznikiem maila.
+// Czysty Astro + moduły formularzy (ładowane zawsze — to funkcja, nie
+// dekoracja). Widok nie ma ruchu, więc nie ma bramki `js-motion`; pasek
+// chrome'u w wariancie stałym.
+//
+// Przełącznik SHOW_PRACA (site-config.ts): wyłączony = strona bez
+// formularza (JobsClosed), z `noindex` i poza sitemapą; funkcja formularzy
+// odrzuca wtedy `form=praca`.
+import heroSmall from "@/assets/img/praca-hero-m.webp";
+import hero from "@/assets/img/praca-hero.webp";
+import Footer from "@/components/Footer.astro";
+import Navbar from "@/components/navbar/Navbar.astro";
+import "@/components/sections/content.css";
+import JobsClosed from "@/components/sections/jobs/JobsClosed.astro";
+import { JOBS_HERO_SMALL_BELOW_PX } from "@/components/sections/jobs/jobs-config";
+import JobsForm from "@/components/sections/jobs/JobsForm.astro";
+import JobsHero from "@/components/sections/jobs/JobsHero.astro";
 import { ui } from "@/i18n/ui";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { SHOW_PRACA } from "@/lib/site-config";
 ---
 
-<SkeletonPage
+<BaseLayout
   title={ui.pl["jobsPage.title"]}
   description={ui.pl["jobsPage.description"]}
-  heading="Praca"
-/>
+  noindex={!SHOW_PRACA}
+>
+  {/* zdjęcie hero: jeden preload per plik (jak <picture> w JobsHero) */}
+  {
+    SHOW_PRACA && (
+      <link
+        slot="head"
+        rel="preload"
+        as="image"
+        href={heroSmall.src}
+        media={`(max-width: ${JOBS_HERO_SMALL_BELOW_PX - 1}px)`}
+        fetchpriority="high"
+      />
+    )
+  }
+  {
+    SHOW_PRACA && (
+      <link
+        slot="head"
+        rel="preload"
+        as="image"
+        href={hero.src}
+        media={`(min-width: ${JOBS_HERO_SMALL_BELOW_PX}px)`}
+        fetchpriority="high"
+      />
+    )
+  }
+
+  <Navbar />
+
+  <main class="jobs">
+    <div class="jobs-in">
+      {
+        SHOW_PRACA ? (
+          <>
+            <JobsHero />
+            <JobsForm />
+          </>
+        ) : (
+          <JobsClosed />
+        )
+      }
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<script>
+  import { initFileFields } from "@/components/forms/form-file";
+  import { initForms } from "@/components/forms/form-ui";
+  import { checkCv } from "@/lib/cv-file";
+
+  // reguła pliku jedzie tylko z tą stroną (ta sama, którą woła funkcja)
+  initForms(document, checkCv);
+  initFileFields();
+</script>
+
+<style>
+  /* telefon i tablet: zdjęcie zaczyna się od górnej krawędzi okna (pod
+     szklanym paskiem) — bez odsunięcia o pasek */
+  .jobs {
+    padding-bottom: clamp(48px, 13vw, 80px);
+    background: var(--bg);
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .jobs {
+      padding: calc(var(--hdr-h) + clamp(24px, 2.6vw, 48px)) var(--pad)
+        clamp(64px, 6vw, 96px);
+      background: var(--bg-card);
+    }
+    .jobs-in {
+      display: flex;
+      flex-direction: column;
+      max-width: var(--col);
+      margin-inline: auto;
+    }
+  }
+</style>

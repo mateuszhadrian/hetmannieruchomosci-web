@@ -18,9 +18,11 @@ export const TABLET_MIN_PX = 768;
 export const CONTACT_MAP_MIN_PX = 600;
 
 // ── Widoczność podstron ─────────────────────────────────────────────────
-/** Podstrona „Praca" w menu i stopce. Przestawia Mateusz na prośbę
- *  klientki. STAN Etapu 0: steruje pozycjami nawigacji; trasa buduje się
- *  zawsze. */
+/** Podstrona „Praca". Przestawia Mateusz na prośbę klientki. Wyłączona:
+ *  pozycja znika z menu i stopki, strona wypada z sitemapy i dostaje
+ *  `noindex`, zamiast formularza pokazuje krótką informację z linkiem do
+ *  kontaktu, a funkcja formularzy odrzuca `form=praca`. Adres zostaje
+ *  (stare linki nie kończą się 404). */
 export const SHOW_PRACA: boolean = true;
 
 // ── Oferty: prezentacja ─────────────────────────────────────────────────

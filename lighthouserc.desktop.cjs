@@ -17,6 +17,9 @@ module.exports = {
         "/kontakt/",
         // widok treściowy z formularzem (5A) — jak w lighthouserc.cjs
         "/sprzedaj-z-nami/",
+        // widok z formularzem i polem pliku (5B): zdjęcie hero z preloadem
+        // per plik, moduł formularzy + moduł pola pliku
+        "/praca/",
         "/oferty/",
         "/oferty/mieszkanie-na-sprzedaz/",
         // detale z fixture'u (4.3) — jak w lighthouserc.cjs

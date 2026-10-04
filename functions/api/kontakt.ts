@@ -1,6 +1,6 @@
 // Pages Function: POST /api/kontakt — JEDEN endpoint wszystkich formularzy
-// serwisu; rodzaj niesie pole `form` (`kontakt`, `sprzedaj`, `oferta`;
-// praca dochodzi w 5B / PR 2).
+// serwisu; rodzaj niesie pole `form` (`kontakt`, `sprzedaj`, `oferta`,
+// `praca`).
 // Sekrety (RESEND_API_KEY, TURNSTILE_SECRET_KEY) żyją w ustawieniach
 // projektu Pages; binding KONTAKT_KV jest OPCJONALNY (dzienny bezpiecznik
 // limitu Resend); KONTAKT_TO jest OPCJONALNE (nadpisuje adresata — np.
@@ -12,10 +12,16 @@
 // tytuł, lokalizację i adres funkcja czyta sama z indeksu ofert
 // (`/oferty/index.json`, plik statyczny tego samego wdrożenia, przez
 // binding ASSETS).
+// Zgłoszenie do pracy: CV jedzie jako załącznik maila i żyje WYŁĄCZNIE
+// w pamięci żądania (nic nie jest zapisywane, logi nie niosą nazwy pliku
+// ani danych kandydata). Reguły czasu procesora: odrzucenie po nagłówku
+// przed czytaniem treści, kodowanie pliku na samym końcu i tylko natywnie,
+// treść żądania do usługi pocztowej bez serializacji załącznika.
 import {
   buildMail,
   CONTACT_FROM_NOTIFY,
   CONTACT_TO,
+  CV_REQUEST_MAX_BYTES,
   FORM_MAX_BYTES,
   isActiveFormKind,
   isBotTrap,
@@ -25,6 +31,15 @@ import {
   type FormRaw,
   type MailOffer,
 } from "../../src/lib/contact-form";
+import {
+  checkCv,
+  CV_SIGNATURE_BYTES,
+  detectCvSignature,
+} from "../../src/lib/cv-file";
+import {
+  pickBase64Encoder,
+  withAttachment,
+} from "../../src/lib/mail-attachment";
 import { formatLocation } from "../../src/lib/offers/format";
 import { CONTACT_PATH, OFFERS_INDEX_PATH } from "../../src/lib/routes";
 
@@ -114,7 +129,9 @@ async function handlePost({ request, env }: PagesContext): Promise<Response> {
   if (!Number.isInteger(length) || length < 0) {
     return json(411, { ok: false, error: "length-required" });
   }
-  if (length > FORM_MAX_BYTES) {
+  // Próg górny = limit CV + narzut pól. Rodzaj formularza siedzi w treści,
+  // więc próg formularzy tekstowych sprawdzamy zaraz po jej odczytaniu.
+  if (length > CV_REQUEST_MAX_BYTES) {
     return json(413, { ok: false, error: "too-large" });
   }
 
@@ -125,17 +142,40 @@ async function handlePost({ request, env }: PagesContext): Promise<Response> {
     return json(400, { ok: false, error: "bad-form" });
   }
   const raw: FormRaw = {};
+  let hasFile = false;
   for (const [key, value] of fd.entries()) {
     if (typeof value === "string") raw[key] = value;
+    else hasFile = true;
   }
 
   const kind = raw.form ?? "";
   if (!isActiveFormKind(kind)) return json(400, { ok: false, error: "form" });
 
+  // Formularz tekstowy nie niesie plików i mieści się w swoim progu.
+  if (kind !== "praca" && (hasFile || length > FORM_MAX_BYTES)) {
+    return json(413, { ok: false, error: "too-large" });
+  }
+
   // Bot-trap: udawany sukces bez wysyłki — bot nie wie, że został odsiany.
   if (isBotTrap(raw)) return json(200, { ok: true });
 
-  const validated = validateForm(kind, raw);
+  // Opis pliku do walidacji składa FUNKCJA (nazwa, rozmiar, sygnatura
+  // z pierwszych bajtów) — pola tekstowe o tych nazwach dosłane przez
+  // klienta nie mają znaczenia.
+  delete raw["cv:name"];
+  delete raw["cv:size"];
+  delete raw["cv:sig"];
+  const cv = kind === "praca" ? fd.get("cv") : null;
+  const file = cv !== null && typeof cv !== "string" ? cv : null;
+  if (file && file.name !== "") {
+    raw["cv:name"] = file.name;
+    raw["cv:size"] = String(file.size);
+    raw["cv:sig"] = detectCvSignature(
+      new Uint8Array(await file.slice(0, CV_SIGNATURE_BYTES).arrayBuffer()),
+    );
+  }
+
+  const validated = validateForm(kind, raw, checkCv);
   if (!validated.ok) {
     return json(400, { ok: false, error: "fields", fields: validated.fields });
   }
@@ -143,6 +183,14 @@ async function handlePost({ request, env }: PagesContext): Promise<Response> {
   if (!env.RESEND_API_KEY || !env.TURNSTILE_SECRET_KEY) {
     console.error("kontakt: brak sekretów w środowisku funkcji");
     return json(503, { ok: false, error: "config" });
+  }
+
+  // Załącznik wymaga natywnego kodowania base64; platforma bez niego nie
+  // obsłuży TEGO formularza (pozostałe działają).
+  const encoder = validated.data.form === "praca" ? pickBase64Encoder() : null;
+  if (validated.data.form === "praca" && !encoder) {
+    console.error("kontakt: brak natywnego kodowania base64 — załącznik");
+    return json(503, { ok: false, error: "encoder" });
   }
 
   // Turnstile — token jest jednorazowy i żyje 300 s; frontend pobiera
@@ -197,7 +245,7 @@ async function handlePost({ request, env }: PagesContext): Promise<Response> {
     env.KONTAKT_TO && isValidEmail(env.KONTAKT_TO)
       ? env.KONTAKT_TO
       : CONTACT_TO;
-  const sent = await sendEmail(env.RESEND_API_KEY, {
+  const message = JSON.stringify({
     from: CONTACT_FROM_NOTIFY,
     to: [to],
     // Reply-To = klient, więc „Odpowiedz" pisze wprost do niego. Gdy podał
@@ -206,7 +254,25 @@ async function handlePost({ request, env }: PagesContext): Promise<Response> {
     // Losowy identyfikator — klienci poczty nie sklejają zgłoszeń w wątek.
     headers: { "X-Entity-Ref-ID": crypto.randomUUID() },
     ...mail,
-  });
+  } satisfies OutgoingEmail);
+
+  // Kodowanie pliku NA KOŃCU — żądanie odsiane wcześniej (pułapka,
+  // walidacja, Turnstile, limit) za nie nie płaci. Treść żądania =
+  // wiadomość + doklejony fragment z base64, bez serializacji załącznika.
+  let body = message;
+  if (validated.data.form === "praca" && encoder && file) {
+    body = withAttachment(message, {
+      filename: validated.data.cv.name,
+      contentType: validated.data.cv.mime,
+      base64: encoder.encode(new Uint8Array(await file.arrayBuffer())),
+    });
+    // ścieżka kodowania i rozmiar — bez nazwy pliku i danych kandydata
+    console.log(
+      `kontakt: załącznik ${validated.data.cv.size} B, base64 przez ${encoder.via}`,
+    );
+  }
+
+  const sent = await sendEmail(env.RESEND_API_KEY, body);
   if (!sent.ok) {
     console.error(`kontakt: powiadomienie nie wyszło (HTTP ${sent.status})`);
     return json(502, { ok: false, error: "send" });
@@ -290,9 +356,11 @@ interface OutgoingEmail {
   text: string;
 }
 
+/** `body` = gotowa treść żądania (JSON wiadomości, ewentualnie z doklejonym
+ *  załącznikiem). */
 async function sendEmail(
   apiKey: string,
-  mail: OutgoingEmail,
+  body: string,
 ): Promise<{ ok: boolean; status: number }> {
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -301,7 +369,7 @@ async function sendEmail(
         authorization: `Bearer ${apiKey}`,
         "content-type": "application/json",
       },
-      body: JSON.stringify(mail),
+      body,
     });
     return { ok: res.ok, status: res.status };
   } catch {
