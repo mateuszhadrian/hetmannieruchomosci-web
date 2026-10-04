@@ -6,17 +6,21 @@
 // Wygląd docelowy (Etap 4.1, docs/analiza-chrome.md): logo w dwóch
 // wariantach, sześć pozycji z efektem liter przy hover (czysty CSS, za
 // bramką prefers-reduced-motion), telefon przez slot antyscrapingowy,
-// wariant strony głównej przemalowywany POZYCJĄ SCROLLA.
+// wariant „nad hero" przemalowywany POZYCJĄ SCROLLA.
 //
 // Stany paska:
-//  [data-scroll-nav] — wariant „/" (SSR, tylko HOME_PATH): pasek startuje
+//  [data-scroll-nav] — wariant „nad hero" (SSR): pasek startuje
 //    przezroczysty nad hero; skrypt pisze zmienne --nav-* na nagłówku,
-//    CSS je konsumuje. Kontrakt = PRÓG SCROLLA z wysokości okna (hero
-//    z 4.4 jest pełnoekranowe), nie selektor sekcji hero.
+//    CSS je konsumuje. Ma go strona główna oraz strony, które zadeklarują
+//    hero pod paskiem propem `overHero` (od 5A: /sprzedaj-z-nami/).
+//    Kontrakt = PRÓG SCROLLA liczony z wysokości hero: elementu
+//    `[data-nav-hero]` strony, a gdy strona go nie oznaczy — z wysokości
+//    okna (strona główna: hero pełnoekranowe).
 //  [data-hero] — SSR razem z data-scroll-nav (stan przezroczysty bez
 //    migotania przed startem skryptu); bez JS <noscript> przywraca tło.
-//  [data-solid] — pasek „pełny": na „/" po dojechaniu przemalowania do
-//    końca, na pozostałych trasach zaraz po ruszeniu scrolla.
+//  [data-solid] — pasek „pełny": w wariancie „nad hero" po dojechaniu
+//    przemalowania do końca, na pozostałych trasach zaraz po ruszeniu
+//    scrolla.
 //  [data-open] — otwarty sheet.
 import { mainNavItems } from "@/i18n/nav";
 import { CONTACT_PATH, HOME_PATH } from "@/lib/routes";
@@ -28,8 +32,15 @@ const currentPath = Astro.url.pathname.endsWith("/")
   ? Astro.url.pathname
   : `${Astro.url.pathname}/`;
 
-/** Wariant przezroczysty nad hero — WYŁĄCZNIE strona główna. */
-const isHome = currentPath === HOME_PATH;
+interface Props {
+  /** Strona ma hero POD paskiem (oznaczone `data-nav-hero`): pasek
+   *  startuje przezroczysty i przemalowuje się pozycją scrolla. Domyślnie
+   *  wariant ma wyłącznie strona główna. */
+  overHero?: boolean;
+}
+
+/** Wariant przezroczysty nad hero. */
+const overHero = Astro.props.overHero ?? currentPath === HOME_PATH;
 
 /** Pozycja jest bieżąca także dla adresów POD nią (listy i detale ofert
  *  pod /oferty/). */
@@ -58,13 +69,13 @@ const t = {
 <header
   class="hdr"
   data-nav
-  data-scroll-nav={isHome ? "" : undefined}
-  data-hero={isHome ? "" : undefined}
+  data-scroll-nav={overHero ? "" : undefined}
+  data-hero={overHero ? "" : undefined}
 >
   {
-    /* scrim nad hero (design: gradient 190 px) — tylko wariant „/";
-       gaśnie razem z przemalowaniem */
-    isHome && <span class="hdr-scrim" aria-hidden="true" />
+    /* scrim nad hero (design: gradient 190 px) — tylko wariant „nad
+       hero"; gaśnie razem z przemalowaniem */
+    overHero && <span class="hdr-scrim" aria-hidden="true" />
   }
   {/* szklane tło paska (design: półprzezroczysta szarość + blur) */}
   <span class="hdr-bg" aria-hidden="true"></span>
@@ -80,7 +91,7 @@ const t = {
     />
     {
       /* logo jasne nad hero — crossfade z ciemnym pozycją scrolla */
-      isHome && (
+      overHero && (
         <img
           class="hdr-logo-light"
           src={logoSilver.src}
@@ -137,10 +148,10 @@ const t = {
   </button>
 </header>
 {
-  /* Bez JS wariant „/" nie ma kto przemalować — przywracamy pełny pasek
-     (selektor trafia wyłącznie na „/"). !important, bo reguły komponentu
-     są scope'owane atrybutem (wyższa specyficzność) i inaczej wygrałyby
-     domyślne wartości stanu przezroczystego. */
+  /* Bez JS wariantu „nad hero" nie ma kto przemalować — przywracamy pełny
+     pasek (selektor trafia wyłącznie na ten wariant). !important, bo
+     reguły komponentu są scope'owane atrybutem (wyższa specyficzność)
+     i inaczej wygrałyby domyślne wartości stanu przezroczystego. */
 }
 <noscript>
   <style is:inline>
@@ -218,8 +229,8 @@ const t = {
     box-sizing: border-box;
   }
 
-  /* Wariant „/" — zmienne pisane przez skrypt co klatkę (e = 0 nad hero,
-     1 po przemalowaniu). Wartości startowe = stan przezroczysty. */
+  /* Wariant „nad hero" — zmienne pisane przez skrypt co klatkę (e = 0 nad
+     hero, 1 po przemalowaniu). Wartości startowe = stan przezroczysty. */
   .hdr[data-hero] {
     --nav-e: 0;
     --nav-c: rgba(255, 255, 255, 0.88);
@@ -228,8 +239,9 @@ const t = {
     --nav-bar: var(--silver);
   }
 
-  /* Szklane tło: widoczne ZAWSZE poza wariantem „/", gdzie wjeżdża
-     pozycją scrolla. Bez przejścia czasowego — stan liczy pętla rAF. */
+  /* Szklane tło: widoczne ZAWSZE poza wariantem „nad hero", gdzie
+     wjeżdża pozycją scrolla. Bez przejścia czasowego — stan liczy pętla
+     rAF. */
   .hdr-bg {
     position: absolute;
     inset: 0;
@@ -591,7 +603,8 @@ const t = {
       }
     }
 
-    /* wariant „/": kolory linków z pętli rAF, cień tekstu i halo gasną */
+    /* wariant „nad hero": kolory linków z pętli rAF, cień tekstu i halo
+       gasną */
     .hdr[data-hero] .nav-link {
       color: var(--nav-c);
       text-shadow: 0 1px 6px rgba(0, 0, 0, var(--nav-sh));
@@ -689,8 +702,14 @@ const t = {
     const SHEET_ID = "nav-sheet";
     const desktopMQ = matchMedia(`(min-width:${NAV_DESKTOP_MIN_PX}px)`);
     const reduceMQ = matchMedia("(prefers-reduced-motion: reduce)");
-    /** Wariant „/" (SSR): przemalowanie pozycją scrolla. */
-    const home = hdr.hasAttribute("data-scroll-nav");
+    /** Wariant „nad hero" (SSR): przemalowanie pozycją scrolla. */
+    const overHero = hdr.hasAttribute("data-scroll-nav");
+    /** Hero strony pod paskiem — z jego wysokości liczy się próg
+     *  przemalowania. Strona bez oznaczonego hero (strona główna: hero
+     *  pełnoekranowe) liczy próg z wysokości okna. */
+    const hero = overHero
+      ? document.querySelector<HTMLElement>("[data-nav-hero]")
+      : null;
 
     // telefon w pasku, sheecie i stopce (antyscraping — lib/contact-details)
     fillContactSlots();
@@ -718,12 +737,13 @@ const t = {
       hdr!.toggleAttribute("data-solid", s);
     }
 
-    // ── wariant „/": przemalowanie pozycją scrolla (design site.js §4) ──
+    // ── wariant „nad hero": przemalowanie pozycją scrolla (design
+    // site.js §4) ──
     // Postęp e ∈ [0, 1] ze smoothstep; start = 0,32 × h, koniec = h − pasek,
-    // h = wysokość OKNA (próg scrolla, nie selektor hero). Pętla rAF
-    // dociąga wartość (Safari dostarcza `scroll` rzadziej, niż przewija —
-    // scroll.md); przy reduce — skok. Zapis = kilka zmiennych CSS na
-    // nagłówku, nie style inline per link.
+    // h = wysokość HERO strony (`[data-nav-hero]`), a bez niego wysokość
+    // okna. Pętla rAF dociąga wartość (Safari dostarcza `scroll` rzadziej,
+    // niż przewija — scroll.md); przy reduce — skok. Zapis = kilka
+    // zmiennych CSS na nagłówku, nie style inline per link.
     const WHITE = [255, 255, 255];
     const INK = [28, 27, 25]; // --ink
     const NAVY = [24, 58, 107]; // --navy
@@ -737,7 +757,7 @@ const t = {
     let raf = 0;
 
     function progress(): number {
-      const h = window.innerHeight;
+      const h = hero?.offsetHeight || window.innerHeight;
       const navH = hdr!.offsetHeight || 96;
       const start = h * NAV_HOME_FADE_START;
       const end = Math.max(start + 1, h - navH);
@@ -772,7 +792,7 @@ const t = {
 
     function onScroll() {
       if (frozen()) return;
-      if (home) {
+      if (overHero) {
         target = progress();
         if (!raf) raf = requestAnimationFrame(tick);
       } else {
@@ -781,7 +801,7 @@ const t = {
     }
     addEventListener("scroll", onScroll, { passive: true });
     addEventListener("resize", onScroll, { passive: true });
-    if (home) {
+    if (overHero) {
       // start bez dociągania — przeładowanie w środku strony od razu
       // w stanie docelowym
       current = target = progress();
