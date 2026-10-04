@@ -33,7 +33,7 @@ odziedziczone z szablonu projektu i stan chrome'u po Etapie 0.
   „Strona główna" niżej); strona treściowa dokłada tylko swoje wejście
   chunku (`<widok>-motion.ts`) i bramkę inline w `<head>` — komponent
   `src/components/MotionGate.astro` (`<MotionGate slot="head" />`; od 5A
-  używają go „/" i `/sprzedaj-z-nami/`).
+  używają go „/" i `/sprzedaj-z-nami/`, od 4.5 także `/o-nas/`).
 - **BEZ bibliotek ruchu i scrolla** — ruch sekcji to własne pętle rAF i
   `IntersectionObserver` (wzorzec `content-motion.ts`).
 - **`data-rv` tylko na blokach NIEinteraktywnych** (wrapper, nie link
@@ -66,7 +66,8 @@ odziedziczone z szablonu projektu i stan chrome'u po Etapie 0.
   fallback w `global.css`, skrypt Navbara doprecyzowuje pomiarem).
 - Stany paska: `[data-scroll-nav]` + `[data-hero]` (SSR — wariant
   przezroczysty „nad hero": strona główna oraz strony, które przekażą
-  paskowi prop `overHero`; od 5A `/sprzedaj-z-nami/`), `[data-solid]`
+  paskowi prop `overHero`; od 5A `/sprzedaj-z-nami/`, od 4.5 `/o-nas/`),
+  `[data-solid]`
   (w wariancie „nad hero" po dojechaniu przemalowania do końca, na
   pozostałych trasach po `NAV_SOLID_FALLBACK_PX`), `[data-open]` (otwarty
   sheet). Poza wariantem „nad hero" szklane tło jest widoczne zawsze.
@@ -75,10 +76,12 @@ odziedziczone z szablonu projektu i stan chrome'u po Etapie 0.
   postęp `e = smoothstep((scrollY − 0,32·h) / (h − pasek − 0,32·h))`,
   `h` = wysokość elementu `[data-nav-hero]` strony, a gdy strona go nie
   oznaczy — `innerHeight` (strona główna: hero pełnoekranowe, bez
-  znacznika; `/sprzedaj-z-nami/`: hero 66 % okna na desktopie). Strona
-  z hero pod paskiem = `<Navbar overHero />` + `data-nav-hero` na
-  elemencie hero + hero zaczynające się od góry okna (własny
-  `padding-top` z `--hdr-h`). Stałe `NAV_HOME_*` w `nav-config.ts`
+  znacznika; `/sprzedaj-z-nami/`: hero 66 % okna na desktopie; `/o-nas/`:
+  znacznik na KADRZE ZDJĘCIA — na telefonie samo zdjęcie, na desktopie
+  cała sekcja). Strona z hero pod paskiem = `<Navbar overHero />` +
+  `data-nav-hero` na elemencie, pod którym pasek ma być przezroczysty
+  (pierwszy taki element w dokumencie) + hero zaczynające się od góry
+  okna (własny `padding-top` z `--hdr-h`). Stałe `NAV_HOME_*` w `nav-config.ts`
   dotyczą całego wariantu. Tekst i logo paska stoją wtedy NAD zdjęciem —
   kontrast linków paska wchodzi do pomiaru kontrastu hero (axe go nie
   liczy). Pętla rAF
@@ -470,7 +473,14 @@ true)`). **Akcja wymagająca przewinięcia strony („Napisz" → `#kontakt`)
   zapas `--px-a` (0,08 i 0,10 — W PARZE z `PX_AMT_*` w
   `content-config.ts`), JS pisze sam `translate3d`; transform jest
   czystą funkcją pozycji scrolla (liczony także poza oknem),
-  przemalowanie na `resize` tylko przy zmianie szerokości.
+  przemalowanie na `resize` tylko przy zmianie szerokości. Wartości
+  atrybutu (od 4.5): `data-px="-1"` — kierunek odwrotny (dwa sąsiednie
+  zdjęcia jadą przeciwnie); `data-px="top"` — kadr zaczynający się NA
+  GÓRZE STRONY: przesunięcie liczone od pozycji scrolla 0 (zero na
+  starcie, potem tylko w górę, ograniczone do zapasu) — sposób na
+  zdjęcie pierwszego ekranu bez przeskoku po wczytaniu modułu, gdy
+  wysokość kadru nie jest ułamkiem okna (wzór CSS ze „Sprzedaj z nami"
+  wymaga takiego ułamka).
 - **`content-viewport.ts`:** `armViewportPin(host)` przypina `--svh`
   dopiero, gdy `100svh` drgnie bez zmiany szerokości (przeglądarki
   zmieniające rozmiar widoku z paskiem adresu; także rozciągnięcie okna
@@ -791,3 +801,57 @@ checkCv)`) i funkcja. Ta sama reguła po obu stronach; bez niej
   kolumny i trzyma tę samą szczelinę — `--jf-gap`), treść (dwie kolumny)
   obok strefy pliku (ta sama wysokość); przycisk i „Wolisz mailem?"
   w jednym wierszu (siatka na `.fm-form` przez `:global()`).
+
+## O nas — stan po Etapie 4.5 (`docs/analiza-o-nas.md`)
+
+- `src/pages/o-nas.astro` + `sections/about/`: `AboutHero`,
+  `AboutHistory`, `AboutFocus` (specjalizacja), `AboutContact`; teksty
+  w `about-copy.ts` (całość PLACEHOLDER U9; nagłówek historii ma w
+  designie DWA warianty — wstawiony desktopowy, wybór klientki), stałe
+  w `about-config.ts`, wejście chunku ruchu `about-motion.ts`. Bez wyspy
+  i bez formularza; skrypt strony: `armViewportPin` + dynamiczny
+  `import()` ruchu przy `no-preference`.
+- **Hero ma dwa układy na jednym markupie:** telefon i tablet — jasne tło,
+  zdjęcie od górnej krawędzi okna (wysokość z SZEROKOŚCI okna, promień
+  lewego dolnego rogu), szklana karta (eyebrow + `h1`) nasunięta na jego
+  dół, akapit i pas liczb pod kartą (`margin-top: auto` — dosunięty do
+  dołu hero o `min-height` = okno); desktop — pełne okno, zdjęcie +
+  gradient, szkło na wspólnym opakowaniu karty i akapitu, pas liczb
+  u dołu. Odstępy pionowe i rozmiar `h1` na desktopie ograniczone przez
+  `svh` — na niskim oknie laptopa karta i pas liczb mieszczą się
+  w pierwszym ekranie.
+- **`data-nav-hero` stoi na kadrze zdjęcia (`.ah-media`), nie na
+  sekcji:** poniżej 1025 px kadr ma wysokość zdjęcia, od 1025 px wypełnia
+  sekcję (`inset: 0`). Pasek jest pełny, zanim wjedzie pod niego jasna
+  część hero. Zmiana układu hero = sprawdź, z czego pasek liczy próg
+  (`navigation.spec`, trasa `/o-nas/`).
+- **Krycia są z POMIARU kontrastu** (analiza §10.2; axe zwraca
+  „incomplete"): szkło karty na telefonie to kolor `--bg` z kryciem .8
+  (srebro .39 z designu dawało eyebrow 2,3:1, a srebro o wyższym kryciu
+  — miedzianej frazie poniżej 3:1); górny pas ZDJĘCIA na telefonie ma
+  własne przyciemnienie pod paskiem (`.ah-shade` — jasne kreski menu nad
+  jasnym fragmentem kadru; chrome nietknięty); górne stopy gradientów
+  historii i kontaktu na telefonie oraz etykiety listy kontaktu mocniejsze
+  niż w designie. Zmiana krycia, koloru tekstu albo zdjęcia = ponowny
+  pomiar (telefon, tablet i desktop; Chromium i WebKit).
+- Zdjęcie hero: `<picture>` z plikiem `-m` poniżej 768 px (pole na
+  telefonie nie jest pionowe — bez kadru `-tall`), dwa `preload`
+  z `media` na stronie, `eager`, `fetchpriority`, żadnego reveala,
+  parallax `data-px="top"`. Na telefonie zdjęcie JEST kandydatem LCP (nie
+  wypełnia okna); na desktopie elementem LCP jest `h1`.
+- Historia: DOM w kolejności telefonu (Joanna → dokumenty); desktop
+  przestawia kolumny przez `order` (zdjęcia nie są interaktywne). Blok
+  tekstu ma JEDEN reveal (od 1025 px to szklana karta). Zdjęcie Joanny
+  `data-px="-1"`.
+- Specjalizacja: jedna treść na obu progach (akapit, dopisek, lista);
+  zdjęcie „dokumentacja" tylko poniżej 1025 px (`display: none` + `lazy`
+  — desktop go nie pobiera; moduł parallaxu pomija kadr o wysokości 0,
+  sondy e2e filtrują takie kadry). Od 1025 px zdjęcie „umowa" wypełnia
+  wysokość sekcji i dochodzi do lewej krawędzi okna. **`align-items`
+  z siatki działa też we flexie** — kontener przełączany z `grid` na
+  `flex` musi zresetować `align-items: start`, inaczej kadr bez własnej
+  wysokości ma 0 px.
+- Kontakt: lista danych (e-mail, telefon, biuro) tylko od 1025 px, sloty
+  `a[data-mail="biuro"]`, `a[data-tel]` z `<span data-slot>`; bez JS
+  wiersz slotu znika (`.ac-row:has(> a[hidden])`). Brąz sekcji to
+  wartości lokalne komponentu (występuje tylko nad tym zdjęciem).
