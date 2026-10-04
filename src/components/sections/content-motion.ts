@@ -13,6 +13,11 @@
 //             design nadawał go skryptem.
 //  [data-px]  zdjęcie w kadrze `.px-frame` jadące w pionie o ułamek
 //             wysokości kadru; zapas układu = amplituda (content.css).
+//             Wartości atrybutu: `-1` — kierunek odwrotny (jak w designie:
+//             dwa sąsiednie zdjęcia jadą przeciwnie); `top` — kadr
+//             zaczynający się NA GÓRZE STRONY: przesunięcie liczone od
+//             pozycji scrolla 0 (zdjęcie pierwszego ekranu nie przeskakuje
+//             po wczytaniu modułu — docs/analiza-o-nas.md A9).
 import {
   CONTENT_DESKTOP_MIN_PX,
   PX_AMT_DESKTOP,
@@ -47,11 +52,13 @@ function initReveals(): void {
 /* ── parallax: jedna pętla rAF ── */
 function initParallax(): void {
   // kadr = najbliższy `.px-frame` (obraz bywa owinięty w <picture>)
-  const items = qa("[data-px]")
-    .map((el) => ({ el, frame: el.closest<HTMLElement>(".px-frame") }))
-    .filter(
-      (it): it is { el: HTMLElement; frame: HTMLElement } => it.frame !== null,
-    );
+  const items = qa("[data-px]").flatMap((el) => {
+    const frame = el.closest<HTMLElement>(".px-frame");
+    const mode = el.dataset.px;
+    return frame
+      ? [{ el, frame, dir: mode === "-1" ? -1 : 1, top: mode === "top" }]
+      : [];
+  });
   if (!items.length) return;
   const desktopMQ = matchMedia(`(min-width: ${CONTENT_DESKTOP_MIN_PX}px)`);
   let raf = 0;
@@ -66,13 +73,20 @@ function initParallax(): void {
     // z transformem „ostatniej klatki, kiedy były widoczne" — wynik
     // zależny od próbkowania rAF, różny między maszynami (zrzuty
     // fullPage). Koszt: kilka getBoundingClientRect na klatkę.
-    for (const { el, frame } of items) {
+    for (const { el, frame, dir, top } of items) {
       // pozycja z KADRU (nieruchomy) — transform elementu nie zapętla
       // własnego odczytu
       const r = frame.getBoundingClientRect();
       if (!r.height) continue;
       const p = Math.min(1, Math.max(0, (vh - r.top) / (vh + r.height)));
-      const y = (0.5 - p) * 2 * amt * r.height;
+      // `top`: punkt zerowy = postęp kadru przy scrollu 0 (kadr od góry
+      // strony); ograniczenie do zapasu, gdy kadr jest wyższy od okna
+      const y = top
+        ? Math.max(
+            -amt * r.height,
+            (vh / (vh + r.height) - p) * 2 * amt * r.height,
+          )
+        : (0.5 - p) * 2 * amt * r.height * dir;
       el.style.transform = `translate3d(0,${y.toFixed(1)}px,0)`;
     }
   }

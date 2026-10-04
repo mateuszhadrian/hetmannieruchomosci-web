@@ -20,6 +20,9 @@ module.exports = {
         // widok z formularzem i polem pliku (5B): zdjęcie hero z preloadem
         // per plik, moduł formularzy + moduł pola pliku
         "/praca/",
+        // widok treściowy (4.5): hero ze zdjęciem pod paskiem (preload per
+        // plik), reveale i parallax w chunku ruchu, bez formularza
+        "/o-nas/",
         "/oferty/",
         "/oferty/mieszkanie-na-sprzedaz/",
         // detale z fixture'u (4.3) — jak w lighthouserc.cjs

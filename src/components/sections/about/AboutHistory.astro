@@ -1,0 +1,244 @@
+---
+// 02 Historia (4.5, docs/analiza-o-nas.md §1, A1, A5, A8): ciemna sekcja
+// ze zdjęciem tła (parallax), blok tekstu (od 1025 px szklana karta)
+// i dwa zdjęcia. Jeden markup w kolejności telefonu (Joanna → dokumenty);
+// desktop przestawia kolumny siatką — zdjęcia nie są interaktywne, więc
+// kolejność fokusu się nie zmienia. Zdjęcie Joanny jedzie w kierunku
+// ODWROTNYM do sąsiada (`data-px="-1"`, jak w designie).
+//
+// Zdjęcie tła zaczyna się tuż pod pierwszym ekranem (hero ma wysokość
+// okna), więc przeglądarka pobiera je razem z nim. `fetchpriority="low"`
+// i mniejszy plik poniżej 1025 px (`sizes` — tło leży pod gradientem
+// o kryciu 86–92 %) trzymają je z dala od zdjęcia hero, które na
+// telefonie jest elementem LCP (analiza A25).
+import bgM from "@/assets/img/onas-historia-bg-m.webp";
+import bg from "@/assets/img/onas-historia-bg.webp";
+import docsM from "@/assets/img/onas-dokumenty-m.webp";
+import docs from "@/assets/img/onas-dokumenty.webp";
+import joannaM from "@/assets/img/onas-joanna-m.webp";
+import joanna from "@/assets/img/onas-joanna.webp";
+import SectionHead from "../SectionHead.astro";
+import { ABOUT_COPY } from "./about-copy";
+
+const t = ABOUT_COPY.history;
+const PHOTO_SIZES = "(min-width: 1025px) 22vw, (min-width: 640px) 294px, 44vw";
+---
+
+<section
+  class="sx-sec sx-sec--dark ay"
+  data-about="historia"
+  aria-labelledby="about-historia-h"
+>
+  <div class="px-frame ay-bg" aria-hidden="true">
+    <img
+      data-px
+      src={bg.src}
+      srcset={`${bgM.src} ${bgM.width}w, ${bg.src} ${bg.width}w`}
+      sizes="(min-width: 1025px) 100vw, 40vw"
+      width={bg.width}
+      height={bg.height}
+      alt=""
+      loading="lazy"
+      fetchpriority="low"
+      decoding="async"
+    />
+  </div>
+  <span class="ay-shade" aria-hidden="true"></span>
+
+  <div class="sx-in ay-in">
+    <div class="ay-card" data-rv>
+      <SectionHead
+        id="about-historia-h"
+        eyebrow={t.eyebrow}
+        title={t.title}
+        accent={t.accent}
+      />
+      <div class="ay-body">
+        {t.paragraphs.map((p) => <p class="sx-text">{p}</p>)}
+      </div>
+    </div>
+
+    <div class="ay-photos" data-rv="soft" style="--rvd: 0.07s">
+      <figure class="ay-fig">
+        <div class="px-frame ay-frame ay-frame--founder">
+          <img
+            data-px="-1"
+            src={joanna.src}
+            srcset={`${joannaM.src} ${joannaM.width}w, ${joanna.src} ${joanna.width}w`}
+            sizes={PHOTO_SIZES}
+            width={joanna.width}
+            height={joanna.height}
+            alt={t.founderAlt}
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+        <figcaption>
+          {t.founderName}<br /><span>{t.founderRole}</span>
+        </figcaption>
+      </figure>
+      <div class="px-frame ay-frame ay-frame--docs">
+        <img
+          data-px
+          src={docs.src}
+          srcset={`${docsM.src} ${docsM.width}w, ${docs.src} ${docs.width}w`}
+          sizes={PHOTO_SIZES}
+          width={docs.width}
+          height={docs.height}
+          alt={t.documentsAlt}
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .ay {
+    /* szkło karty na desktopie (design: granat .24) — z pomiaru kontrastu */
+    --ay-glass: rgba(9, 18, 36, 0.24);
+  }
+  .ay-bg,
+  .ay-shade {
+    position: absolute;
+    inset: 0;
+  }
+  .ay-bg img {
+    object-position: 50% 40%;
+  }
+  /* górny stop mocniejszy niż w designie (.8): eyebrow na wąskim
+     telefonie miał nad jasnym fragmentem tła 4,2:1 (z pomiaru) */
+  .ay-shade {
+    background: linear-gradient(
+      180deg,
+      rgba(14, 32, 60, 0.86),
+      rgba(14, 32, 60, 0.92)
+    );
+  }
+  .ay-in,
+  .ay-card,
+  .ay-body,
+  .ay-fig {
+    display: flex;
+    flex-direction: column;
+  }
+  .ay-in,
+  .ay-card {
+    gap: clamp(24px, 7vw, 40px);
+  }
+  .ay-body {
+    gap: clamp(14px, 4vw, 20px);
+  }
+  .ay-photos {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(8px, 2.3vw, 12px);
+    align-items: start;
+    margin-top: clamp(4px, 1vw, 8px);
+  }
+  .ay-fig {
+    gap: clamp(8px, 2.3vw, 12px);
+    margin: 0;
+  }
+  .ay-frame {
+    aspect-ratio: 4 / 5;
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .ay-frame--founder {
+    border-radius: 0 0 0 clamp(36px, 10vw, 56px);
+  }
+  .ay-frame--founder img {
+    object-position: 50% 28%;
+  }
+  .ay-frame--docs {
+    margin-top: clamp(24px, 7vw, 40px);
+  }
+  .ay-frame--docs img {
+    object-position: 60% 50%;
+  }
+  .ay-fig figcaption {
+    font-family: var(--font-label);
+    font-size: clamp(10px, 2.8vw, 12px);
+    line-height: 1.4;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(221, 221, 221, 0.74);
+  }
+  .ay-fig figcaption span {
+    color: var(--copper-light);
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .ay {
+      display: flex;
+      align-items: center;
+      min-height: max(880px, var(--svh, 100svh));
+      padding: calc(var(--hdr-h) + clamp(24px, 2.6vw, 48px)) var(--pad)
+        clamp(40px, 4vw, 64px);
+    }
+    .ay-shade {
+      background: linear-gradient(
+        115deg,
+        rgba(14, 32, 60, 0.9) 0%,
+        rgba(14, 32, 60, 0.72) 50%,
+        rgba(14, 32, 60, 0.86) 100%
+      );
+    }
+    .ay-in {
+      display: grid;
+      grid-template-columns: minmax(0, 6.5fr) minmax(0, 5.5fr);
+      gap: clamp(32px, 3.4vw, 56px);
+      align-items: center;
+      width: 100%;
+    }
+    .ay-card {
+      gap: clamp(18px, 1.8vw, 26px);
+      padding: clamp(32px, 3.4vw, 48px);
+      background: var(--ay-glass);
+      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(221, 221, 221, 0.14);
+      border-radius: 3px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+    }
+    .ay-card :global(.sx-head) {
+      gap: clamp(18px, 1.8vw, 26px);
+    }
+    .ay-card :global(.sx-h2) {
+      font-size: clamp(28px, 2.9vw, 42px);
+      line-height: 1.14;
+    }
+    .ay-body {
+      gap: clamp(14px, 1.3vw, 20px);
+    }
+    .ay-body p {
+      max-width: none;
+      font-size: clamp(15px, 1.15vw, 17px);
+      line-height: 1.6;
+    }
+    .ay-photos {
+      gap: clamp(10px, 1vw, 16px);
+      margin-top: 0;
+    }
+    /* dokumenty z lewej (z promieniem), Joanna z prawej, opuszczona */
+    .ay-frame--docs {
+      order: -1;
+      aspect-ratio: auto;
+      height: clamp(300px, 30vw, 430px);
+      margin-top: 0;
+      border-radius: 0 0 0 clamp(36px, 3.8vw, 56px);
+    }
+    .ay-fig {
+      gap: clamp(12px, 1.2vw, 16px);
+      margin-top: clamp(48px, 5vw, 72px);
+    }
+    .ay-frame--founder {
+      border-radius: 0;
+    }
+    .ay-fig figcaption {
+      font-size: clamp(10px, 0.76vw, 12px);
+    }
+  }
+</style>

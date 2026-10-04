@@ -2,8 +2,8 @@
 
 > **Status:** ZAAKCEPTOWANA 2026-10-04 (wszystkie rekomendacje Q1–Q8
 > z §9). PR 1 (`feat/oferta-zapytanie`: zapytanie o ofertę) ZMERGOWANY —
-> PR #27, 2026-10-04 (uzupełnienia w §10); PR 2 (`feat/praca`) w toku —
-> zakodowany 2026-10-04 (uzupełnienia w §11).
+> PR #27, 2026-10-04 (uzupełnienia w §10); PR 2 (`feat/praca`: `/praca/`
+> z CV) ZMERGOWANY — PR #29, 2026-10-04 (uzupełnienia w §11).
 > Część 5B Etapu 5 wg instrukcji wykonawczej (dokument lokalny,
 > `docs/plan/`): kroki 5.2 (reguły implementacji uploadu), 5.3, akapit 5B,
 > 5.4; prompt §5B z `etap-4-prompty.md`. Referencje wyglądu:

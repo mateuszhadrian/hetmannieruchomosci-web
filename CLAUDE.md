@@ -1180,11 +1180,31 @@ offer-lightbox.ts` (chunk z dynamicznego `import()` w `offer-detail.ts`,
   (`chore/ci-pin-runner`, `docs/optional-todos.md`). Progi nietknięte.
 
 - **Etap 5 / 5B PR 2 (`/praca/` z formularzem rekrutacyjnym i CV) —
-  W TOKU** (2026-10-04, gałąź `feat/praca`, decyzje Q1, Q3, Q5, Q7
-  i F57–F70 z `docs/analiza-formularze-b.md`, uzupełnienia §11; kod
-  i testy gotowe lokalnie, ZOSTAŁO: workflow baseline'ów linux,
-  baseline'y darwin, PR, merge, `prod-smoke`; następna sesja = 4.5
-  `/o-nas/`). Kroki 5.1 i 5.2 NIE są wykonane — na `nowa.` wysyłka
+  WYKONANY** (2026-10-04, PR #29 zmergowany 14:05 UTC, commit `6adc98c`;
+  checki PR-a (bieg 37206222107: `quality`, `e2e`, `lighthouse`)
+  i `prod-smoke` (bieg 37207976527) zielone; baseline'y linux + darwin
+  w PR: 24 PNG na platformę — same nowe `praca-*`, żaden inny baseline
+  nietknięty; gałąź `feat/praca`, decyzje Q1, Q3, Q5, Q7 i F57–F70
+  z `docs/analiza-formularze-b.md`, uzupełnienia §11). `ci.yml` na main
+  po #29 (bieg 37207976510) zielony na trzech jobach. Pierwszy bieg CI
+  na PR (37205817885) miał czerwony `e2e` WYŁĄCZNIE z braku 24
+  baseline'ów linux (`quality` i `lighthouse` zielone — stan oczekiwany
+  przed workflowem); bieg na commicie bota (37205984205) zakończył się
+  bez jobów — to nie jest czerwony check; workflow baseline'ów linux:
+  bieg 37205830797. Weryfikacja na `nowa.` po merge'u (same żądania
+  próbne, nic nie wysłano): `/praca/` 200 z formularzem (`enctype`, pole
+  pliku, jedyny checkbox `future`, bez `marketing`, dopisek „maks.
+  2 MB"), bez hosta Turnstile i bez `mailto:` w HTML, nagłówek
+  `x-robots-tag: noindex` fazy podglądu, strona w sitemapie; endpoint:
+  pułapka → 200; `form=praca` bez pól → 400
+  `fields: ["name","contact","cv"]`; `form=kontakt` z plikiem → 413;
+  `form=praca` z poprawnymi polami i małym PDF-em, bez sekretów → 503
+  `config` (funkcja dostała plik z `formData()` i przeszła kontrolę
+  sygnatury — ryzyko z analizy §6 pkt 4 nie wystąpiło); wysyłka bez JS
+  z Refererem `/praca/` → 303 na `/praca/#formularz`. **Tym samym CAŁE
+  5B (zapytanie o ofertę, `/praca/`) i CAŁY kod Etapu 5 (5A + 5B) są
+  WYKONANE** (PR #25–#27, #29); zostaje blok chmury 5.1 → 5.2 → 5.5 po
+  zakończeniu widoków. Kroki 5.1 i 5.2 NIE są wykonane — na `nowa.` wysyłka
   kończy się komunikatem błędu (stan oczekiwany); pomiar limitu CV:
   analiza §11.7. `src/lib/cv-file.ts` (nowy): **`CV_MAX_BYTES` = 2 MB —
   JEDYNE miejsce z tą liczbą** (dopisek w strefie, komunikat, kontrola
@@ -1257,6 +1277,74 @@ checkCv)`; `PRACA_FORM_COPY`. Widok: `src/pages/praca.astro` +
   zostają; ocena F81 i F91 na urządzeniach oraz upuszczenie pliku obok
   strefy — lista poprawek po zakończeniu widoków
   (`docs/optional-todos.md`).
+
+- **Etap 4 / 4.5 (`/o-nas/`) — W TOKU** (2026-10-04, gałąź `feat/o-nas`,
+  mini-analiza `docs/analiza-o-nas.md` zaakceptowana wg rekomendacji
+  Q1–Q6, uzupełnienia §10; kod i testy gotowe lokalnie, ZOSTAŁO: workflow
+  baseline'ów linux, baseline'y darwin, PR, merge, `prod-smoke`; następna
+  sesja = 4.6 `/uslugi/`). Testy `/praca/` na `nowa.` i na telefonie:
+  nic do dopisania; chmura bez zmian (blok 5.1 → 5.2 → 5.5 po 4.7).
+  `src/pages/o-nas.astro` + `sections/about/`: `AboutHero` (telefon
+  i tablet — zdjęcie od górnej krawędzi okna POD przezroczystym paskiem,
+  szklana karta z eyebrow i `h1` nasunięta na jego dół, akapit i pas
+  trzech liczb pod kartą; desktop — pełne okno, zdjęcie + gradient,
+  szklana karta, pas liczb u dołu; zdjęcie `eager` + `fetchpriority` +
+  dwa `preload` z `media`, plik `-m` poniżej 768 px — pole na telefonie
+  nie jest pionowe, kadr `-tall` niepotrzebny; hero BEZ reveala),
+  `AboutHistory` (ciemna sekcja ze zdjęciem tła; blok tekstu — od 1025 px
+  szklana karta; dwa zdjęcia, DOM w kolejności telefonu, desktop
+  przestawia kolumny), `AboutFocus` (specjalizacja: jedna treść na obu
+  progach — akapit, dopisek, lista trzech pozycji; drugie zdjęcie tylko
+  poniżej 1025 px; od 1025 px zdjęcie na całą wysokość sekcji do lewej
+  krawędzi okna), `AboutContact` (zdjęcie tła, przycisk do `/kontakt/`;
+  lista e-mail / telefon / biuro tylko od 1025 px, sloty `data-mail` /
+  `data-tel`, adres z `BUSINESS`), `about-copy.ts` (PLACEHOLDER U9;
+  **nagłówek historii ma w designie DWA warianty — wstawiony desktopowy,
+  wybór klientki; liczby „10 lat / 4 lata / setki" to WARTOŚCI do
+  potwierdzenia**), `about-config.ts`, `about-motion.ts`. Pasek:
+  `<Navbar overHero />`, znacznik `data-nav-hero` na KADRZE zdjęcia hero
+  (telefon: samo zdjęcie, desktop: cała sekcja) — chrome bez zmian.
+  Jedyna zmiana we wspólnym kodzie: `content-motion.ts` rozumie
+  `data-px="-1"` (kierunek odwrotny — zdjęcie założycielki) i
+  `data-px="top"` (kadr od góry strony: przesunięcie 0 przy scrollu 0,
+  bez pozycji startowej w CSS — zdjęcie hero). Rozstrzygnięcia A15–A27
+  w analizie §10.2, w tym krycia z POMIARU kontrastu (14 rozmiarów okna,
+  Chromium i WebKit): szkło karty hero na telefonie = kolor `--bg` `.8`
+  (design: srebro `.39` → eyebrow 2,25:1; po zmianie ≥ 5,9:1, fraza `h1`
+  ≥ 3,4:1), przyciemnienie górnego pasa ZDJĘCIA pod paskiem (kreski menu
+  1,9:1 → ≥ 3,6:1), górne stopy gradientów historii (`.8` → `.86`)
+  i kontaktu (`.7` → `.84`) na telefonie, etykiety listy kontaktu `.6` →
+  `.82`; reszta designu przechodzi bez zmian. A22: odstępy i `h1` hero na
+  desktopie ograniczone przez `svh` (pas liczb w pierwszym ekranie przy
+  1366×768). A25: `fetchpriority="low"` na zdjęciach tła i mniejszy plik
+  tła historii poniżej 1025 px — bez tego LCP telefonu było dwumodalne
+  (2 112–2 804 ms). Testy: e2e nowy `o-nas.spec.ts` (13 testów; treść
+  `chromium-1920`, hero, układ i ruch także `chromium-pixel-5`
+  i `webkit-iphone-14`), `navigation.spec` — test wariantu nad hero po
+  liście tras (`/sprzedaj-z-nami/`, `/o-nas/`); visual nowy
+  `o-nas.spec.ts` (`o-nas-top`, `o-nas-full` × 6 profili = 12 PNG na
+  platformę); `/o-nas/` w obu `lighthouserc*.cjs`; unit bez zmian.
+  Weryfikacja lokalna: format/lint/typecheck, unit 539 (537 zielonych +
+  2 skip), build 89 stron, `test:dist` 6/6, e2e 672 (+1 056 skip profili)
+  na 6 profilach — zielone, axe 0 naruszeń; `test:visual` 12 czerwonych
+  OCZEKIWANYCH (nowe zrzuty bez baseline'u), 217 zielonych; progiem 0 bez
+  różnic: `chrome-*`, `home-*`, `sprzedaj-*` (60 zrzutów); HTML
+  pozostałych tras bez zmian (odcisk na `build:visual`). BUDŻET
+  (`build:visual`, baza = main): `/o-nas/` `script` 12 020 B brutto /
+  5 679 B gzip w 9 plikach (szkielet: 8 217 / 3 402), CSS 41 758 /
+  8 892 B w 2 arkuszach; wspólny `content-motion` 1 389 B (+118 B — także
+  na „/" i `/sprzedaj-z-nami/`); wyspa listy co do bajta (38 653 B). LHCI
+  lokalnie (oba configi, asercje czyste na 12 adresach): `/o-nas/`
+  `script` 9 442 B = 24 % bramki, `total` 330 KB mobile / 383 KB desktop
+  (telefon z pomiaru pobiera przy wejściu wszystkie obrazy `lazy`), LCP
+  mobile 2 121 ms (mediana z 5 przebiegów, 1 971–2 369; element LCP =
+  zdjęcie hero; margines ok. 1,08 s do 3 200 — obserwacja), desktop
+  595 ms (element LCP = `h1`), TBT 0, CLS ≤ 0,007, zero podmiotów
+  trzecich; „/" `script` 10 644 B (27 %), `/sprzedaj-z-nami/` 12 751 B
+  (32 %). Progi nietknięte. Do oceny po całej implementacji
+  (`docs/optional-todos.md`): pas liczb na telefonie, jaśniejsze szkło
+  karty i przyciemniony pas zdjęcia, odstępy hero na niskim oknie, kadr
+  zdjęcia „umowa" na desktopie.
 
 ## Dokumentacja
 

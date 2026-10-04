@@ -1,0 +1,229 @@
+---
+// 04 Kontakt (4.5, docs/analiza-o-nas.md §1, A4, A8, A13): ciemna sekcja
+// ze zdjęciem tła (parallax) i wejściem na /kontakt/. Telefon: nagłówek,
+// akapit, przycisk. Desktop: obok szklana karta z listą danych (e-mail,
+// telefon, biuro) i przyciskiem — lista tylko od 1025 px (jak w designie;
+// na telefonie tuż pod sekcją stoi stopka z numerem i przyciskami).
+// Telefon i e-mail WYŁĄCZNIE przez sloty antyscrapingowe (wypełnia je
+// `fillContactSlots` z Navbara); bez JS wiersz slotu znika. Adres biura
+// z `BUSINESS` (jedno źródło danych firmy).
+import bgM from "@/assets/img/onas-cta-m.webp";
+import bg from "@/assets/img/onas-cta.webp";
+import { BUSINESS } from "@/lib/jsonld";
+import { CONTACT_PATH } from "@/lib/routes";
+import SectionHead from "../SectionHead.astro";
+import { ABOUT_COPY } from "./about-copy";
+
+const t = ABOUT_COPY.contact;
+---
+
+<section
+  class="sx-sec sx-sec--dark ac"
+  data-about="kontakt"
+  aria-labelledby="about-kontakt-h"
+>
+  <div class="px-frame ac-bg" aria-hidden="true">
+    <img
+      data-px
+      src={bg.src}
+      srcset={`${bgM.src} ${bgM.width}w, ${bg.src} ${bg.width}w`}
+      sizes="100vw"
+      width={bg.width}
+      height={bg.height}
+      alt=""
+      loading="lazy"
+      fetchpriority="low"
+      decoding="async"
+    />
+  </div>
+  <span class="ac-shade" aria-hidden="true"></span>
+
+  <div class="sx-in ac-in">
+    <div class="ac-main">
+      <div data-rv>
+        <SectionHead
+          id="about-kontakt-h"
+          eyebrow={t.eyebrow}
+          title={t.title}
+          accent={t.accent}
+        />
+      </div>
+      <p class="sx-text ac-text" data-rv style="--rvd: 0.07s">{t.text}</p>
+    </div>
+
+    <div class="ac-side" data-rv="d" style="--rvd: 0.14s">
+      <ul class="ac-list" data-about-contacts>
+        <li class="ac-row">
+          <span class="ac-k">{t.labels.mail}</span>
+          <a class="ac-v" data-mail="biuro" href={CONTACT_PATH} hidden
+            ><span data-slot></span></a
+          >
+        </li>
+        <li class="ac-row">
+          <span class="ac-k">{t.labels.phone}</span>
+          <a class="ac-v" data-tel href={CONTACT_PATH} hidden
+            ><span data-slot></span></a
+          >
+        </li>
+        <li class="ac-row">
+          <span class="ac-k">{t.labels.office}</span>
+          <span class="ac-v"
+            >{BUSINESS.street}, {BUSINESS.postalCode}
+            {BUSINESS.locality}</span
+          >
+        </li>
+      </ul>
+      <a class="sx-btn ac-btn" href={t.href}>{t.cta}</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .ac {
+    /* brąz tej sekcji występuje tylko nad tym zdjęciem (design) — wartości
+       lokalne, bez tokenów globalnych; krycia z pomiaru kontrastu */
+    --ac-glass: rgba(9, 18, 36, 0.24);
+    --ac-label: rgba(221, 221, 221, 0.82);
+    background: #1a120c;
+  }
+  .ac-bg,
+  .ac-shade {
+    position: absolute;
+    inset: 0;
+  }
+  /* górny stop mocniejszy niż w designie (.7): eyebrow na telefonie miał
+     3,6:1 (z pomiaru) */
+  .ac-shade {
+    background: linear-gradient(
+      180deg,
+      rgba(40, 28, 18, 0.84),
+      rgba(26, 18, 12, 0.9)
+    );
+  }
+  .ac-in,
+  .ac-main,
+  .ac-side {
+    display: flex;
+    flex-direction: column;
+  }
+  .ac-in,
+  .ac-main {
+    gap: clamp(24px, 7vw, 40px);
+  }
+  .ac-side {
+    align-items: flex-start;
+  }
+  .ac-list {
+    display: none;
+  }
+  .ac-btn:focus-visible {
+    outline-color: #fff;
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .ac {
+      display: flex;
+      align-items: center;
+      min-height: 520px;
+      padding: clamp(48px, 4.6vw, 72px) var(--pad);
+    }
+    .ac-shade {
+      background: linear-gradient(
+        90deg,
+        rgba(22, 15, 10, 0.95) 0%,
+        rgba(28, 19, 13, 0.88) 40%,
+        rgba(40, 28, 18, 0.5) 100%
+      );
+    }
+    .ac-in {
+      display: grid;
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      gap: clamp(32px, 3.4vw, 56px);
+      align-items: center;
+      width: 100%;
+    }
+    .ac-main {
+      gap: clamp(18px, 1.8vw, 26px);
+    }
+    .ac-main :global(.sx-head) {
+      gap: clamp(18px, 1.8vw, 26px);
+    }
+    .ac-main :global(.sx-h2) {
+      font-size: clamp(30px, 3vw, 44px);
+    }
+    .ac-text {
+      max-width: 44ch;
+      font-size: clamp(15px, 1.15vw, 17px);
+      line-height: 1.62;
+    }
+    .ac-side {
+      align-items: stretch;
+      gap: clamp(20px, 2vw, 28px);
+      padding: clamp(28px, 2.8vw, 40px);
+      background: var(--ac-glass);
+      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(221, 221, 221, 0.14);
+      border-radius: 3px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+    }
+    .ac-list {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(14px, 1.4vw, 20px);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .ac-row {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+      padding-top: clamp(12px, 1.2vw, 16px);
+      border-top: 1px solid rgba(221, 221, 221, 0.18);
+    }
+    /* bez JS slot jest pusty i ukryty — znika cały wiersz */
+    .ac-row:has(> a[hidden]) {
+      display: none;
+    }
+    .ac-k {
+      font-family: var(--font-label);
+      font-size: clamp(10px, 0.76vw, 12px);
+      line-height: 1;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ac-label);
+    }
+    .ac-v {
+      font-size: clamp(14px, 1.1vw, 16px);
+      line-height: 1.45;
+      font-weight: 500;
+      color: #fff;
+    }
+    a.ac-v {
+      text-decoration: none;
+      border-bottom: 1px solid rgba(224, 168, 106, 0.5);
+      transition: color 0.3s ease;
+    }
+    a.ac-v:hover {
+      color: var(--copper-light);
+    }
+    a.ac-v:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 3px;
+    }
+    .ac-btn {
+      min-height: 56px;
+      padding: 0 clamp(28px, 2.8vw, 40px);
+      border-radius: 0 0 0 clamp(14px, 1.4vw, 20px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    a.ac-v {
+      transition: none;
+    }
+  }
+</style>
