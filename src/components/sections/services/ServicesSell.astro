@@ -1,0 +1,130 @@
+---
+// 02 Sprzedaję (4.6, docs/analiza-uslugi.md §1, SV4, SV7): nagłówek, akapit,
+// zdjęcie 4:3 (parallax), lista pięciu pozycji i pas CTA jako ostatnie
+// dziecko sekcji. Telefon: jedna kolumna; desktop: tekst i zdjęcie obok
+// listy, pas CTA na całą szerokość okna.
+//
+// Sekcja jest celem kotwicy `#sprzedaje`: poniżej 1025 px staje pod
+// paskiem (`scroll-margin-top`), od 1025 px przy górnej krawędzi okna —
+// jej dopełnienie górne zawiera wysokość paska (jak w designie).
+import teamM from "@/assets/img/uslugi-doradcy-m.webp";
+import team from "@/assets/img/uslugi-doradcy.webp";
+import keysM from "@/assets/img/uslugi-klucze-m.webp";
+import keys from "@/assets/img/uslugi-klucze.webp";
+import SectionHead from "../SectionHead.astro";
+import ServicesCta from "./ServicesCta.astro";
+import ServicesList from "./ServicesList.astro";
+import { SERVICES_ANCHORS } from "./services-config";
+import { SERVICES_COPY } from "./services-copy";
+
+const t = SERVICES_COPY.sell;
+---
+
+<section
+  class="us"
+  id={SERVICES_ANCHORS.sell}
+  data-services="sprzedaje"
+  aria-labelledby="uslugi-sprzedaje-h"
+>
+  <div class="us-body">
+    <div class="sx-in us-in">
+      <div class="us-lead">
+        <div data-rv>
+          <SectionHead
+            id="uslugi-sprzedaje-h"
+            eyebrow={t.eyebrow}
+            title={t.title}
+            accent={t.accent}
+          />
+        </div>
+        <p class="sx-text us-text" data-rv style="--rvd: 0.07s">{t.text}</p>
+        <div class="px-frame us-frame" data-rv="soft" style="--rvd: 0.14s">
+          <img
+            data-px
+            src={keys.src}
+            srcset={`${keysM.src} ${keysM.width}w, ${keys.src} ${keys.width}w`}
+            sizes="(min-width: 1025px) 42vw, (min-width: 640px) 600px, 90vw"
+            width={keys.width}
+            height={keys.height}
+            alt={t.imageAlt}
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+      </div>
+      <ServicesList items={t.items} layout="rows" delay={0.07} />
+    </div>
+  </div>
+
+  <ServicesCta
+    eyebrow={t.cta.eyebrow}
+    text={t.cta.text}
+    primary={{ label: t.cta.call, tel: true }}
+    secondary={{
+      label: t.cta.form,
+      href: t.cta.formHref,
+      kicker: t.cta.formKicker,
+    }}
+    bg={{ full: team, small: teamM, position: "50% 45%" }}
+  />
+</section>
+
+<style>
+  .us {
+    scroll-margin-top: var(--hdr-h);
+    background: var(--bg);
+  }
+  .us-body {
+    box-sizing: border-box;
+    padding: clamp(48px, 13vw, 80px) max(var(--pad), calc((100% - 600px) / 2)) 0;
+  }
+  .us-in,
+  .us-lead {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(24px, 7vw, 40px);
+  }
+  .us-frame {
+    aspect-ratio: 4 / 3;
+    border-radius: 0 0 0 clamp(36px, 10vw, 56px);
+    background: var(--bg-photo);
+  }
+  .us-frame img {
+    object-position: 52% 67%;
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .us {
+      scroll-margin-top: 0;
+    }
+    .us-body {
+      padding: calc(var(--hdr-h) + clamp(24px, 2.6vw, 48px)) var(--pad)
+        clamp(64px, 6vw, 88px);
+    }
+    .us-in {
+      display: grid;
+      grid-template-columns: minmax(0, 5.6fr) minmax(0, 6.4fr);
+      gap: clamp(40px, 4vw, 72px);
+      align-items: start;
+    }
+    .us-lead {
+      gap: clamp(20px, 2vw, 28px);
+    }
+    .us-lead :global(.sx-head) {
+      gap: clamp(20px, 2vw, 28px);
+    }
+    .us-lead :global(.sx-h2) {
+      font-size: clamp(28px, 2.9vw, 42px);
+      line-height: 1.14;
+    }
+    .us-text {
+      max-width: 46ch;
+      font-size: clamp(15px, 1.15vw, 17px);
+      line-height: 1.62;
+    }
+    .us-frame {
+      border-radius: 0 0 0 clamp(36px, 3.8vw, 56px);
+    }
+  }
+</style>

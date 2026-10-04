@@ -23,6 +23,9 @@ module.exports = {
         // widok treściowy (4.5): hero ze zdjęciem pod paskiem (preload per
         // plik), reveale i parallax w chunku ruchu, bez formularza
         "/o-nas/",
+        // widok treściowy (4.6): hero ze zdjęciem pod paskiem (preload per
+        // kadr), trzy listy usług, osiem zdjęć, reveale i parallax w chunku ruchu
+        "/uslugi/",
         "/oferty/",
         "/oferty/mieszkanie-na-sprzedaz/",
         // detale z fixture'u (4.3) — jak w lighthouserc.cjs

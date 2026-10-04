@@ -33,7 +33,8 @@ odziedziczone z szablonu projektu i stan chrome'u po Etapie 0.
   „Strona główna" niżej); strona treściowa dokłada tylko swoje wejście
   chunku (`<widok>-motion.ts`) i bramkę inline w `<head>` — komponent
   `src/components/MotionGate.astro` (`<MotionGate slot="head" />`; od 5A
-  używają go „/" i `/sprzedaj-z-nami/`, od 4.5 także `/o-nas/`).
+  używają go „/" i `/sprzedaj-z-nami/`, od 4.5 także `/o-nas/`, od 4.6
+  `/uslugi/`).
 - **BEZ bibliotek ruchu i scrolla** — ruch sekcji to własne pętle rAF i
   `IntersectionObserver` (wzorzec `content-motion.ts`).
 - **`data-rv` tylko na blokach NIEinteraktywnych** (wrapper, nie link
@@ -66,7 +67,8 @@ odziedziczone z szablonu projektu i stan chrome'u po Etapie 0.
   fallback w `global.css`, skrypt Navbara doprecyzowuje pomiarem).
 - Stany paska: `[data-scroll-nav]` + `[data-hero]` (SSR — wariant
   przezroczysty „nad hero": strona główna oraz strony, które przekażą
-  paskowi prop `overHero`; od 5A `/sprzedaj-z-nami/`, od 4.5 `/o-nas/`),
+  paskowi prop `overHero`; od 5A `/sprzedaj-z-nami/`, od 4.5 `/o-nas/`,
+  od 4.6 `/uslugi/`),
   `[data-solid]`
   (w wariancie „nad hero" po dojechaniu przemalowania do końca, na
   pozostałych trasach po `NAV_SOLID_FALLBACK_PX`), `[data-open]` (otwarty
@@ -78,7 +80,8 @@ odziedziczone z szablonu projektu i stan chrome'u po Etapie 0.
   oznaczy — `innerHeight` (strona główna: hero pełnoekranowe, bez
   znacznika; `/sprzedaj-z-nami/`: hero 66 % okna na desktopie; `/o-nas/`:
   znacznik na KADRZE ZDJĘCIA — na telefonie samo zdjęcie, na desktopie
-  cała sekcja). Strona z hero pod paskiem = `<Navbar overHero />` +
+  cała sekcja; `/uslugi/`: znacznik na sekcji hero, ciemnej na obu
+  progach). Strona z hero pod paskiem = `<Navbar overHero />` +
   `data-nav-hero` na elemencie, pod którym pasek ma być przezroczysty
   (pierwszy taki element w dokumencie) + hero zaczynające się od góry
   okna (własny `padding-top` z `--hdr-h`). Stałe `NAV_HOME_*` w `nav-config.ts`
@@ -475,12 +478,20 @@ true)`). **Akcja wymagająca przewinięcia strony („Napisz" → `#kontakt`)
   czystą funkcją pozycji scrolla (liczony także poza oknem),
   przemalowanie na `resize` tylko przy zmianie szerokości. Wartości
   atrybutu (od 4.5): `data-px="-1"` — kierunek odwrotny (dwa sąsiednie
-  zdjęcia jadą przeciwnie); `data-px="top"` — kadr zaczynający się NA
-  GÓRZE STRONY: przesunięcie liczone od pozycji scrolla 0 (zero na
-  starcie, potem tylko w górę, ograniczone do zapasu) — sposób na
-  zdjęcie pierwszego ekranu bez przeskoku po wczytaniu modułu, gdy
-  wysokość kadru nie jest ułamkiem okna (wzór CSS ze „Sprzedaj z nami"
-  wymaga takiego ułamka).
+  zdjęcia jadą przeciwnie); `data-px="top"` — kadr PIERWSZEGO EKRANU:
+  przesunięcie liczone od pozycji scrolla 0 (zero na starcie,
+  ograniczone do zapasu) — sposób na zdjęcie pierwszego ekranu bez
+  przeskoku po wczytaniu modułu, gdy wysokość kadru nie jest ułamkiem
+  okna (wzór CSS ze „Sprzedaj z nami" wymaga takiego ułamka). Od 4.6
+  punkt zerowy wynika z POZYCJI KADRU W DOKUMENCIE (prostokąt kadru
+  plus `scrollY`), więc kadr nie musi zaczynać się na samej górze strony
+  (hero `/uslugi/` na telefonie: zdjęcie pod blokiem tekstu); przy
+  blokadzie scrolla nakładek (`body{position:fixed}` zeruje `scrollY`)
+  moduł trzyma ostatnią znaną pozycję. **Skok kotwicy** (od 4.6):
+  bloki przeskoczone jednym susem nie przecinają okna, więc
+  IntersectionObserver ich nie zgłasza — moduł odsłania wszystko, co po
+  zdarzeniu `hashchange` leży NAD oknem (dotyczy każdej strony z kotwicą
+  w treści: `#formularz`, sekcje usług).
 - **`content-viewport.ts`:** `armViewportPin(host)` przypina `--svh`
   dopiero, gdy `100svh` drgnie bez zmiany szerokości (przeglądarki
   zmieniające rozmiar widoku z paskiem adresu; także rozciągnięcie okna
@@ -855,3 +866,80 @@ checkCv)`) i funkcja. Ta sama reguła po obu stronach; bez niej
   `a[data-mail="biuro"]`, `a[data-tel]` z `<span data-slot>`; bez JS
   wiersz slotu znika (`.ac-row:has(> a[hidden])`). Brąz sekcji to
   wartości lokalne komponentu (występuje tylko nad tym zdjęciem).
+
+## Usługi — stan po Etapie 4.6 (`docs/analiza-uslugi.md`)
+
+- `src/pages/uslugi.astro` + `sections/services/`: `ServicesHero`,
+  `ServicesSell` (Sprzedaję), `ServicesBuy` (Kupuję), `ServicesLegal`
+  (Pomoc prawna), wspólne `ServicesList` (lista numerowana) i
+  `ServicesCta` (pas CTA sekcji 02 i 03); teksty w `services-copy.ts`
+  (całość PLACEHOLDER U9; trzecie wejście hero i przycisk telefonu mają
+  w designie DWA warianty — wstawione desktopowe), stałe
+  w `services-config.ts` (w tym `SERVICES_ANCHORS`), wejście chunku ruchu
+  `services-motion.ts`. Bez wyspy i bez formularza.
+- **Kotwice `#sprzedaje`, `#kupuje`, `#pomoc-prawna`** (id na sekcjach,
+  bez sufiksów gałęzi eksportu): cele trzech wejść hero i kafli sekcji
+  „Usługi" strony głównej. Poniżej 1025 px sekcja staje POD paskiem
+  (`scroll-margin-top: var(--hdr-h)`), od 1025 px przy górnej krawędzi
+  okna — jej dopełnienie górne zawiera wysokość paska (design),
+  `scroll-margin-top: 0`. Zmiana dopełnienia sekcji na desktopie = zmiana
+  położenia po skoku (e2e mierzy oba warianty). Bez płynnego
+  przewijania (`scroll-behavior`).
+- **Wejście z kotwicą w adresie poprawia skrypt strony:** po `load`
+  i po wczytaniu fontów cel jest ustawiany ponownie natywnym `scrollTo`
+  (silniki bez kotwiczenia przewijania zostawiają sekcję przesuniętą,
+  gdy układ zmienia się po skoku) — tylko przy zwykłym wejściu
+  (`navigation.type === "navigate"`; przy odświeżeniu i „wstecz" pozycję
+  przywraca przeglądarka) i tylko dopóki użytkownik sam nie przewinął.
+  Kliknięcia wejść hero zostają natywne. Wysokość dokumentu nie zależy
+  od wczytania obrazów: każdy kadr ma `aspect-ratio`, tła są absolutne —
+  nowe zdjęcie bez zarezerwowanego miejsca nad sekcją psułoby skok.
+- **Hero ma dwa układy na jednym markupie:** telefon i tablet — blok
+  tekstu na jednolitym granacie, pod nim „scena" (`.uh-stage`) ze
+  zdjęciem wypełniająca resztę okna i trzema wejściami u dołu; desktop —
+  scena jest statyczna, kadr zdjęcia (`.uh-media`, absolutny) wypełnia
+  całą sekcję, tekst stoi na szklanej karcie, wejścia tworzą pas u dołu.
+  Trzecie wejście poniżej 1025 px to lżejszy, podkreślony link z samym
+  tytułem (nadtytuł i strzałka ukryte). `data-nav-hero` na sekcji.
+- Zdjęcie hero: źródło ma tylko 617 px wysokości. Poniżej 768 px
+  `uslugi-hero-tall.webp` — wycinek o PEŁNEJ wysokości źródła (pole na
+  telefonie jest pionowe; plik `-m` miał 439 px wysokości i nie jest już
+  używany), od 768 px pełny plik; dwa `preload` z `media`, `eager`,
+  `fetchpriority`, żadnego reveala, parallax `data-px="top"`. Na
+  telefonie zdjęcie JEST kandydatem LCP (nie wypełnia okna).
+- **Krycia są z POMIARU kontrastu** (analiza §10.2; axe zwraca
+  „incomplete"): kafle wejść na telefonie mają jaśniejsze szkło niż
+  w designie ORAZ własne przyciemnienie zdjęcia zakotwiczone do wejść
+  (`.uh-entries::before` — nie do procentu pola: na niskim ekranie
+  wejścia zajmują większość pola zdjęcia); karta hero na desktopie —
+  granat mocniejszy niż w designie; **pas wejść na desktopie to CIEMNE
+  szkło** (design: jasne srebro nad zdjęciem bez gradientu — nadtytuł
+  1,3:1); górny pas zdjęcia pod paskiem przyciemniony w komponencie hero
+  (jasne logo nad jasnym fragmentem kadru); szkło przycisków pasów CTA
+  słabsze niż w designie, prawy koniec gradientu pasa „Sprzedaję"
+  mocniejszy; blok zamykający „Pomocy prawnej" na telefonie ma
+  przyciemnienie zakotwiczone do TREŚCI. Zmiana krycia, koloru tekstu
+  albo zdjęcia = ponowny pomiar (telefon, tablet, desktop; Chromium
+  i WebKit).
+- **Pas CTA (`ServicesCta`) jest ostatnim dzieckiem sekcji:** poniżej
+  1025 px stoi w kolumnie treści (marginesy boczne = dopełnienie sekcji),
+  od 1025 px wychodzi na całą szerokość okna. Przyciski są częścią
+  komponentu (propy `primary` / `secondary`, nie slot — style scoped nie
+  sięgają treści slotu). Przycisk telefonu: slot
+  `a[data-tel][data-fill="href"]` — etykieta stała, bez JS → `/kontakt/`.
+- **Zdjęcia zmieniające rodzica między progami występują dwa razy**
+  (`[data-services-extra="below" | "desktop"]`, `display: none` + `lazy`
+  — ukryty wariant nie jest pobierany): „prezentacja 1" (kadr od 1025 px,
+  tło pasa CTA poniżej), „prawne 3" (tło sekcji od 1025 px, tło bloku
+  zamykającego poniżej); „prawne 2" tylko poniżej progu. Sondy e2e
+  filtrują kadry o wysokości 0.
+- „Pomoc prawna": DOM w układzie desktopu (kolumna z nagłówkiem,
+  akapitem i listą · kolumna ze zdjęciem i blokiem zamykającym); poniżej
+  1025 px kolumny są `display: contents`, a zdjęcia wchodzą między akapit
+  i listę przez `order` (jedyny element interaktywny jest ostatni w DOM
+  i na ekranie). Blok zamykający: telefon — zdjęcie tła i szklany
+  przycisk, desktop — szklana karta i przycisk miedziany.
+- `ServicesList`: jeden układ poniżej 1025 px, trzy od progu (`rows`,
+  `wide` — numer · tytuł · opis na linii bazowej przez
+  `display: contents`, `cols`); numery to licznik CSS; lista jest JEDNYM blokiem
+  reveala (`data-rv` na `<ol>`).

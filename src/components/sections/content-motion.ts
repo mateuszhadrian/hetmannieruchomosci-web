@@ -15,9 +15,11 @@
 //             wysokości kadru; zapas układu = amplituda (content.css).
 //             Wartości atrybutu: `-1` — kierunek odwrotny (jak w designie:
 //             dwa sąsiednie zdjęcia jadą przeciwnie); `top` — kadr
-//             zaczynający się NA GÓRZE STRONY: przesunięcie liczone od
-//             pozycji scrolla 0 (zdjęcie pierwszego ekranu nie przeskakuje
-//             po wczytaniu modułu — docs/analiza-o-nas.md A9).
+//             PIERWSZEGO EKRANU: przesunięcie liczone od pozycji scrolla 0
+//             (zdjęcie nie przeskakuje po wczytaniu modułu —
+//             docs/analiza-o-nas.md A9); punkt zerowy wynika z pozycji
+//             kadru w dokumencie, więc kadr nie musi zaczynać się na samej
+//             górze strony (docs/analiza-uslugi.md SV10).
 import {
   CONTENT_DESKTOP_MIN_PX,
   PX_AMT_DESKTOP,
@@ -47,6 +49,18 @@ function initReveals(): void {
     { rootMargin: `0px 0px -${Math.round((1 - RV_TRIGGER) * 100)}% 0px` },
   );
   for (const el of els) io.observe(el);
+  // Skok kotwicy w obrębie strony: bloki przeskoczone jednym susem nigdy
+  // nie przecinają okna (były pod nim, są nad nim), więc obserwator ich
+  // nie zgłasza — odsłaniamy je po zmianie kotwicy (zdarzenie przychodzi
+  // już po przewinięciu). Blok ukryty w układzie ma zerowy prostokąt.
+  addEventListener("hashchange", () => {
+    for (const el of qa("[data-rv]:not(.is-in)")) {
+      const r = el.getBoundingClientRect();
+      if (!r.height || r.bottom > 0) continue;
+      io.unobserve(el);
+      el.classList.add("is-in");
+    }
+  });
 }
 
 /* ── parallax: jedna pętla rAF ── */
@@ -56,7 +70,15 @@ function initParallax(): void {
     const frame = el.closest<HTMLElement>(".px-frame");
     const mode = el.dataset.px;
     return frame
-      ? [{ el, frame, dir: mode === "-1" ? -1 : 1, top: mode === "top" }]
+      ? [
+          {
+            el,
+            frame,
+            dir: mode === "-1" ? -1 : 1,
+            top: mode === "top",
+            docTop: 0,
+          },
+        ]
       : [];
   });
   if (!items.length) return;
@@ -73,21 +95,26 @@ function initParallax(): void {
     // z transformem „ostatniej klatki, kiedy były widoczne" — wynik
     // zależny od próbkowania rAF, różny między maszynami (zrzuty
     // fullPage). Koszt: kilka getBoundingClientRect na klatkę.
-    for (const { el, frame, dir, top } of items) {
+    // blokada scrolla nakładek (overlay.ts: body fixed) zeruje scrollY —
+    // pozycja kadru w dokumencie zostaje wtedy z ostatniego odczytu
+    const locked = document.body.style.position === "fixed";
+    for (const item of items) {
       // pozycja z KADRU (nieruchomy) — transform elementu nie zapętla
       // własnego odczytu
-      const r = frame.getBoundingClientRect();
+      const r = item.frame.getBoundingClientRect();
       if (!r.height) continue;
-      const p = Math.min(1, Math.max(0, (vh - r.top) / (vh + r.height)));
-      // `top`: punkt zerowy = postęp kadru przy scrollu 0 (kadr od góry
-      // strony); ograniczenie do zapasu, gdy kadr jest wyższy od okna
-      const y = top
-        ? Math.max(
-            -amt * r.height,
-            (vh / (vh + r.height) - p) * 2 * amt * r.height,
-          )
-        : (0.5 - p) * 2 * amt * r.height * dir;
-      el.style.transform = `translate3d(0,${y.toFixed(1)}px,0)`;
+      const span = vh + r.height;
+      const p = Math.min(1, Math.max(0, (vh - r.top) / span));
+      let y = (0.5 - p) * 2 * amt * r.height * item.dir;
+      if (item.top) {
+        // punkt zerowy = postęp kadru przy scrollu 0 (z jego pozycji
+        // w dokumencie); ograniczenie do zapasu układu
+        if (!locked) item.docTop = r.top + window.scrollY;
+        const p0 = Math.min(1, Math.max(0, (vh - item.docTop) / span));
+        const max = amt * r.height;
+        y = Math.min(max, Math.max(-max, (p0 - p) * 2 * max));
+      }
+      item.el.style.transform = `translate3d(0,${y.toFixed(1)}px,0)`;
     }
   }
   const tick = () => {

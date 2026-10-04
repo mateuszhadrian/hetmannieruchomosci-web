@@ -1,10 +1,125 @@
 ---
-import SkeletonPage from "@/components/SkeletonPage.astro";
+// /uslugi/ (Etap 4.6, docs/analiza-uslugi.md): hero z trzema wejściami do
+// sekcji strony, „Sprzedaję", „Kupuję" (obie z pasem CTA) i „Pomoc prawna".
+// Czysty Astro, bez wyspy i bez formularza.
+//
+// Kotwice `#sprzedaje`, `#kupuje`, `#pomoc-prawna` działają natywnie (bez
+// JS i bez `scroll-behavior: smooth`); skrypt strony poprawia tylko pozycję
+// po WEJŚCIU z kotwicą w adresie (np. ze strony głównej).
+//
+// RUCH (reveale sekcji, parallax zdjęć) siedzi w services-motion.ts,
+// ładowanym DYNAMICZNIE tylko przy prefers-reduced-motion: no-preference;
+// stany startowe uzbraja html.js-motion (MotionGate.astro). Bez JS i przy
+// reduce strona jest statyczna i kompletna. Zdjęcie hero i `h1` to
+// kandydaci LCP: preload w <head>, żadnego reveala.
+import heroTall from "@/assets/img/uslugi-hero-tall.webp";
+import hero from "@/assets/img/uslugi-hero.webp";
+import Footer from "@/components/Footer.astro";
+import MotionGate from "@/components/MotionGate.astro";
+import Navbar from "@/components/navbar/Navbar.astro";
+import "@/components/sections/content.css";
+import ServicesBuy from "@/components/sections/services/ServicesBuy.astro";
+import ServicesHero from "@/components/sections/services/ServicesHero.astro";
+import ServicesLegal from "@/components/sections/services/ServicesLegal.astro";
+import ServicesSell from "@/components/sections/services/ServicesSell.astro";
+import { SERVICES_HERO_TALL_BELOW_PX } from "@/components/sections/services/services-config";
 import { ui } from "@/i18n/ui";
+import BaseLayout from "@/layouts/BaseLayout.astro";
 ---
 
-<SkeletonPage
+<BaseLayout
   title={ui.pl["servicesPage.title"]}
   description={ui.pl["servicesPage.description"]}
-  heading="Usługi"
-/>
+>
+  {/* zdjęcie hero: jeden preload per plik (jak <picture> w ServicesHero) */}
+  <link
+    slot="head"
+    rel="preload"
+    as="image"
+    href={heroTall.src}
+    media={`(max-width: ${SERVICES_HERO_TALL_BELOW_PX - 1}px)`}
+    fetchpriority="high"
+  />
+  <link
+    slot="head"
+    rel="preload"
+    as="image"
+    href={hero.src}
+    media={`(min-width: ${SERVICES_HERO_TALL_BELOW_PX}px)`}
+    fetchpriority="high"
+  />
+  {/* bramka ruchu: html.js-motion PRZED malowaniem + bezpiecznik */}
+  <MotionGate slot="head" />
+
+  {/* hero stoi POD paskiem — wariant przezroczysty, próg z wysokości hero */}
+  <Navbar overHero />
+
+  <main class="services">
+    <ServicesHero />
+    <ServicesSell />
+    <ServicesBuy />
+    <ServicesLegal />
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<script>
+  import { armViewportPin } from "@/components/sections/content-viewport";
+
+  // stabilna wysokość sekcji liczonych z okna — układ, nie dekoracja,
+  // więc poza bramką ruchu
+  const services = document.querySelector<HTMLElement>("main.services");
+  if (services) armViewportPin(services);
+
+  // Wejście z kotwicą w adresie (np. z kafli „Usługi" strony głównej):
+  // przeglądarka skacze do celu, zanim układ jest ostateczny (fonty,
+  // pomiar wysokości paska), a silniki bez kotwiczenia przewijania
+  // zostawiają wtedy sekcję przesuniętą. Po `load` i po wczytaniu fontów
+  // cel jest ustawiany ponownie natywnym `scrollTo` — tylko przy zwykłym
+  // wejściu (przy odświeżeniu i „wstecz" pozycję przywraca przeglądarka)
+  // i tylko dopóki użytkownik sam nie zaczął przewijać.
+  const hashTarget = () => {
+    // identyfikatory sekcji są czystym ASCII — bez dekodowania adresu
+    const id = location.hash.slice(1);
+    const el = id ? document.getElementById(id) : null;
+    return el?.matches("main.services > section[id]") ? el : null;
+  };
+  const [nav] = performance.getEntriesByType(
+    "navigation",
+  ) as PerformanceNavigationTiming[];
+  const target = hashTarget();
+  if (target && (!nav || nav.type === "navigate")) {
+    let touched = false;
+    for (const type of ["wheel", "touchstart", "keydown", "pointerdown"]) {
+      addEventListener(type, () => (touched = true), {
+        once: true,
+        passive: true,
+      });
+    }
+    const align = () => {
+      if (touched || hashTarget() !== target) return;
+      const margin = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+      const off = target.getBoundingClientRect().top - margin;
+      if (Math.abs(off) > 1) window.scrollTo(0, window.scrollY + off);
+    };
+    if (document.readyState === "complete") align();
+    else addEventListener("load", align, { once: true });
+    document.fonts?.ready.then(align);
+  }
+
+  if (matchMedia("(prefers-reduced-motion: no-preference)").matches) {
+    import("@/components/sections/services/services-motion").catch(() => {
+      document.documentElement.classList.remove("js-motion");
+    });
+  }
+</script>
+
+<style>
+  /* `--svh` przypina content-viewport.ts dopiero wtedy, gdy przeglądarka
+     rusza wysokością okna bez zmiany szerokości; domyślnie czysty CSS */
+  .services {
+    --svh: 100svh;
+    background: var(--bg);
+  }
+</style>

@@ -1,7 +1,7 @@
 # Mini-analiza 4.5 — `/o-nas/`
 
-> **Status:** ZAAKCEPTOWANA 2026-10-04 (wszystkie rekomendacje Q1–Q6
-> z §9), zakodowana na gałęzi `feat/o-nas` — uzupełnienia po implementacji
+> **Status:** ZMERGOWANA (PR #30, 2026-10-04) — zaakceptowana 2026-10-04
+> (wszystkie rekomendacje Q1–Q6 z §9), uzupełnienia po implementacji
 > w §10. Część 4.5 Etapu 4 wg instrukcji
 > wykonawczej (dokument lokalny, `docs/plan/`): akapit 4.5, „Tryb pracy",
 > „Zasada rozjazdów"; prompt §4.5 z `etap-4-prompty.md`. Referencja

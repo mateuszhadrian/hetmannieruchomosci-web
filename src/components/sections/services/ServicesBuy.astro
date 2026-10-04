@@ -1,0 +1,175 @@
+---
+// 03 Kupuję (4.6, docs/analiza-uslugi.md §1, SV4, SV5, SV7): nagłówek,
+// akapit, zdjęcia, lista pięciu pozycji i pas CTA jako ostatnie dziecko
+// sekcji. Telefon: jedno zdjęcie 4:3 w treści, drugie jest tłem pasa CTA;
+// desktop: oba jako kadry 3:4 obok nagłówka (drugi opuszczony, parallax
+// w kierunku ODWROTNYM — `data-px="-1"`), lista w wierszach
+// trzykolumnowych, pas CTA bez zdjęcia.
+//
+// Zdjęcie „prezentacja 1" zmienia rodzica między progami, więc występuje
+// dwa razy (kadr od 1025 px, tło pasa poniżej) — oba `lazy`, ukryty
+// wariant nie jest pobierany (wzorzec `[data-about-extra]` z /o-nas/).
+import firstM from "@/assets/img/uslugi-prezentacja1-m.webp";
+import first from "@/assets/img/uslugi-prezentacja1.webp";
+import secondM from "@/assets/img/uslugi-prezentacja2-m.webp";
+import second from "@/assets/img/uslugi-prezentacja2.webp";
+import SectionHead from "../SectionHead.astro";
+import ServicesCta from "./ServicesCta.astro";
+import ServicesList from "./ServicesList.astro";
+import { SERVICES_ANCHORS } from "./services-config";
+import { SERVICES_COPY } from "./services-copy";
+
+const t = SERVICES_COPY.buy;
+---
+
+<section
+  class="ub"
+  id={SERVICES_ANCHORS.buy}
+  data-services="kupuje"
+  aria-labelledby="uslugi-kupuje-h"
+>
+  <div class="ub-body">
+    <div class="sx-in ub-in">
+      <div class="ub-top">
+        <div class="ub-lead">
+          <div data-rv>
+            <SectionHead
+              id="uslugi-kupuje-h"
+              eyebrow={t.eyebrow}
+              title={t.title}
+              accent={t.accent}
+            />
+          </div>
+          <p class="sx-text ub-text" data-rv style="--rvd: 0.07s">{t.text}</p>
+        </div>
+        <div class="ub-photos" data-rv="soft" style="--rvd: 0.14s">
+          <div
+            class="px-frame ub-frame ub-frame--first"
+            data-services-extra="desktop"
+          >
+            <img
+              data-px
+              src={first.src}
+              srcset={`${firstM.src} ${firstM.width}w, ${first.src} ${first.width}w`}
+              sizes="22vw"
+              width={first.width}
+              height={first.height}
+              alt={t.firstAlt}
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+          <div class="px-frame ub-frame ub-frame--second">
+            <img
+              data-px="-1"
+              src={second.src}
+              srcset={`${secondM.src} ${secondM.width}w, ${second.src} ${second.width}w`}
+              sizes="(min-width: 1025px) 22vw, (min-width: 640px) 600px, 90vw"
+              width={second.width}
+              height={second.height}
+              alt={t.secondAlt}
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+        </div>
+      </div>
+      <ServicesList items={t.items} layout="wide" />
+    </div>
+  </div>
+
+  <ServicesCta
+    eyebrow={t.cta.eyebrow}
+    text={t.cta.text}
+    primary={{ label: t.cta.contact, href: t.cta.contactHref }}
+    secondary={{ label: t.cta.offers, href: t.cta.offersHref }}
+    bg={{ full: first, small: firstM, position: "50% 40%" }}
+    bgBelowDesktop
+    plain
+  />
+</section>
+
+<style>
+  .ub {
+    scroll-margin-top: var(--hdr-h);
+    background: var(--bg);
+  }
+  .ub-body {
+    box-sizing: border-box;
+    padding: clamp(48px, 13vw, 80px) max(var(--pad), calc((100% - 600px) / 2)) 0;
+  }
+  .ub-in,
+  .ub-top,
+  .ub-lead {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(24px, 7vw, 40px);
+  }
+  .ub-frame {
+    background: var(--bg-photo);
+  }
+  .ub-frame--first {
+    display: none;
+  }
+  .ub-frame--second {
+    aspect-ratio: 4 / 3;
+    border-radius: 0 0 0 clamp(36px, 10vw, 56px);
+  }
+  .ub-frame--second img {
+    object-position: 60% 40%;
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .ub {
+      scroll-margin-top: 0;
+    }
+    .ub-body {
+      padding: calc(var(--hdr-h) + clamp(24px, 2.6vw, 48px)) var(--pad)
+        clamp(56px, 5.4vw, 80px);
+    }
+    .ub-in {
+      gap: clamp(40px, 4vw, 64px);
+    }
+    .ub-top {
+      display: grid;
+      grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
+      gap: clamp(32px, 3.4vw, 64px);
+      align-items: start;
+    }
+    .ub-lead {
+      gap: clamp(18px, 1.8vw, 26px);
+    }
+    .ub-lead :global(.sx-head) {
+      gap: clamp(18px, 1.8vw, 26px);
+    }
+    .ub-lead :global(.sx-h2) {
+      font-size: clamp(28px, 3vw, 44px);
+      line-height: 1.12;
+    }
+    .ub-text {
+      max-width: 52ch;
+      font-size: clamp(15px, 1.15vw, 17px);
+      line-height: 1.62;
+    }
+    .ub-photos {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: clamp(10px, 1vw, 14px);
+      align-items: start;
+    }
+    .ub-frame--first {
+      display: block;
+      aspect-ratio: 3 / 4;
+      border-radius: 0 0 0 clamp(28px, 3vw, 44px);
+    }
+    .ub-frame--first img {
+      object-position: 50% 42%;
+    }
+    .ub-frame--second {
+      aspect-ratio: 3 / 4;
+      margin-top: clamp(24px, 2.6vw, 40px);
+      border-radius: 0;
+    }
+  }
+</style>

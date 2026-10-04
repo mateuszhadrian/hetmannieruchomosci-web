@@ -4,6 +4,88 @@ Harness odziedziczony z szablonu projektu (konfiguracja
 Playwright/Vitest/axe/LHCI, 6 profili, helpery); liczby szablonu NIE
 obowiązują — baseline'y i budżety powstają od nowa w Etapie 3.
 
+STAN po Etapie 4.6 (`/uslugi/`; wspólny moduł ruchu: tryb `data-px="top"`
+liczony z pozycji kadru w dokumencie, odsłanianie bloków po skoku
+kotwicy): unit bez zmian (widok nie ma logiki). E2E `uslugi` (nowy spec;
+treść `chromium-1920`, hero, kotwice, układ i ruch także
+`chromium-pixel-5` i `webkit-iphone-14`; teksty z `services-copy.ts`;
+`useMediaStub` — test wejścia ze strony głównej otwiera „/"). Hero:
+`main h1` = tytuł + fraza, `.uh-eyebrow`, akapit;
+`[data-services-entries]` (`nav` z `aria-label`) — trzy `a` z `href` =
+`#sprzedaje`, `#kupuje`, `#pomoc-prawna`, `.uh-name` i `.uh-kicker`
+z `services-copy`; **poniżej progu nadtytuł TRZECIEGO wejścia jest
+ukryty** (lżejszy link z samym tytułem, wysokość ≥ 44 px; kafle ≥ 48 px);
+`[data-services-photo]` `eager`, `fetchpriority`, wymiary, `alt=""`,
+`opacity 1`, zero `[data-rv]` w hero; `data-nav-hero` na sekcji hero;
+geometria sub-pikselowo: hero od górnej krawędzi okna, wysokość ≥ okno;
+desktop — wysokość = okno, kadr `.uh-media` = hero, dół pasa wejść = dół
+hero, karta nad pasem; poniżej progu — kadr zaczyna się na dolnej
+krawędzi `.uh-text` i kończy na dolnej krawędzi hero, wejścia leżą
+w kadrze. Surowy HTML: dwa `link[rel=preload][as=image]` z `media` (kadr
+`-tall` poniżej `SERVICES_HERO_TALL_BELOW_PX`), bramka `js-motion`,
+`id` i `href` trzech kotwic, BRAK identyfikatorów z sufiksem `-m` / `-d`;
+`scroll-behavior` dokumentu = `auto`; `<source>` 864×617, `currentSrc`
+przy 767 / 768 (poll). **Kotwice (trzy profile, helper `expectAtAnchor`
+— wszystko przez `expect.poll`):** górna krawędź sekcji w odległości
+≤ 1,5 px od celu — **poniżej progu cel = dolna krawędź paska, od progu
+= górna krawędź okna** (dopełnienie sekcji zawiera wysokość paska); `h2`
+pod paskiem i w oknie; pierwszy `[data-rv]` sekcji dochodzi do
+`opacity 1`; **żaden widoczny `[data-rv]` NAD oknem nie zostaje bez
+`.is-in`** (bloki przeskoczone jednym susem — to wyłapało lukę modułu
+ruchu); pasek `data-solid`. Trzy ścieżki: klik wejścia hero (× 3),
+wejście z adresu `/uslugi/#…` (× 3), klik kafla
+`[data-home="uslugi"] a.hsv-tile` na „/" (× 3 w jednym teście; `href`
+kafli z `home-copy` = `SERVICES_PATH` + kotwica). Sekcje: `id`,
+`aria-labelledby` = `uslugi-{sprzedaje|kupuje|pomoc-prawna}-h`, `h2`,
+`.sx-head .sx-eyebrow` (**nie samo `.sx-eyebrow`** — pasy CTA też je
+mają), akapit; `[data-services-list]` to `OL` z 5 / 5 / 6 pozycjami
+(`h3` + `p` w kolejności z `services-copy`); zdjęcia po `alt` (`lazy`,
+wymiary); `[data-services-extra="below"]` × 3 ukryte na desktopie,
+`="desktop"` × 2 widoczne (na telefonie odwrotnie). Pasy CTA
+`[data-services-cta]`: `.uc-eyebrow`, `.uc-text`, `a.uc-ghost`
+(`.uc-kicker`, `.uc-name`) → `SELL_PATH` / `OFFERS_PATH`, `a.sx-btn` →
+`CONTACT_PATH`; blok zamykający `.ul-close-eyebrow`, `.ul-close-text`,
+`a.sx-btn`; trasy < 400. Slot: surowy `<main>` bez numeru, `tel:`,
+`mailto:`; DOKŁADNIE jeden `a[data-tel]` z `data-fill="href"`
+i `href` = `CONTACT_PATH`; po JS `href` = `tel:`, etykieta bez zmian.
+Próg 1025: `expectBreakpointFlip` na 13 elementach (m.in. `.uh-stage`
+flex ↔ block, wejścia flex ↔ grid, `.ul-main` contents ↔ flex, warianty
+zdjęć none ↔ block) + sonda: kadr hero niższy od sekcji ↔ równy, pas CTA
+węższy od SEKCJI ↔ na całą jej szerokość, zdjęcia „Pomocy prawnej" między
+akapitem i listą ↔ obok listy. **Szerokość „na całe okno" porównuj
+z szerokością sekcji, nie z `documentElement.clientWidth`:** na Linuksie
+`scrollbar-gutter: stable` rezerwuje 15 px i układ jest o tyle węższy od
+wartości `clientWidth` (czerwony `e2e` na PR #31, lokalnie na macOS
+zielony — paski nakładkowe nie mają rynny). Telefon: warianty zdjęć, pięć przycisków
+≥ 48 px, pas CTA w kolumnie treści, brak przewijania w bok. Bez JS: brak
+`js-motion`, każdy `[data-rv]` `opacity 1`, kotwice w HTML, przycisk
+telefonu → `CONTACT_PATH`, `.hdr-bg` `opacity 1`. Ruch: reveal pierwszego
+bloku „Sprzedaję"; żaden `[data-rv]` nie jest linkiem ani przyciskiem;
+**sonda parallaxu** — WIDOCZNYCH kadrów 7 na desktopie, 8 poniżej progu;
+zapas ≥ `PX_AMT_*` × wysokość kadru; **zdjęcie hero (`data-px="top"`):
+przesunięcie 0 przy scrollu 0 na OBU progach — poniżej progu kadr NIE
+zaczyna się na górze strony (asercja `frameTop > 100`)**, `transform`
+z CSS = `none`; obraz zakrywa kadr w sześciu pozycjach; kierunek odwrotny
+— para kadrów „Kupuję" od progu, para „Pomocy prawnej" poniżej
+(± 0,2 px). **PUNKTOWA emulacja `reduce` z komentarzem** (piąty dozwolony
+wyjątek): brak `js-motion`, blok `opacity 1`, `[data-px]` `transform:
+none`, skok kotwicy działa. Scroll natywny; zero hostów trzecich; axe po
+`revealSweep` (desktop i Pixel 5). `navigation`: `OVER_HERO_PATHS`
+
+- `/uslugi/`. Visual `uslugi` (`useVisualFixtureGuard`): `uslugi-top`
+  (okno startowe) i `uslugi-full` (fullPage po `revealSweep`, próg 0,001;
+  asercja slotu telefonu `href` = `tel:`) × 6 profili = 12 PNG na
+  platformę. Zmierzone progiem 0 po zmianie `content-motion.ts`: `home-*`,
+  `sprzedaj-*`, `o-nas-*`, `chrome-*` — wynik w `docs/analiza-uslugi.md`
+  §10.4. **Pomiar kontrastu tekstu nad zdjęciem i na szkle** (kafle wejść
+  i link na telefonie, karta i pas wejść na desktopie, logo i linki paska
+  nad zdjęciem, przyciski szklane pasów CTA, blok zamykający „Pomocy
+  prawnej", lista na ciemnej sekcji; axe tego nie liczy): metoda i liczby
+  w `docs/analiza-uslugi.md` §10.2 — powtórz po zmianie krycia, gradientu,
+  koloru tekstu albo zdjęcia; **mierz OBA silniki — WebKit dawał dla
+  tekstu na szkle wyniki o 0,3–1,3 niższe niż Chromium**. LHCI mierzy
+  dodatkowo `/uslugi/`.
+
 STAN po Etapie 4.5 (`/o-nas/`; wspólny moduł ruchu z wartościami
 `data-px="-1"` i `data-px="top"`): unit bez zmian (widok nie ma logiki).
 E2E `o-nas` (nowy spec; treść `chromium-1920`, hero, układ i ruch także
@@ -810,7 +892,8 @@ spec otwierający trasy ofert), `useChromium1920Only`, `collectPageIssues`.
 | `src/components/offers/OfferInquiry.astro`, sekcja kontaktu w `OfferDetailPage.astro` / `offer-detail.css`, wariant ciemny w `forms.css`, `lookupOffer` w `functions/api/kontakt.ts`                                          | `pnpm test:unit && pnpm build && pnpm test:e2e tests/e2e/oferta-zapytanie.spec.ts tests/e2e/oferta.spec.ts tests/e2e/a11y.spec.ts` (+ `build:visual && test:visual tests/visual/oferta.spec.ts` przy zmianie wyglądu; krycia tekstu albo tło sekcji = pomiar kontrastu, `forms.css` = pomiar LCP list rodzaju i detali: `docs/analiza-formularze-b.md` §10)                                                                                                                                                                                                               |
 | `src/pages/sprzedaj-z-nami.astro`, `src/components/sections/sell/**`, `src/components/forms/FormChoice.astro`, `src/components/MotionGate.astro`, `src/components/navbar/**` (wariant „nad hero")                             | `pnpm build && pnpm test:e2e tests/e2e/sprzedaj.spec.ts tests/e2e/navigation.spec.ts tests/e2e/home.spec.ts tests/e2e/kontakt.spec.ts tests/e2e/a11y.spec.ts` (+ `build:visual && test:visual tests/visual/sprzedaj.spec.ts tests/visual/chrome.spec.ts tests/visual/home.spec.ts tests/visual/kontakt.spec.ts` przy zmianie wyglądu; zmiana paska = pomiar `chrome-*` progiem 0; krycie gradientu, kolory tekstu albo zdjęcie hero = pomiar kontrastu: `docs/analiza-formularze-a.md` §11.2)                                                                             |
 | `src/pages/praca.astro`, `src/components/sections/jobs/**`, `src/components/forms/{FormFile,FormMail}.astro`, `form-file.ts`, `CV_MAX_BYTES` / `CV_TYPES` w `cv-file.ts`, `SHOW_PRACA`, `isSitemapPath`                       | `pnpm test:unit && pnpm build && pnpm test:e2e tests/e2e/praca.spec.ts tests/e2e/a11y.spec.ts tests/e2e/seo.spec.ts tests/e2e/navigation.spec.ts` (+ `build:visual && test:visual tests/visual/praca.spec.ts` przy zmianie wyglądu; zmiana `CV_MAX_BYTES` = regeneracja zrzutów z dopiskiem; zdjęcie hero albo krycie rozjaśnienia pod paskiem = pomiar kontrastu: `docs/analiza-formularze-b.md` §11.2 F91)                                                                                                                                                              |
-| `src/pages/o-nas.astro`, `src/components/sections/about/**`, `src/components/sections/content-motion.ts` (wartości `data-px`)                                                                                                 | `pnpm build && pnpm test:e2e tests/e2e/o-nas.spec.ts tests/e2e/navigation.spec.ts tests/e2e/home.spec.ts tests/e2e/sprzedaj.spec.ts tests/e2e/a11y.spec.ts` (+ `build:visual && test:visual tests/visual/o-nas.spec.ts` przy zmianie wyglądu; zmiana `content-motion.ts` = pomiar `home-*` i `sprzedaj-*` progiem 0; krycie szkła, gradientów, kolory tekstu albo zdjęcia = pomiar kontrastu: `docs/analiza-o-nas.md` §10.2)                                                                                                                                              |
+| `src/pages/o-nas.astro`, `src/components/sections/about/**`, `src/components/sections/content-motion.ts` (wartości `data-px`)                                                                                                 | `pnpm build && pnpm test:e2e tests/e2e/o-nas.spec.ts tests/e2e/uslugi.spec.ts tests/e2e/navigation.spec.ts tests/e2e/home.spec.ts tests/e2e/sprzedaj.spec.ts tests/e2e/a11y.spec.ts` (+ `build:visual && test:visual tests/visual/o-nas.spec.ts` przy zmianie wyglądu; zmiana `content-motion.ts` = pomiar `home-*`, `sprzedaj-*`, `o-nas-*` i `uslugi-*` progiem 0; krycie szkła, gradientów, kolory tekstu albo zdjęcia = pomiar kontrastu: `docs/analiza-o-nas.md` §10.2)                                                                                              |
+| `src/pages/uslugi.astro`, `src/components/sections/services/**`, kotwice sekcji usług (`SERVICES_ANCHORS`, linki w `home-copy.ts`)                                                                                            | `pnpm build && pnpm test:e2e tests/e2e/uslugi.spec.ts tests/e2e/navigation.spec.ts tests/e2e/home.spec.ts tests/e2e/a11y.spec.ts` (+ `build:visual && test:visual tests/visual/uslugi.spec.ts` przy zmianie wyglądu; dopełnienie górne sekcji albo `scroll-margin-top` = testy kotwic na trzech profilach; krycie szkła, gradientów, kolory tekstu albo zdjęcia = pomiar kontrastu w OBU silnikach: `docs/analiza-uslugi.md` §10.2)                                                                                                                                       |
 | `tests/helpers/**`, `lighthouserc*.cjs`, `.github/workflows/*.yml`                                                                                                                                                            | `pnpm test:unit` (helpery) + warstwa, której spec używa helpera; workflow NIE uruchamiać w sesji                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `src/pages/index.astro`, `src/components/sections/**` (sekcje strony głównej, moduły ruchu, `content.css`), `src/lib/offers/home-offers.ts`, `public/video/**`                                                                | `pnpm test:unit && pnpm build && pnpm test:e2e tests/e2e/home.spec.ts tests/e2e/navigation.spec.ts tests/e2e/a11y.spec.ts` (+ `build:visual && test:visual tests/visual/home.spec.ts tests/visual/chrome.spec.ts` przy zmianie wyglądu; wideo → `total` desktop w LHCI, szkło i kolory hero → pomiar kontrastu: `docs/analiza-home.md` §6, §10.2)                                                                                                                                                                                                                         |
 | Każda zmiana wyglądu                                                                                                                                                                                                          | `pnpm build:visual && pnpm test:visual`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -899,8 +982,9 @@ spec otwierający trasy ofert), `useChromium1920Only`, `collectPageIssues`.
 - NIE emuluj `prefers-reduced-motion: reduce` (bramka ruchu = testy
   „przechodzą" na martwej stronie); świadome, punktowe wyjątki per test
   weryfikujące ścieżkę reduce są dozwolone — oznaczaj je komentarzem
-  (dziś cztery: litery paska w `navigation`, hero i reveale w `home`,
-  reveale i parallax w `sprzedaj`, reveale i parallax w `o-nas`).
+  (dziś pięć: litery paska w `navigation`, hero i reveale w `home`,
+  reveale i parallax w `sprzedaj`, reveale i parallax w `o-nas`, reveale,
+  parallax i kotwica w `uslugi`).
 - **Wartości limitu CV nie wpisuj w testy** — asercje liczą ją ze stałej
   `CV_MAX_BYTES` (`cvLimitLabel()`, `formatFileSize`), bo pomiar na
   platformie może ją zmienić jednym commitem.
