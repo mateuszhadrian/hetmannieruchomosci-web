@@ -13,8 +13,12 @@
 //  • film i spacer: iframe powstaje DOPIERO po kliknięciu (D32) — do tego
 //    czasu kafel jest zwykłym linkiem;
 //  • opis: „Czytaj więcej" tylko gdy treść przekracza próg (pomiar
-//    scrollHeight), stan w atrybucie, zwijanie trzyma przycisk pod palcem.
+//    scrollHeight), stan w atrybucie, zwijanie trzyma przycisk pod palcem;
+//  • formularz zapytania w sekcji kontaktu: wspólna mechanika formularzy
+//    (`initForms`) — uzbrajana od razu, bo do czasu uzbrojenia wysyłka
+//    poszłaby natywnym POST-em.
 // Scroll natywny (scroll.md); sloty kontaktowe wypełnia skrypt Navbara.
+import { initForms } from "@/components/forms/form-ui";
 import {
   DESKTOP_MIN_PX,
   OFFER_DESCRIPTION_COLLAPSE_PX,
@@ -27,6 +31,8 @@ const desktopMQ = matchMedia(`(min-width: ${DESKTOP_MIN_PX}px)`);
 const reduceMQ = matchMedia("(prefers-reduced-motion: reduce)");
 
 const root = document.querySelector<HTMLElement>("[data-offer-detail]");
+
+if (root) initForms(root);
 
 function q<T extends HTMLElement>(sel: string): T | null {
   return root?.querySelector<T>(sel) ?? null;

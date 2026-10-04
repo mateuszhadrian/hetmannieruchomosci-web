@@ -1,6 +1,6 @@
 // Pages Function: POST /api/kontakt — JEDEN endpoint wszystkich formularzy
-// serwisu; rodzaj niesie pole `form` (Etap 5A: `kontakt`, `sprzedaj`;
-// zapytanie o ofertę i praca dochodzą w 5B).
+// serwisu; rodzaj niesie pole `form` (`kontakt`, `sprzedaj`, `oferta`;
+// praca dochodzi w 5B / PR 2).
 // Sekrety (RESEND_API_KEY, TURNSTILE_SECRET_KEY) żyją w ustawieniach
 // projektu Pages; binding KONTAKT_KV jest OPCJONALNY (dzienny bezpiecznik
 // limitu Resend); KONTAKT_TO jest OPCJONALNE (nadpisuje adresata — np.
@@ -8,19 +8,25 @@
 // biura).
 // Strona wysyła jedną wiadomość, do biura; nic poza mailem nie jest
 // utrwalane, a IP i przeglądarka klienta nie trafiają do treści.
+// Zapytanie o ofertę: z formularza przychodzi WYŁĄCZNIE numer oferty —
+// tytuł, lokalizację i adres funkcja czyta sama z indeksu ofert
+// (`/oferty/index.json`, plik statyczny tego samego wdrożenia, przez
+// binding ASSETS).
 import {
   buildMail,
   CONTACT_FROM_NOTIFY,
   CONTACT_TO,
   FORM_MAX_BYTES,
-  FORM_PAGE_PATH,
   isActiveFormKind,
   isBotTrap,
+  isFormPagePath,
   isValidEmail,
   validateForm,
   type FormRaw,
+  type MailOffer,
 } from "../../src/lib/contact-form";
-import { CONTACT_PATH } from "../../src/lib/routes";
+import { formatLocation } from "../../src/lib/offers/format";
+import { CONTACT_PATH, OFFERS_INDEX_PATH } from "../../src/lib/routes";
 
 // Minimalne typy zamiast @cloudflare/workers-types — używamy wyłącznie
 // standardowych API (Request/Response/FormData/fetch), które pokrywa lib DOM.
@@ -33,11 +39,17 @@ interface KVNamespaceLike {
   ): Promise<void>;
 }
 
+/** Binding plików statycznych wdrożenia (Pages daje go każdej funkcji). */
+interface AssetsLike {
+  fetch(input: string | URL | Request): Promise<Response>;
+}
+
 interface Env {
   RESEND_API_KEY?: string;
   TURNSTILE_SECRET_KEY?: string;
   KONTAKT_KV?: KVNamespaceLike;
   KONTAKT_TO?: string;
+  ASSETS?: AssetsLike;
 }
 
 interface PagesContext {
@@ -72,11 +84,10 @@ export const onRequest = async (ctx: PagesContext): Promise<Response> => {
  *  to nasza strona formularza. */
 function redirectBack(request: Request): Response {
   const origin = new URL(request.url).origin;
-  let path = CONTACT_PATH;
+  let path: string = CONTACT_PATH;
   try {
     const ref = new URL(request.headers.get("referer") ?? "");
-    const known = Object.values(FORM_PAGE_PATH);
-    if (ref.origin === origin && known.includes(ref.pathname)) {
+    if (ref.origin === origin && isFormPagePath(ref.pathname)) {
       path = ref.pathname;
     }
   } catch {
@@ -95,9 +106,15 @@ async function handlePost({ request, env }: PagesContext): Promise<Response> {
   }
 
   // Odrzucenie po nagłówku PRZED czytaniem treści — inaczej każdy mógłby
-  // spalić czas funkcji, wysyłając duży plik.
-  const length = Number(request.headers.get("content-length") ?? "0");
-  if (Number.isFinite(length) && length > FORM_MAX_BYTES) {
+  // spalić czas funkcji, wysyłając duży plik. Żądanie BEZ deklaracji
+  // rozmiaru nie jest czytane wcale (przeglądarka wysyłająca formularz
+  // podaje ją zawsze).
+  const declared = request.headers.get("content-length");
+  const length = declared === null || declared === "" ? NaN : Number(declared);
+  if (!Number.isInteger(length) || length < 0) {
+    return json(411, { ok: false, error: "length-required" });
+  }
+  if (length > FORM_MAX_BYTES) {
     return json(413, { ok: false, error: "too-large" });
   }
 
@@ -167,9 +184,14 @@ async function handlePost({ request, env }: PagesContext): Promise<Response> {
 
   // Adres strony w stopce maila z HOSTA ŻĄDANIA: na podglądzie prowadzi na
   // podgląd, po przełączeniu domeny — na domenę główną.
+  const origin = new URL(request.url).origin;
   const mail = buildMail(validated.data, {
     sentAt,
-    origin: new URL(request.url).origin,
+    origin,
+    // dopiero tutaj — żądanie odsiane wcześniej nie kosztuje odczytu indeksu
+    ...(validated.data.form === "oferta"
+      ? { offer: await lookupOffer(env, origin, validated.data.offer) }
+      : {}),
   });
   const to =
     env.KONTAKT_TO && isValidEmail(env.KONTAKT_TO)
@@ -191,6 +213,71 @@ async function handlePost({ request, env }: PagesContext): Promise<Response> {
   }
 
   return json(200, { ok: true });
+}
+
+/**
+ * Wpis oferty z indeksu wyszukiwarki. `null`, gdy numeru w nim nie ma
+ * (oferta zdjęta po otwarciu strony) albo indeksu nie da się odczytać —
+ * zgłoszenie wtedy i tak wychodzi, z dopiskiem zamiast tytułu i linku
+ * (zapytanie klienta jest warte więcej niż ścisłość).
+ */
+async function lookupOffer(
+  env: Env,
+  origin: string,
+  number: string,
+): Promise<MailOffer | null> {
+  if (!env.ASSETS) {
+    console.error("kontakt: brak bindingu ASSETS — oferta bez weryfikacji");
+    return null;
+  }
+  try {
+    const res = await env.ASSETS.fetch(`${origin}${OFFERS_INDEX_PATH}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const index = (await res.json()) as { offers?: unknown };
+    const entries = Array.isArray(index.offers) ? index.offers : [];
+    const entry = entries.find(
+      (e): e is IndexEntryLike =>
+        isIndexEntry(e) && e.number.toUpperCase() === number,
+    );
+    if (!entry) return null;
+    return {
+      title: entry.title,
+      place: formatLocation(entry.location),
+      path: entry.path,
+    };
+  } catch {
+    console.error("kontakt: indeks ofert nieczytelny — oferta bez weryfikacji");
+    return null;
+  }
+}
+
+/** Pola wpisu indeksu, z których korzysta mail (kształt:
+ *  src/lib/offers/index-entry.ts — tu sprawdzany, nie zakładany). */
+interface IndexEntryLike {
+  number: string;
+  path: string;
+  title: string;
+  location: {
+    city: string;
+    district?: string;
+    street?: string;
+    streetType?: string;
+  };
+}
+
+function isIndexEntry(value: unknown): value is IndexEntryLike {
+  if (typeof value !== "object" || value === null) return false;
+  const e = value as Record<string, unknown>;
+  const loc = e.location as Record<string, unknown> | null | undefined;
+  return (
+    typeof e.number === "string" &&
+    typeof e.title === "string" &&
+    typeof e.path === "string" &&
+    e.path.startsWith("/oferty/") &&
+    typeof loc === "object" &&
+    loc !== null &&
+    typeof loc.city === "string"
+  );
 }
 
 interface OutgoingEmail {

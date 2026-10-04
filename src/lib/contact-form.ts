@@ -3,15 +3,16 @@
 // Function), src/components/forms/form-ui.ts (walidacja kliencka),
 // komponenty formularzy (słowniki, brzmienie zgody) i testy unit.
 //
-// Etap 5A (docs/analiza-formularze-a.md): JEDEN endpoint z polem `form`;
-// obsługiwane rodzaje `kontakt` i `sprzedaj` (zapytanie o ofertę i praca
-// dochodzą w 5B). Dwa OSOBNE pola kontaktowe, wymagane co najmniej jedno.
+// Etap 5 (docs/analiza-formularze-a.md, analiza-formularze-b.md): JEDEN
+// endpoint z polem `form`; obsługiwane rodzaje `kontakt`, `sprzedaj`
+// i `oferta` (zapytanie przy ofercie); `praca` dochodzi w 5B / PR 2.
+// Dwa OSOBNE pola kontaktowe, wymagane co najmniej jedno.
 // `validateForm` jest jednym źródłem prawdy dla klienta i serwera — obie
 // strony dostają tę samą listę błędnych pól, więc nie mogą się rozjechać.
 //
 // Potwierdzenie do nadawcy NIE istnieje — strona wysyła jedną wiadomość,
 // do biura. Nic poza mailem nie jest utrwalane.
-import { CONTACT_PATH, SELL_PATH } from "./routes";
+import { CONTACT_PATH, OFFERS_PATH, SELL_PATH } from "./routes";
 
 export const CONTACT_TO = "biuro@hetmannieruchomosci.com";
 // Nadawca MUSI siedzieć na domenie zweryfikowanej w Resendzie (subdomena
@@ -26,6 +27,8 @@ export const CONTACT_FROM_NOTIFY =
  *  dalej); zmienia się tylko dopisek kontekstu. */
 const SITE_LABEL = "hetmannieruchomosci.com";
 const SUBJECT_PREFIX = `Zapytanie ze strony www ${SITE_LABEL}`;
+/** Zapytanie przy ofercie miało na dotychczasowej stronie własny temat. */
+const SUBJECT_PREFIX_AGENT = `Zapytanie do agenta ze strony www ${SITE_LABEL}`;
 
 export const MIN_FILL_MS = 4000;
 export const NAME_MAX = 100;
@@ -48,21 +51,40 @@ export const PHONE_RE = /^\+?\d{9,15}$/;
 // ── Rodzaje formularzy ──────────────────────────────────────────────────
 export const FORM_KINDS = ["kontakt", "sprzedaj", "oferta", "praca"] as const;
 export type FormKind = (typeof FORM_KINDS)[number];
-/** Rodzaje obsługiwane przez endpoint (5A); pozostałe wchodzą w 5B. */
-export const ACTIVE_FORM_KINDS = ["kontakt", "sprzedaj"] as const;
+/** Rodzaje obsługiwane przez endpoint; `praca` wchodzi w 5B / PR 2. */
+export const ACTIVE_FORM_KINDS = ["kontakt", "sprzedaj", "oferta"] as const;
 export type ActiveFormKind = (typeof ACTIVE_FORM_KINDS)[number];
 
 export function isActiveFormKind(value: string): value is ActiveFormKind {
   return (ACTIVE_FORM_KINDS as readonly string[]).includes(value);
 }
 
-/** Strona, na której żyje formularz — do stopki maila i przekierowania
+/** Strony formularzy o STAŁYM adresie — do stopki maila i przekierowania
  *  wysyłki bez JS. Ścieżka wynika z RODZAJU formularza, nie z danych
- *  klienta. */
-export const FORM_PAGE_PATH: Record<ActiveFormKind, string> = {
+ *  klienta. Zapytanie o ofertę żyje pod adresem detalu (`isFormPagePath`). */
+export const FORM_PAGE_PATH = {
   kontakt: CONTACT_PATH,
   sprzedaj: SELL_PATH,
-};
+} as const;
+
+/** Adres detalu oferty: `/oferty/{rodzaj}/{lokalizacja}/{numer}/`
+ *  (wzorzec tras w routes.ts; numer w adresie małymi literami). */
+const OFFER_DETAIL_PATH_RE = /^\/oferty\/[^/]+\/[^/]+\/[a-z]{1,8}\d{1,12}\/$/;
+
+/** Czy pod tą ścieżką stoi któryś formularz serwisu (cel powrotu po
+ *  wysyłce bez JS — nigdy adres spoza tej listy). */
+export function isFormPagePath(path: string): boolean {
+  return (
+    (Object.values(FORM_PAGE_PATH) as string[]).includes(path) ||
+    OFFER_DETAIL_PATH_RE.test(path)
+  );
+}
+
+/** Kształt numeru oferty — W PARZE z `OfferSchema.number`
+ *  (src/lib/offers/schema.ts; ten moduł nie importuje schematów — trafia
+ *  do bundla klienta). Jedyna wartość o ofercie, którą przyjmujemy
+ *  z formularza; tytuł, lokalizację i adres funkcja bierze z indeksu. */
+export const OFFER_NUMBER_RE = /^[A-Z]{1,8}\d{1,12}$/;
 
 // ── Słowniki zgłoszenia nieruchomości ───────────────────────────────────
 // Wartości = identyfikatory słownika CRM (te same, które wysyłał
@@ -105,6 +127,9 @@ export type FieldName =
   | "phone"
   | "contact"
   | "message"
+  /** Ukryty numer oferty — nie ma opakowania w markupie; błąd tego pola
+   *  kończy się komunikatem błędu wysyłki. */
+  | "offer"
   | "type"
   | "transaction"
   | "location"
@@ -137,7 +162,13 @@ export interface SprzedajData extends CommonData {
   price: string;
   notes: string;
 }
-export type FormSubmission = KontaktData | SprzedajData;
+export interface OfertaData extends CommonData {
+  form: "oferta";
+  /** Numer oferty (wielkimi literami), o kształcie `OFFER_NUMBER_RE`. */
+  offer: string;
+  message: string;
+}
+export type FormSubmission = KontaktData | SprzedajData | OfertaData;
 
 export type ValidationResult =
   | { ok: true; data: FormSubmission }
@@ -203,6 +234,9 @@ export function validateForm(
 ): ValidationResult {
   const fields: FieldName[] = [];
 
+  const offer = text(raw, "offer").toUpperCase();
+  if (kind === "oferta" && !OFFER_NUMBER_RE.test(offer)) fields.push("offer");
+
   const type = text(raw, "type");
   const transaction = text(raw, "transaction");
   if (kind === "sprzedaj") {
@@ -224,15 +258,19 @@ export function validateForm(
 
   const marketing = text(raw, "marketing") !== "";
 
-  if (kind === "kontakt") {
+  if (kind === "kontakt" || kind === "oferta") {
     const message = text(raw, "message");
     if (message.length === 0 || message.length > MESSAGE_MAX) {
       fields.push("message");
     }
     if (fields.length > 0) return { ok: false, fields };
+    const common = { name, email, phone, marketing, message };
     return {
       ok: true,
-      data: { form: "kontakt", name, email, phone, marketing, message },
+      data:
+        kind === "oferta"
+          ? { form: "oferta", offer, ...common }
+          : { form: "kontakt", ...common },
     };
   }
 
@@ -282,15 +320,32 @@ export interface EmailContent {
   text: string;
 }
 
+/** Dane oferty do maila — WYŁĄCZNIE z indeksu ofert czytanego przez
+ *  funkcję, nigdy z pól formularza. */
+export interface MailOffer {
+  title: string;
+  /** Lokalizacja w jednej linii (miejscowość, dzielnica, ulica). */
+  place: string;
+  /** Ścieżka detalu (`/oferty/…/`). */
+  path: string;
+}
+
 export interface MailContext {
   /** Data i godzina wysłania, już sformatowana (Europe/Warsaw). */
   sentAt: string;
   /** Początek adresu z HOSTA ŻĄDANIA (`https://host`) — na podglądzie
    *  linki prowadzą na podgląd, po przełączeniu na domenę główną. */
   origin: string;
+  /** Zapytanie o ofertę: wpis z indeksu albo `null`, gdy numeru w nim nie
+   *  ma (oferta zdjęta po otwarciu strony) lub indeksu nie dało się
+   *  odczytać — zgłoszenie i tak wychodzi, z dopiskiem zamiast tytułu. */
+  offer?: MailOffer | null;
 }
 
 const NOT_GIVEN = "nie podano";
+/** Dopisek w mailu, gdy numeru oferty nie ma w bieżącym indeksie. */
+export const OFFER_NOT_IN_INDEX =
+  "Oferty o tym numerze nie ma w bieżącym indeksie strony — mogła zostać zdjęta po otwarciu strony przez klienta.";
 /** Kolor nagłówka i etykiet w mailu (kolor marki z logo). */
 const MAIL_COLOR = "#083870";
 
@@ -299,21 +354,38 @@ interface MailRow {
   value: string;
 }
 
+const SUBJECT_CONTEXT = {
+  kontakt: "kontakt",
+  sprzedaj: "zgłoszenie nieruchomości",
+} as const;
+const HEADING = {
+  kontakt: "Kontakt ze strony",
+  sprzedaj: "Zgłoszona oferta",
+} as const;
+
 /**
  * Powiadomienie do skrzynki biura — układ jak w mailach dotychczasowej
  * strony (nagłówek, etykieta, wartość, „Dane kontaktowe:", zgoda), żeby
  * odbiorca nie musiał uczyć się nowego formatu. Temat jest stały per
- * formularz (żadnych danych klienta w temacie).
+ * formularz (żadnych danych klienta w temacie); zapytanie o ofertę niesie
+ * w temacie numer — zweryfikowany co do kształtu, nie dowolny tekst.
  */
 export function buildMail(
   data: FormSubmission,
   ctx: MailContext,
 ): EmailContent {
-  const isSell = data.form === "sprzedaj";
-  const subject = `${SUBJECT_PREFIX} — ${
-    isSell ? "zgłoszenie nieruchomości" : "kontakt"
-  }`;
-  const heading = isSell ? "Zgłoszona oferta" : "Kontakt ze strony";
+  const isOffer = data.form === "oferta";
+  const subject = isOffer
+    ? `${SUBJECT_PREFIX_AGENT} — oferta ${data.offer}`
+    : `${SUBJECT_PREFIX} — ${SUBJECT_CONTEXT[data.form]}`;
+  const heading = isOffer
+    ? `Zapytanie wysłane ze strony www do oferty nr ${data.offer}`
+    : HEADING[data.form];
+
+  // Zapytanie o ofertę: adres, tytuł i lokalizacja z INDEKSU.
+  const offer = isOffer ? (ctx.offer ?? null) : null;
+  const offerUrl = offer ? `${ctx.origin}${offer.path}` : "";
+  const offerLine = offer ? `${offer.title} · ${offer.place}` : "";
 
   const rows: MailRow[] = [];
   if (data.form === "sprzedaj") {
@@ -337,7 +409,10 @@ export function buildMail(
       rows.push({ label: "Cena", value: formatMailPrice(data.price) });
     }
   } else {
-    rows.push({ label: "Treść", value: data.message });
+    rows.push({
+      label: isOffer ? "Treść wiadomości" : "Treść",
+      value: data.message,
+    });
   }
 
   const contact: MailRow[] = [
@@ -348,7 +423,9 @@ export function buildMail(
   const consent = `Zgoda na oferty i informacje handlowe: ${
     data.marketing ? "Tak" : "Nie"
   }`;
-  const page = `${ctx.origin}${FORM_PAGE_PATH[data.form]}`;
+  const page = isOffer
+    ? offerUrl || `${ctx.origin}${OFFERS_PATH}`
+    : `${ctx.origin}${FORM_PAGE_PATH[data.form]}`;
   const replyNote = data.email
     ? "Wiadomość wygenerowana automatycznie; odpowiadając, piszesz do klienta."
     : "Wiadomość wygenerowana automatycznie. Klient nie podał adresu e-mail — skontaktuj się telefonicznie.";
@@ -356,6 +433,9 @@ export function buildMail(
   const textRow = (r: MailRow) => `${r.label}:\n${r.value}\n`;
   const text = [
     heading.toUpperCase(),
+    ...(isOffer
+      ? [offer ? `${offerUrl}\n${offerLine}` : OFFER_NOT_IN_INDEX]
+      : []),
     "",
     ...rows.map(textRow),
     "Dane kontaktowe:",
@@ -375,9 +455,21 @@ export function buildMail(
   const value = (s: string) =>
     `<div style="white-space:pre-wrap">${escapeHtml(s)}</div>`;
   const htmlRow = (r: MailRow) => label(r.label) + value(r.value);
+  // numer w nagłówku jest linkiem do oferty (jak w mailach dotychczasowej
+  // strony); wartości z indeksu escapowane tak samo jak dane klienta
+  const headingHtml =
+    isOffer && offer
+      ? `${escapeHtml(heading.slice(0, -data.offer.length))}<a href="${escapeHtml(offerUrl)}" style="color:${MAIL_COLOR}">${escapeHtml(data.offer)}</a>`
+      : escapeHtml(heading);
+  const underHeading = !isOffer
+    ? []
+    : [
+        `<p style="margin:0 0 8px;text-align:center${offer ? ";font-weight:bold" : ""}">${escapeHtml(offer ? offerLine : OFFER_NOT_IN_INDEX)}</p>`,
+      ];
   const html = [
     `<div style="font-family:system-ui,-apple-system,'Segoe UI',Arial,sans-serif;font-size:15px;line-height:1.5;color:#1c1b19">`,
-    `<h2 style="margin:0 0 8px;color:${MAIL_COLOR};text-align:center;text-transform:uppercase;font-size:18px">${escapeHtml(heading)}</h2>`,
+    `<h2 style="margin:0 0 8px;color:${MAIL_COLOR};text-align:center;text-transform:uppercase;font-size:18px">${headingHtml}</h2>`,
+    ...underHeading,
     ...rows.map(htmlRow),
     `<h3 style="margin:24px 0 0;color:${MAIL_COLOR};font-size:16px">Dane kontaktowe:</h3>`,
     ...contact.map(htmlRow),

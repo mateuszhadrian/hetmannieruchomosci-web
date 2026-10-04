@@ -118,3 +118,27 @@ export const SPRZEDAJ_FORM_COPY = {
     again: "Wyślij kolejne zgłoszenie",
   } satisfies FormFrameCopy,
 } as const;
+
+export const OFERTA_FORM_COPY = {
+  message: {
+    label: "Wiadomość",
+    /** Treść startowa pola — brzmienie z formularza dotychczasowej strony
+     *  (NIE placeholder: klient może ją wysłać bez zmian). Numer, tytuł
+     *  i adres oferty niesie mail, nie treść. */
+    value: "Jestem zainteresowany(a) tą ofertą. Proszę o kontakt.",
+  },
+  // PLACEHOLDER (U9): teksty ramki — brzmienia robocze na wzór formularza
+  // kontaktowego (zdanie o celu, etykieta przycisku, potwierdzenie, błąd).
+  frame: {
+    purpose:
+      "Twoje dane wykorzystujemy po to, żeby odpowiedzieć na to zapytanie.",
+    submit: "Wyślij zapytanie",
+    serverError:
+      "Nie udało się wysłać zapytania — coś po naszej stronie. Spróbuj jeszcze raz albo zadzwoń:",
+    doneHeading: "Zapytanie wysłane.",
+    doneBefore: "Odezwiemy się w ciągu",
+    doneAfter: ".",
+    doneCall: "Jeśli sprawa nie może czekać — zadzwoń:",
+    again: "Napisz kolejną wiadomość",
+  } satisfies FormFrameCopy,
+} as const;

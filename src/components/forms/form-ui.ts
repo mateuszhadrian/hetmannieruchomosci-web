@@ -66,10 +66,13 @@ function loadTurnstile(): Promise<void> {
 
 /** Dosuwa element w okno: górna krawędź nie wyżej niż dół stałego paska
  *  (+ odstęp), a gdy element jest pod oknem — dolna krawędź w oknie.
- *  Natywny `window.scrollTo`, bez animacji. */
-function revealUnderBar(el: HTMLElement): void {
+ *  `under` = selektor drugiego elementu przyklejonego pod paskiem (pasek
+ *  kotwic detalu oferty). Natywny `window.scrollTo`, bez animacji. */
+function revealUnderBar(el: HTMLElement, under?: string): void {
   const hdr = document.querySelector<HTMLElement>("[data-nav]");
-  const limit = (hdr?.offsetHeight ?? 0) + FORM_SCROLL_GAP_PX;
+  const extra = under ? document.querySelector<HTMLElement>(under) : null;
+  const limit =
+    (hdr?.offsetHeight ?? 0) + (extra?.offsetHeight ?? 0) + FORM_SCROLL_GAP_PX;
   const r = el.getBoundingClientRect();
   if (r.top < limit) {
     window.scrollTo(0, window.scrollY + r.top - limit);
@@ -89,6 +92,7 @@ function initForm(frame: HTMLElement): void {
   const kindAttr = form?.dataset.form ?? "";
   if (!form || !isActiveFormKind(kindAttr)) return;
   const kind: ActiveFormKind = kindAttr;
+  const under = frame.dataset.formUnder;
 
   const sendBtn = form.querySelector<HTMLButtonElement>("[data-form-submit]");
   const sendLb = sendBtn?.querySelector<HTMLElement>("[data-label]");
@@ -197,14 +201,18 @@ function initForm(frame: HTMLElement): void {
     control.setAttribute("aria-invalid", invalid ? "true" : "false");
   }
 
-  function setErrors(fields: readonly FieldName[]): void {
+  /** Zapala opakowania błędnych pól; zwraca, czy COKOLWIEK się zapaliło
+   *  (błąd pola bez opakowania — np. ukryty numer oferty — nie ma gdzie
+   *  się pokazać i kończy się komunikatem błędu wysyłki). */
+  function setErrors(fields: readonly FieldName[]): boolean {
+    let lit = false;
     for (const wrap of wraps()) {
-      wrap.classList.toggle(
-        "err",
-        fields.includes(wrap.dataset.f as FieldName),
-      );
+      const on = fields.includes(wrap.dataset.f as FieldName);
+      wrap.classList.toggle("err", on);
+      lit ||= on;
     }
     form!.querySelectorAll<Control>(CONTROLS).forEach(syncControl);
+    return lit;
   }
 
   function focusFirstError(): void {
@@ -219,7 +227,7 @@ function initForm(frame: HTMLElement): void {
     // paskiem mimo scroll-margin) — a pole zasłonięte paskiem to błąd,
     // którego użytkownik nie widzi.
     control.focus({ preventScroll: true });
-    revealUnderBar(first ?? control);
+    revealUnderBar(first ?? control, under);
   }
 
   // pisanie w polu gasi jego błąd (i błąd pary, do której należy)
@@ -259,7 +267,7 @@ function initForm(frame: HTMLElement): void {
       ?.focus({ preventScroll: true });
     // potwierdzenie jest niższe od formularza — dosuwamy ramkę pod pasek,
     // jeśli jej górna krawędź została nad oknem
-    revealUnderBar(frame);
+    revealUnderBar(frame, under);
   }
 
   function readRaw(): FormRaw {
@@ -274,11 +282,13 @@ function initForm(frame: HTMLElement): void {
     if (busy) return;
 
     const result = validateForm(kind, readRaw());
-    setErrors(result.ok ? [] : result.fields);
+    srvErr!.hidden = true;
     if (!result.ok) {
-      focusFirstError();
+      if (setErrors(result.fields)) focusFirstError();
+      else srvErr!.hidden = false;
       return;
     }
+    setErrors([]);
 
     /* pułapki po stronie klienta: honeypot lub submit < MIN_FILL_MS →
        udawany sukces bez requestu (serwer i tak powtarza test) */
@@ -287,7 +297,6 @@ function initForm(frame: HTMLElement): void {
       return;
     }
 
-    srvErr!.hidden = true;
     setBusy(true);
     try {
       const token = await getToken();
@@ -304,8 +313,7 @@ function initForm(frame: HTMLElement): void {
         const body = (await res.json().catch(() => null)) as {
           fields?: FieldName[];
         } | null;
-        if (body?.fields?.length) {
-          setErrors(body.fields);
+        if (body?.fields?.length && setErrors(body.fields)) {
           focusFirstError();
           return;
         }

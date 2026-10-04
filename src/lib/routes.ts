@@ -30,6 +30,10 @@ export const STATIC_PATHS = [
 // STAN Etapu 0: istnieje tylko /oferty/ (szkielet). Trasy dynamiczne
 // wchodzą w wersji szkieletowej w Etapie 2, widoki w Etapie 4.
 
+/** Indeks wyszukiwarki (plik statyczny z builda) — czyta go wyspa listy,
+ *  a funkcja formularzy weryfikuje w nim numer oferty z zapytania. */
+export const OFFERS_INDEX_PATH = `${OFFERS_PATH}index.json`;
+
 export const OFFER_TYPE_SLUGS = [
   "mieszkanie",
   "dom",
