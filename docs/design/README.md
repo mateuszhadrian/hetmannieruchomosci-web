@@ -94,7 +94,7 @@ Pochodne generuje `node scripts/optimize-images.mjs <src> <out.webp>
 | `praca-hero.png`          | 1456×816  | `praca-hero{,-m}.webp`             | 1456 / 1024 |
 | `sprzedaj-doradca.png`    | 1456×816  | `sprzedaj-doradca{,-m}.webp`       | 1456 / 1024 |
 | `onas-cta.png`            | 1680×720  | `onas-cta{,-m}.webp`               | 1680 / 1024 |
-| `uslugi-hero.jpg`         | 1440×617  | `uslugi-hero{,-m}.webp`            | 1440 / 1024 |
+| `uslugi-hero.jpg`         | 1440×617  | `uslugi-hero{,-tall,-m}.webp`      | 1440 / 864 (kadr o pełnej wysokości — niżej) / 1024 (nieużywany od 4.6) |
 | `home-o-nas.png`          | 960×1200  | `home-o-nas{,-m}.webp`             | 960 / 720   |
 | `kontakt-biuro.png`       | 960×1200  | `kontakt-biuro{,-m}.webp`          | 960 / 720   |
 | `onas-dokumenty.png`      | 960×1200  | `onas-dokumenty{,-m}.webp`         | 960 / 720   |
@@ -110,7 +110,7 @@ Pochodne generuje `node scripts/optimize-images.mjs <src> <out.webp>
 | `logo-color.png`          | 1500×346  | `src/assets/logo/logo-color.webp`  | 600 (q 90)  |
 | `logo-silver.png`         | 1500×344  | `src/assets/logo/logo-silver.webp` | 600 (q 90)  |
 
-Razem 20 kadrów → 40 plików WebP, 1,7 MB (źródła: 22 MB).
+Razem 20 kadrów → 40 plików WebP, 1,7 MB (źródła: 22 MB). Od Etapów 4.4–4.6 dochodzą kadry pionowe hero (`hero-poster-tall`, `sprzedaj-doradca-tall`, `uslugi-hero-tall`).
 
 **Kadr pionowy plakatu hero (Etap 4.4).** Wariant `hero-poster-m.webp`
 (1024×574) został zastąpiony przez `hero-poster-tall.webp` — wycinek
@@ -125,6 +125,23 @@ node scripts/optimize-images.mjs docs/design/export/assets/img/hero-poster.png \
 Lewa krawędź wycinka = (1456 − 720) × 0,89 = 655 px — przy tej wartości
 `object-position: 89%` daje na wycinku dokładnie ten sam kadr co na pełnym
 źródle, dla każdej proporcji okna.
+
+**Kadr zdjęcia hero `/uslugi/` na telefon (Etap 4.6).** Pole zdjęcia na
+telefonie jest pionowe albo zbliżone do kwadratu, a źródło ma tylko 617 px
+wysokości — plik `-m` (1024×439) byłby powiększany ponad trzykrotnie.
+Telefonom (< 768 px) podawany jest `uslugi-hero-tall.webp`: wycinek
+864×617 o PEŁNEJ wysokości źródła wokół pozycji 50 % (`object-position`
+w poziomie jest takie samo dla obu plików):
+
+```bash
+node scripts/optimize-images.mjs docs/design/export/assets/img/uslugi-hero.jpg \
+  src/assets/img/uslugi-hero-tall.webp 864 78 288,0,864,617
+```
+
+Lewa krawędź wycinka = (1440 − 864) × 0,5 = 288 px. Źródło jest za małe
+na pełne okno desktopu (1920×1080 = powiększenie 1,75×) — ostrzejszy plik
+od autora designu podmienia się tym samym skryptem (wpis
+w `docs/optional-todos.md`).
 
 **Szerokości są punktem wyjścia, nie decyzją ostateczną.** Widok, który
 osadza kadr, dobiera wariant do realnego pola (`sizes`) i w razie potrzeby

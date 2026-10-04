@@ -1278,12 +1278,29 @@ checkCv)`; `PRACA_FORM_COPY`. Widok: `src/pages/praca.astro` +
   strefy — lista poprawek po zakończeniu widoków
   (`docs/optional-todos.md`).
 
-- **Etap 4 / 4.5 (`/o-nas/`) — W TOKU** (2026-10-04, gałąź `feat/o-nas`,
+- **Etap 4 / 4.5 (`/o-nas/`) — WYKONANY** (2026-10-04, PR #30 zmergowany
+  16:29 UTC, commit `0925bc8`; checki PR-a (bieg 37215156513: `quality`,
+  `e2e`, `lighthouse`) i `prod-smoke` (bieg 37216953035) zielone;
+  baseline'y linux + darwin w PR: 12 PNG na platformę — same nowe
+  `o-nas-*`, żaden inny baseline nietknięty; gałąź `feat/o-nas`,
   mini-analiza `docs/analiza-o-nas.md` zaakceptowana wg rekomendacji
-  Q1–Q6, uzupełnienia §10; kod i testy gotowe lokalnie, ZOSTAŁO: workflow
-  baseline'ów linux, baseline'y darwin, PR, merge, `prod-smoke`; następna
-  sesja = 4.6 `/uslugi/`). Testy `/praca/` na `nowa.` i na telefonie:
-  nic do dopisania; chmura bez zmian (blok 5.1 → 5.2 → 5.5 po 4.7).
+  Q1–Q6, uzupełnienia §10). `ci.yml` na main po #30 (bieg 37216953033)
+  zielony na trzech jobach. Pierwszy bieg CI na PR (37214375953) miał
+  czerwony `e2e` WYŁĄCZNIE z braku 12 baseline'ów linux (`quality`
+  i `lighthouse` zielone — stan oczekiwany przed workflowem); bieg na
+  commicie bota (37214533698) zakończył się bez jobów — to nie jest
+  czerwony check; workflow baseline'ów linux: bieg 37214385287.
+  Weryfikacja na `nowa.` po merge'u (same żądania GET): `/o-nas/` 200
+  z `x-robots-tag: noindex` fazy podglądu, `h1` z treścią hero, dwa
+  `preload` zdjęcia hero z `media` (plik `-m` do 767 px), w HTML zero
+  `tel:` i `mailto:`, `data-scroll-nav` na pasku, `data-nav-hero` na
+  kadrze zdjęcia, bramka `js-motion` w `<head>`, cztery sekcje
+  `data-about`, atrybuty `data-px="top"` i `data-px="-1"`, strona
+  w sitemapie. Liczb LHCI z runnera nie odczytano — LCP mobile `/o-nas/`
+  (lokalnie mediana 2 121 ms przy progu 3 200) do sprawdzenia przy
+  najbliższym `lhci-measure.yml`. Testy `/praca/` na `nowa.` i na
+  telefonie: nic do dopisania; chmura bez zmian (blok 5.1 → 5.2 → 5.5 po
+  4.7).
   `src/pages/o-nas.astro` + `sections/about/`: `AboutHero` (telefon
   i tablet — zdjęcie od górnej krawędzi okna POD przezroczystym paskiem,
   szklana karta z eyebrow i `h1` nasunięta na jego dół, akapit i pas
@@ -1345,6 +1362,86 @@ checkCv)`; `PRACA_FORM_COPY`. Widok: `src/pages/praca.astro` +
   (`docs/optional-todos.md`): pas liczb na telefonie, jaśniejsze szkło
   karty i przyciemniony pas zdjęcia, odstępy hero na niskim oknie, kadr
   zdjęcia „umowa" na desktopie.
+
+- **Etap 4 / 4.6 (`/uslugi/`) — W TOKU** (2026-10-04, gałąź `feat/uslugi`,
+  mini-analiza `docs/analiza-uslugi.md` zaakceptowana wg rekomendacji
+  Q1–Q7, uzupełnienia §10; kod i testy gotowe lokalnie, ZOSTAŁO: workflow
+  baseline'ów linux, baseline'y darwin, PR, merge, `prod-smoke`; następna
+  sesja = 4.7 `/polityka-prywatnosci/` + domknięcie etapów). Testy
+  `/o-nas/` na `nowa.` i na telefonie: bez zgłoszeń w tej sesji; chmura
+  bez zmian (blok 5.1 → 5.2 → 5.5 po 4.7).
+  `src/pages/uslugi.astro` + `sections/services/`: `ServicesHero` (telefon
+  i tablet — eyebrow, `h1` i akapit na jednolitym granacie, pod nimi pole
+  zdjęcia wypełniające resztę okna z trzema wejściami do sekcji; desktop
+  — zdjęcie na całe okno, szklana karta, pas trzech wejść u dołu; zdjęcie
+  `eager` + `fetchpriority` + dwa `preload` z `media`; poniżej 768 px
+  nowy kadr `uslugi-hero-tall.webp` 864×617 o pełnej wysokości źródła —
+  pole na telefonie jest pionowe; hero BEZ reveala; `data-nav-hero` na
+  sekcji), `ServicesSell` i `ServicesBuy` (nagłówek, akapit, zdjęcia,
+  lista pięciu pozycji, pas CTA jako ostatnie dziecko sekcji — poniżej
+  1025 px w kolumnie treści, od 1025 px na całą szerokość okna),
+  `ServicesLegal` (ciemna sekcja: lista sześciu pozycji, zdjęcia, blok
+  zamykający z wejściem na `/kontakt/`; DOM w układzie desktopu, poniżej
+  progu kolumny `display: contents` + `order`), wspólne `ServicesList`
+  (numery jako licznik CSS; trzy układy od 1025 px) i `ServicesCta`
+  (przycisk telefonu = slot `a[data-tel][data-fill="href"]`, bez JS →
+  `/kontakt/`), `services-copy.ts` (PLACEHOLDER U9; **trzecie wejście
+  hero i przycisk telefonu mają w designie DWA warianty — wstawione
+  desktopowe; deklaracja bezpłatnej pierwszej rozmowy i „System MLS" do
+  potwierdzenia przez klientkę**), `services-config.ts`
+  (`SERVICES_ANCHORS`), `services-motion.ts`. **Kotwice `#sprzedaje`,
+  `#kupuje`, `#pomoc-prawna`** bez sufiksów: poniżej 1025 px sekcja staje
+  pod paskiem (`scroll-margin-top`), od 1025 px przy górnej krawędzi okna
+  (dopełnienie sekcji zawiera wysokość paska); skrypt strony poprawia
+  pozycję po wejściu z kotwicą w adresie (po `load` i po fontach, tylko
+  przy zwykłym wejściu i dopóki użytkownik nie przewinął); linki sekcji
+  „Usługi" strony głównej trafiają w sekcje (z `home-copy.ts` zszedł sam
+  komentarz; stopka i menu niosą `/uslugi/` bez kotwic). Zdjęcia
+  zmieniające rodzica między progami występują dwa razy
+  (`[data-services-extra]`, `display: none` + `lazy`). Zmiany we wspólnym
+  `content-motion.ts`: `data-px="top"` liczy punkt zerowy z POZYCJI KADRU
+  w dokumencie (kadr pierwszego ekranu nie musi zaczynać się na górze
+  strony) oraz odsłanianie bloków przeskoczonych skokiem kotwicy (po
+  `hashchange` — IntersectionObserver ich nie zgłasza; znalezione testem).
+  Rozstrzygnięcia SV17–SV31 w analizie §10.2, w tym krycia z POMIARU
+  kontrastu (14 rozmiarów okna; Chromium, WebKit, od progu także
+  Firefox): kafle wejść na telefonie — szkło `.16` + przyciemnienie
+  zdjęcia zakotwiczone do wejść (design: nadtytuł 1,66:1 → ≥ 5,1:1);
+  karta hero na desktopie granat `.68` (design `.24`: fraza `h1` 2,54:1
+  → ≥ 3,4:1); pas wejść na desktopie CIEMNE szkło `.68` (design: jasne
+  srebro, nadtytuł 1,30:1 → ≥ 6,3:1); przyciemniony górny pas zdjęcia pod
+  paskiem (logo 1,88:1 → ≥ 4,2:1); słabsze szkło przycisków pasów CTA
+  i mocniejszy gradient pasa „Sprzedaję"; przyciemnienie treści bloku
+  zamykającego „Pomocy prawnej" na telefonie (eyebrow 1,04:1 → ≥ 5,5:1).
+  WebKit dawał dla tekstu na szkle wyniki o 0,3–1,3 niższe niż Chromium.
+  `CollapsibleText.astro` / `collapsible.ts` nie weszły — do usunięcia
+  w PR porządkowym 4.7. Testy: e2e nowy `uslugi.spec.ts` (21 testów;
+  treść `chromium-1920`, hero, kotwice, układ i ruch także
+  `chromium-pixel-5` i `webkit-iphone-14`), `navigation.spec` — lista
+  `OVER_HERO_PATHS` + `/uslugi/`; visual nowy `uslugi.spec.ts`
+  (`uslugi-top`, `uslugi-full` × 6 profili = 12 PNG na platformę);
+  `/uslugi/` w obu `lighthouserc*.cjs`; unit bez zmian. Weryfikacja
+  lokalna: format/lint/typecheck, unit 539 (537 zielonych + 2 skip),
+  build 89 stron, `test:dist` 6/6, e2e 723 (+1 137 skip profili) na 6
+  profilach — zielone, axe 0 naruszeń; `test:visual` 12 czerwonych
+  OCZEKIWANYCH (nowe zrzuty bez baseline'u), 229 zielonych; progiem 0
+  bez różnic: `chrome-*`, `home-*`, `sprzedaj-*`, `o-nas-*` (72 zrzuty);
+  HTML pozostałych tras bez zmian (odcisk na `build:visual`). BUDŻET
+  (`build:visual`, baza = main): `/uslugi/` `script` 12 972 B brutto /
+  6 144 B gzip w 9 plikach (szkielet: 8 217 / 3 402), CSS 49 509 /
+  10 046 B w 2 arkuszach; wspólny `content-motion` 1 706 B (+317 B —
+  także na „/", `/sprzedaj-z-nami/` i `/o-nas/`); wyspa listy co do bajta
+  (38 653 B). LHCI lokalnie (oba configi, asercje czyste na 13 adresach):
+  `/uslugi/` `script` 9 703 B = 24 % bramki, `total` 269 KB mobile /
+  329 KB desktop, LCP mobile 2 198 ms (mediana z 5 przebiegów,
+  2 174–2 412; element LCP = zdjęcie hero; margines ok. 1,0 s do 3 200 —
+  obserwacja), desktop 557 ms (element LCP = `h1`), TBT 0, CLS ≤ 0,007,
+  zero podmiotów trzecich; „/" `script` 10 754 B (27 %),
+  `/sprzedaj-z-nami/` 12 860 B (32 %), `/o-nas/` 9 551 B (24 %). Progi
+  nietknięte. Do oceny po całej implementacji (`docs/optional-todos.md`):
+  przyciemnienia i ciemne szkło hero, gradient pasa CTA, blok zamykający
+  na telefonie, miękkość zdjęcia hero (źródło 1440×617 — ostrzejszy plik
+  to prośba do autora designu).
 
 ## Dokumentacja
 
