@@ -48,7 +48,8 @@ export interface FormFrameCopy {
   /** Tekst przed pogrubionym czasem odpowiedzi i po nim. */
   doneBefore: string;
   doneAfter: string;
-  /** Zdanie kończące się numerem telefonu ze slotu (albo puste). */
+  /** Zdanie kończące się numerem telefonu ze slotu; puste = potwierdzenie
+   *  bez numeru. */
   doneCall: string;
   again: string;
 }
@@ -72,5 +73,48 @@ export const KONTAKT_FORM_COPY = {
     doneAfter: ".",
     doneCall: "Jeśli sprawa nie może czekać — zadzwoń:",
     again: "Napisz kolejną wiadomość",
+  } satisfies FormFrameCopy,
+} as const;
+
+export const SPRZEDAJ_FORM_COPY = {
+  heading: "Zgłoś nieruchomość",
+  // PLACEHOLDER (U9): akapit pod nagłówkiem (brzmienie z designu).
+  lead: "Potrzebujemy tylko pierwszych pól. Pozostałe są opcjonalne — pomagają nam przygotować wycenę przed rozmową.",
+  type: { legend: "Typ nieruchomości" },
+  transaction: { legend: "Rodzaj transakcji" },
+  /** Nagłówek rozwijanego bloku pól opcjonalnych (dopisek „(opcjonalnie)"
+   *  z `FORM_COPY.optional`; pola wewnątrz już go nie powtarzają). */
+  details: "Szczegóły nieruchomości",
+  location: { label: "Lokalizacja", placeholder: "Poznań, Winogrady" },
+  area: { label: "Powierzchnia (m²)", placeholder: "48" },
+  price: {
+    label: "Oczekiwana cena (PLN)",
+    placeholder: "550 000",
+    hint: "Nie musisz jej znać — pomożemy ją ustalić.",
+  },
+  notes: {
+    label: "Opis lub uwagi",
+    placeholder: "Co jeszcze warto wiedzieć o nieruchomości?",
+  },
+  errors: {
+    type: "Wybierz, czego dotyczy zgłoszenie.",
+    transaction: "Zaznacz, czy chodzi o sprzedaż, czy o wynajem.",
+    area: "Podaj powierzchnię w metrach, samą liczbą.",
+    price: "Podaj cenę samą liczbą, bez „zł”.",
+  },
+  // PLACEHOLDER (U9): zdanie przed numerem telefonu pod przyciskiem.
+  call: "Wolisz przez telefon?",
+  frame: {
+    purpose:
+      "Twoje dane wykorzystujemy po to, żeby przygotować odpowiedź i wycenę.",
+    submit: "Wyślij zgłoszenie",
+    serverError:
+      "Nie udało się wysłać zgłoszenia — coś po naszej stronie. Spróbuj jeszcze raz albo zadzwoń:",
+    doneHeading: "Zgłoszenie wysłane.",
+    doneBefore: "Przejrzymy je i odezwiemy się w ciągu",
+    doneAfter:
+      " z propozycją terminu oględzin. Zdjęć nie potrzebujemy na tym etapie — poprosimy o nie, kiedy się skontaktujemy.",
+    doneCall: "",
+    again: "Wyślij kolejne zgłoszenie",
   } satisfies FormFrameCopy,
 } as const;

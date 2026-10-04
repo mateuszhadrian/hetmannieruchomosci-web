@@ -1,0 +1,214 @@
+---
+// Formularz „Zgłoś nieruchomość" (/sprzedaj-z-nami/, 5A — docs/analiza-
+// formularze-a.md §1.2, F1–F8, Q1, Q2). Na wierzchu to, czego potrzeba do
+// oddzwonienia: typ nieruchomości i rodzaj transakcji (kafle radio,
+// wartości słownika CRM), imię, para e-mail / telefon (wymagane co
+// najmniej jedno). Pola opcjonalne — lokalizacja, powierzchnia, cena,
+// uwagi — siedzą w rozwijanym bloku <details> (działa bez JS; błąd pola
+// w zwiniętym bloku otwiera go — form-ui.ts). Blok końcowy (zgoda, nota,
+// przycisk), antyspam i ekran potwierdzenia daje FormFrame.astro.
+// `id="formularz"` — cel przycisku hero i powrotu po wysyłce bez JS.
+import FormChoice from "@/components/forms/FormChoice.astro";
+import FormContactPair from "@/components/forms/FormContactPair.astro";
+import FormField from "@/components/forms/FormField.astro";
+import FormFrame from "@/components/forms/FormFrame.astro";
+import {
+  FORM_COPY,
+  SPRZEDAJ_FORM_COPY as t,
+} from "@/components/forms/forms-copy";
+import {
+  ESTATE_TYPES,
+  LOCATION_MAX,
+  MESSAGE_MAX,
+  NAME_MAX,
+  TRANSACTIONS,
+} from "@/lib/contact-form";
+import { CONTACT_PATH } from "@/lib/routes";
+import { SELL_FORM_ID } from "./sell-config";
+---
+
+<section class="sf" id={SELL_FORM_ID} aria-labelledby="sell-form-h">
+  <div class="sf-in">
+    <div class="sf-head" data-rv>
+      <h2 class="sf-h2" id="sell-form-h">{t.heading}</h2>
+      <p class="sf-lead">{t.lead}</p>
+    </div>
+    <div class="sf-form" data-rv="soft" style="--rvd: 0.07s">
+      <FormFrame kind="sprzedaj" idPrefix="sf" copy={t.frame}>
+        <FormChoice
+          id="sf-type"
+          f="type"
+          legend={t.type.legend}
+          options={ESTATE_TYPES}
+          error={t.errors.type}
+        />
+        <FormChoice
+          id="sf-transaction"
+          f="transaction"
+          legend={t.transaction.legend}
+          options={TRANSACTIONS}
+          error={t.errors.transaction}
+        />
+        <FormField
+          id="sf-name"
+          f="name"
+          label={FORM_COPY.name.label}
+          placeholder={FORM_COPY.name.placeholder}
+          autocomplete="name"
+          maxlength={NAME_MAX}
+          required
+          error={FORM_COPY.errors.name}
+        />
+        <FormContactPair idPrefix="sf" />
+
+        <details class="fm-more" data-sell-details>
+          <summary class="fm-more-sum">
+            <span
+              >{t.details}<span class="fm-opt">{` ${FORM_COPY.optional}`}</span
+              ></span
+            >
+            <span class="fm-more-ic" aria-hidden="true"></span>
+          </summary>
+          <div class="fm-more-in">
+            <div class="fm-row3">
+              <FormField
+                id="sf-location"
+                f="location"
+                label={t.location.label}
+                placeholder={t.location.placeholder}
+                maxlength={LOCATION_MAX}
+              />
+              <FormField
+                id="sf-area"
+                f="area"
+                label={t.area.label}
+                placeholder={t.area.placeholder}
+                inputmode="decimal"
+                maxlength={12}
+                error={t.errors.area}
+              />
+              <FormField
+                id="sf-price"
+                f="price"
+                label={t.price.label}
+                placeholder={t.price.placeholder}
+                inputmode="numeric"
+                maxlength={20}
+                hint={t.price.hint}
+                error={t.errors.price}
+              />
+            </div>
+            <FormField
+              id="sf-notes"
+              f="notes"
+              type="textarea"
+              label={t.notes.label}
+              placeholder={t.notes.placeholder}
+              maxlength={MESSAGE_MAX}
+            />
+          </div>
+        </details>
+
+        {
+          /* numer składany w JS (slot antyscrapingowy); bez JS kotwica
+             zostaje ukryta, a z nią całe zdanie */
+        }
+        <p class="sf-call" slot="after">
+          {t.call}
+          <a class="sf-tel" data-tel href={CONTACT_PATH} hidden
+            ><span data-slot></span></a
+          >
+        </p>
+      </FormFrame>
+    </div>
+  </div>
+</section>
+
+<style>
+  .sf {
+    box-sizing: border-box;
+    padding: clamp(40px, 11vw, 64px) max(var(--pad), calc((100% - 600px) / 2))
+      clamp(48px, 13vw, 80px);
+    background: var(--bg-card);
+    /* przycisk hero i powrót po wysyłce bez JS: górna krawędź sekcji
+       staje pod stałym paskiem */
+    scroll-margin-top: var(--hdr-h);
+  }
+  .sf-in {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(24px, 7vw, 32px);
+  }
+  .sf-head {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .sf-h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(22px, 6vw, 30px);
+    line-height: 1.2;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--navy);
+  }
+  .sf-lead {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--slate);
+    text-wrap: pretty;
+  }
+  .sf-call {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--slate);
+  }
+  .sf-call:has(> a[hidden]) {
+    display: none;
+  }
+  .sf-tel {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-weight: 600;
+    color: var(--navy);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    white-space: nowrap;
+  }
+  .sf-tel[hidden] {
+    display: none;
+  }
+  .sf-tel:focus-visible {
+    outline: 2px solid var(--navy);
+    outline-offset: 3px;
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .sf {
+      padding: clamp(56px, 5.4vw, 88px) var(--pad) clamp(64px, 6vw, 96px);
+    }
+    .sf-in {
+      gap: clamp(28px, 2.8vw, 40px);
+      max-width: 1000px;
+      margin-inline: auto;
+    }
+    .sf-head {
+      max-width: 52ch;
+    }
+    .sf-h2 {
+      font-size: clamp(26px, 2.4vw, 36px);
+      line-height: 1.18;
+    }
+    .sf-lead {
+      font-size: clamp(15px, 1.2vw, 18px);
+    }
+    .sf-tel {
+      min-height: 0;
+    }
+  }
+</style>

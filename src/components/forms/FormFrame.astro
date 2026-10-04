@@ -13,8 +13,9 @@
 // wysyła się bez niej. Nota informuje, checkbox zbiera zgodę: nie łączyć.
 // Telefon w komunikatach przez slot antyscrapingowy (`a[data-tel]`).
 import { MARKETING_CONSENT, type ActiveFormKind } from "@/lib/contact-form";
-import { CONTACT_PATH, POLICY_PATH } from "@/lib/routes";
+import { POLICY_PATH } from "@/lib/routes";
 import { FORM_ENDPOINT } from "./form-config";
+import FormTel from "./FormTel.astro";
 import { FORM_COPY, RESPONSE_TIME, type FormFrameCopy } from "./forms-copy";
 import "./forms.css";
 
@@ -66,9 +67,7 @@ const { kind, idPrefix, copy } = Astro.props;
 
     <p class="fm-srv" data-form-error role="alert" hidden>
       {copy.serverError}
-      <a class="fm-tel" data-tel href={CONTACT_PATH} hidden
-        ><span data-slot></span></a
-      >
+      <FormTel />
     </p>
 
     <button
@@ -87,10 +86,16 @@ const { kind, idPrefix, copy } = Astro.props;
     <p class="fm-done-p">
       {copy.doneBefore}
       <strong>{RESPONSE_TIME}</strong>{copy.doneAfter}
-      {copy.doneCall}
-      <a class="fm-tel" data-tel href={CONTACT_PATH} hidden
-        ><span data-slot></span></a
-      >
+      {
+        /* numer telefonu tylko tam, gdzie potwierdzenie ma zdanie, które
+           do niego prowadzi */
+        copy.doneCall && (
+          <>
+            {`${copy.doneCall} `}
+            <FormTel />
+          </>
+        )
+      }
     </p>
     <button class="fm-again" type="button" data-form-again>{copy.again}</button>
   </div>

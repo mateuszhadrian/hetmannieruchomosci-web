@@ -1,0 +1,11 @@
+---
+// Numer telefonu w komunikatach formularza — slot antyscrapingowy
+// (`a[data-tel]` wypełnia fillContactSlots; bez JS kotwica zostaje ukryta
+// i prowadzi na /kontakt/). Osobny komponent, bo kotwica nie może mieć
+// w środku białych znaków (byłyby podkreślone), a formatter rozbija ją na
+// linie wszędzie tam, gdzie stoi w wyrażeniu.
+import { CONTACT_PATH } from "@/lib/routes";
+---
+
+<a class="fm-tel" data-tel href={CONTACT_PATH} hidden><span data-slot></span></a
+>

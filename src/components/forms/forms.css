@@ -72,6 +72,114 @@
   box-shadow: 0 0 0 2px rgba(201, 130, 54, 0.45);
 }
 
+/* ── grupa wyboru: fieldset + kafle z natywnym radio (FormChoice.astro) ── */
+.fm-choice {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.fm-choice > .fm-label {
+  /* legend nie jest zwykłym elementem flexa — odstęp daje margines */
+  display: block;
+  margin-bottom: 10px;
+  padding: 0;
+}
+.fm-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.fm-tile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 52px;
+  padding: 6px 12px;
+  border: 1px solid rgba(var(--glow), 0.24);
+  background: var(--bg-card);
+  font-size: clamp(14px, 3.9vw, 15px);
+  line-height: 1.25;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.3s ease;
+}
+.fm-tile:hover {
+  border-color: var(--copper);
+}
+.fm-tile input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--navy);
+  cursor: pointer;
+  /* fokus po nieudanej wysyłce dosuwa skrypt; margines dla kotwic */
+  scroll-margin-top: calc(var(--hdr-h) + 48px);
+}
+.fm-choice > .fm-msg {
+  margin-top: 8px;
+}
+
+/* ── blok pól opcjonalnych: natywne <details> (działa bez JS) ── */
+.fm-more {
+  border: 1px solid rgba(var(--glow), 0.18);
+  background: var(--bg-card);
+}
+.fm-more-sum {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 14px;
+  list-style: none;
+  font-size: 15px;
+  line-height: 1.3;
+  font-weight: 600;
+  color: var(--navy);
+  cursor: pointer;
+}
+.fm-more-sum::-webkit-details-marker {
+  display: none;
+}
+/* znak „+" (po rozwinięciu „−") rysowany dwiema kreskami */
+.fm-more-ic {
+  position: relative;
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+.fm-more-ic::before,
+.fm-more-ic::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 14px;
+  height: 2px;
+  background: var(--copper);
+}
+.fm-more-ic::after {
+  transform: rotate(90deg);
+}
+.fm-more[open] .fm-more-ic::after {
+  display: none;
+}
+.fm-more-in {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 6px 14px 18px;
+}
+.fm-row3 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
 /* ── para e-mail / telefon ── */
 .fm-pair {
   display: flex;
@@ -105,6 +213,9 @@
 }
 .fm-field.err .fm-input,
 .fm-pair.err .fm-input {
+  border-color: var(--error);
+}
+.fm-choice.err .fm-tile {
   border-color: var(--error);
 }
 .fm-field.err .fm-input:focus,
@@ -237,6 +348,8 @@
   color: #fff;
 }
 .fm-again:focus-visible,
+.fm-tile input:focus-visible,
+.fm-more-sum:focus-visible,
 .fm-consent input:focus-visible,
 .fm-note a:focus-visible,
 .fm-tel:focus-visible {
@@ -265,6 +378,31 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: clamp(16px, 1.6vw, 22px);
   }
+  /* kafle w jednym rzędzie: typ — cztery równe, transakcja — dwa wąskie */
+  .fm-tiles {
+    grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  }
+  .fm-tiles[data-tiles="2"] {
+    grid-template-columns: repeat(auto-fit, minmax(148px, 220px));
+  }
+  .fm-tile {
+    min-height: 54px;
+    padding: 6px 14px;
+    font-size: 15px;
+  }
+  .fm-more-sum {
+    min-height: 54px;
+    padding: 0 16px;
+  }
+  .fm-more-in {
+    gap: clamp(16px, 1.6vw, 22px);
+    padding: 6px 16px 20px;
+  }
+  .fm-row3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+    gap: clamp(16px, 1.6vw, 22px);
+  }
   .sx-btn.fm-send {
     align-self: flex-start;
     min-height: 56px;
@@ -277,7 +415,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fm-again {
+  .fm-again,
+  .fm-tile {
     transition: none;
   }
 }
