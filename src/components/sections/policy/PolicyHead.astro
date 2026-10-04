@@ -1,0 +1,62 @@
+---
+// Nagłówek polityki: eyebrow, `h1`, zdanie wstępu, informacja o projekcie
+// (tylko przy POLICY_DRAFT) i pasmo dokumentu — data obowiązywania, data
+// ostatniej zmiany, numer wersji. Daty to STAŁE z policy-config.ts, nie
+// „teraz" builda — data dokumentu nie zmienia się z buildem.
+import {
+  formatPolicyDate,
+  POLICY_DRAFT,
+  POLICY_EFFECTIVE,
+  POLICY_HEADING,
+  POLICY_UPDATED,
+  POLICY_VERSION,
+} from "./policy-config";
+import PolicyTodo from "./PolicyTodo.astro";
+---
+
+<header class="pp-head">
+  <p class="pp-eyebrow">Ochrona danych osobowych</p>
+  <h1 class="pp-h1">{POLICY_HEADING}</h1>
+  <p class="pp-lead">
+    Wyjaśniamy, jakie dane osobowe przetwarza biuro HETMAN Nieruchomości, po co,
+    na jakiej podstawie i jak długo — oraz jakie masz w związku z tym prawa.
+    Dokument dotyczy tej strony i całej naszej działalności pośrednictwa w
+    obrocie nieruchomościami.
+  </p>
+  {
+    POLICY_DRAFT && (
+      <p class="pp-draft" data-policy-draft>
+        <strong>Projekt dokumentu</strong> — w trakcie weryfikacji prawnej.
+        Fragmenty w nawiasach kwadratowych zostaną uzupełnione albo potwierdzone
+        przed uruchomieniem strony.
+      </p>
+    )
+  }
+  <dl class="pp-meta" data-policy-meta>
+    <div>
+      <dt>Obowiązuje od</dt>
+      <dd data-policy-effective>
+        {
+          POLICY_EFFECTIVE ? (
+            <time datetime={POLICY_EFFECTIVE}>
+              {formatPolicyDate(POLICY_EFFECTIVE)}
+            </time>
+          ) : (
+            <PolicyTodo kind="fill">dzień uruchomienia strony</PolicyTodo>
+          )
+        }
+      </dd>
+    </div>
+    <div>
+      <dt>Ostatnia aktualizacja</dt>
+      <dd data-policy-updated>
+        <time datetime={POLICY_UPDATED}>{formatPolicyDate(POLICY_UPDATED)}</time
+        >
+      </dd>
+    </div>
+    <div>
+      <dt>Wersja</dt>
+      <dd data-policy-version>{POLICY_VERSION}</dd>
+    </div>
+  </dl>
+</header>

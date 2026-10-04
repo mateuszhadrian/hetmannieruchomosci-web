@@ -1,0 +1,19 @@
+---
+// Spis treści polityki: czyste kotwice `#id` (działa bez JS, bez
+// podświetlania bieżącej sekcji). Poniżej 1025 px karta nad treścią; od
+// 1025 px lewa kolumna `position: sticky` (policy.css).
+import { POLICY_SECTIONS } from "./policy-config";
+---
+
+<nav class="pp-toc" data-policy-toc aria-labelledby="pp-toc-h">
+  <p class="pp-toc-h" id="pp-toc-h">Spis treści</p>
+  <ol class="pp-toc-list">
+    {
+      POLICY_SECTIONS.map((s) => (
+        <li>
+          <a href={`#${s.id}`}>{s.title}</a>
+        </li>
+      ))
+    }
+  </ol>
+</nav>

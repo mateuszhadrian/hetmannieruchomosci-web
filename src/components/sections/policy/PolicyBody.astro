@@ -1,0 +1,665 @@
+---
+// Treść polityki prywatności (Etap 4.7, docs/analiza-polityka.md).
+//
+// PLACEHOLDER (U9, D23): CAŁA treść jest projektem do przeglądu prawnika
+// klientki; miejsca, które uzupełnia albo potwierdza klientka, stoją
+// w tekście jako znaczniki `PolicyTodo` (lista z pytaniami: analiza §12).
+//
+// Treść jest markupem, nie stałymi tekstowymi: długi tekst prawny
+// z odnośnikami, slotami kontaktowymi i znacznikami. To, co MUSI zgadzać
+// się z resztą serwisu, czyta wartości ze źródeł: dane firmy z `BUSINESS`,
+// brzmienia zgód z `contact-form.ts`, tytuły sekcji z `policy-config.ts`,
+// telefon i e-mail ze slotów antyscrapingowych. Zmiana pól albo zgód
+// formularzy, dostawców albo osadzeń = przegląd tego pliku.
+import { BUSINESS } from "@/lib/jsonld";
+import {
+  FUTURE_RECRUITMENT_CONSENT,
+  MARKETING_CONSENT,
+} from "@/lib/contact-form";
+import { SHOW_PRACA } from "@/lib/site-config";
+import PolicySection from "./PolicySection.astro";
+import PolicySlot from "./PolicySlot.astro";
+import PolicyTodo from "./PolicyTodo.astro";
+import {
+  formatPolicyDate,
+  POLICY_UPDATED,
+  POLICY_VERSION,
+} from "./policy-config";
+
+const NIP = BUSINESS.vatID.replace(/\D/g, "");
+---
+
+<PolicySection id="administrator">
+  <p>
+    Administratorem Twoich danych osobowych jest
+    <strong>{BUSINESS.legalName}</strong> — przedsiębiorca wpisany do Centralnej Ewidencji
+    i Informacji o Działalności Gospodarczej, z siedzibą pod adresem:
+    <span data-policy-seat
+      >{BUSINESS.seatStreet}, {BUSINESS.seatPostalCode}
+      {BUSINESS.seatLocality}</span
+    >, NIP {NIP}, REGON {BUSINESS.regon}. Dalej piszemy o sobie „my” albo
+    „biuro”.
+  </p>
+  <p>W sprawach dotyczących danych osobowych możesz:</p>
+  <ul class="pp-list">
+    <li class="pp-row">napisać na adres e-mail: <PolicySlot kind="mail" /></li>
+    <li class="pp-row">zadzwonić: <PolicySlot kind="tel" /></li>
+    <li>wysłać list na adres siedziby podany wyżej.</li>
+  </ul>
+  <noscript>
+    <p class="pp-nojs">
+      Adres e-mail i numer telefonu wyświetlają się po włączeniu JavaScriptu —
+      chronimy je przed automatycznym zbieraniem. Bez niego napisz na adres
+      siedziby podany wyżej.
+    </p>
+  </noscript>
+  <p>
+    Nasze biuro, w którym umawiamy spotkania, mieści się w Poznaniu:
+    <span data-policy-office
+      >{BUSINESS.street}, {BUSINESS.postalCode}
+      {BUSINESS.locality}</span
+    >. Listy w sprawach danych osobowych kieruj jednak na adres siedziby.
+  </p>
+</PolicySection>
+
+<PolicySection id="zrodla">
+  <p>Większość danych dostajemy bezpośrednio od Ciebie:</p>
+  <ul class="pp-list">
+    <li>
+      gdy wypełniasz formularz na tej stronie (kontakt, zgłoszenie
+      nieruchomości, zapytanie o ofertę{SHOW_PRACA && ", zgłoszenie do pracy"}),
+    </li>
+    <li>gdy do nas dzwonisz albo piszesz — e-mailem lub SMS-em,</li>
+    <li>gdy spotykamy się w biurze albo na prezentacji nieruchomości,</li>
+    <li>gdy zawierasz z nami umowę pośrednictwa.</li>
+  </ul>
+  <p>Zdarza się, że Twoje dane otrzymujemy od kogoś innego:</p>
+  <ul class="pp-list">
+    <li>
+      z portalu ogłoszeniowego, przez który odpowiadasz na naszą ofertę — portal
+      przekazuje nam Twoje zapytanie i dane kontaktowe,
+    </li>
+    <li>
+      od osoby, która poleciła Ci nasze biuro, albo od innego biura
+      nieruchomości, z którym współpracujemy przy konkretnej transakcji,
+    </li>
+    <li>
+      od naszego klienta — gdy jesteś drugą stroną transakcji (na przykład
+      kupującym albo najemcą).
+    </li>
+  </ul>
+  <p>
+    W takich przypadkach są to zwykle: imię i nazwisko, dane kontaktowe oraz
+    informacje dotyczące nieruchomości lub transakcji.
+  </p>
+</PolicySection>
+
+<PolicySection id="cele">
+  <p>
+    Dane przetwarzamy tylko w zakresie potrzebnym do konkretnego celu. Poniżej
+    opisujemy to według sytuacji, w której możesz się znaleźć. Okresy
+    przechowywania zebraliśmy w sekcji
+    <a href="#okresy">Jak długo przechowujemy dane</a>.
+  </p>
+
+  <div class="pp-card" data-policy-group="odwiedziny">
+    <h3>Odwiedzasz tę stronę</h3>
+    <dl class="pp-dl">
+      <dt>Jakie dane</dt>
+      <dd>
+        Adres IP i dane techniczne, które wysyła każda przeglądarka: rodzaj
+        urządzenia i przeglądarki, adres otwieranej podstrony, data i godzina.
+      </dd>
+      <dt>Po co</dt>
+      <dd>
+        Żeby wyświetlić stronę, zapewnić jej bezpieczeństwo oraz prowadzić
+        zbiorczą statystykę odwiedzin — bez plików cookies i bez rozpoznawania
+        osób (sekcja
+        <a href="#cookies">Pliki cookies, statystyka i treści zewnętrzne</a>).
+      </dd>
+      <dt>Podstawa prawna</dt>
+      <dd>
+        Art. 6 ust. 1 lit. f RODO — nasz prawnie uzasadniony interes: sprawne i
+        bezpieczne działanie strony oraz wiedza o tym, jak jest używana.
+      </dd>
+    </dl>
+  </div>
+
+  <div class="pp-card" data-policy-group="zapytanie">
+    <h3>Piszesz albo dzwonisz z pytaniem</h3>
+    <dl class="pp-dl">
+      <dt>Jakie dane</dt>
+      <dd>
+        Imię i nazwisko, adres e-mail albo numer telefonu (w formularzach
+        wystarczy jedno z dwóch) i treść wiadomości. Przy zapytaniu o konkretną
+        ofertę — także numer tej oferty.
+      </dd>
+      <dt>Po co</dt>
+      <dd>
+        Żeby odpowiedzieć na Twoje pytanie, przedstawić ofertę i umówić
+        prezentację nieruchomości.
+      </dd>
+      <dt>Podstawa prawna</dt>
+      <dd>
+        Art. 6 ust. 1 lit. b RODO — działania podejmowane na Twoje żądanie przed
+        zawarciem umowy. Gdy pytanie nie zmierza do zawarcia umowy — art. 6 ust.
+        1 lit. f RODO: nasz prawnie uzasadniony interes, czyli odpowiedź na
+        otrzymaną korespondencję.
+      </dd>
+    </dl>
+  </div>
+
+  <div class="pp-card" data-policy-group="zgloszenie">
+    <h3>Zgłaszasz nieruchomość do sprzedaży albo wynajmu</h3>
+    <dl class="pp-dl">
+      <dt>Jakie dane</dt>
+      <dd>
+        Imię i nazwisko, adres e-mail albo numer telefonu, typ nieruchomości i
+        rodzaj transakcji. Jeśli je podasz — także lokalizacja, powierzchnia,
+        oczekiwana cena i Twoje uwagi.
+      </dd>
+      <dt>Po co</dt>
+      <dd>
+        Żeby się z Tobą skontaktować, przygotować wycenę i przedstawić
+        propozycję współpracy.
+      </dd>
+      <dt>Podstawa prawna</dt>
+      <dd>
+        Art. 6 ust. 1 lit. b RODO — działania podejmowane na Twoje żądanie przed
+        zawarciem umowy pośrednictwa.
+      </dd>
+    </dl>
+  </div>
+
+  <div class="pp-card" data-policy-group="umowa">
+    <h3>Jesteś naszym klientem</h3>
+    <dl class="pp-dl">
+      <dt>Jakie dane</dt>
+      <dd>
+        Dane identyfikacyjne i kontaktowe, dane nieruchomości i transakcji, dane
+        potrzebne do wystawienia faktury oraz nasza korespondencja.
+      </dd>
+      <dt>Po co</dt>
+      <dd>
+        Żeby wykonać umowę pośrednictwa — przygotować i opublikować ofertę,
+        prowadzić prezentacje i negocjacje, przygotować transakcję — a także
+        żeby rozliczyć się z Tobą, wypełnić obowiązki podatkowe i księgowe oraz,
+        w razie potrzeby, ustalić roszczenia, dochodzić ich albo się przed nimi
+        bronić.
+      </dd>
+      <dt>Podstawa prawna</dt>
+      <dd>
+        Art. 6 ust. 1 lit. b RODO — wykonanie umowy; art. 6 ust. 1 lit. c RODO —
+        obowiązki wynikające z przepisów podatkowych i o rachunkowości; art. 6
+        ust. 1 lit. f RODO — nasz prawnie uzasadniony interes, czyli ustalenie,
+        dochodzenie albo obrona roszczeń.
+      </dd>
+    </dl>
+  </div>
+
+  <div class="pp-card" data-policy-group="aml">
+    <h3>Przeciwdziałanie praniu pieniędzy</h3>
+    <dl class="pp-dl">
+      <dt>Jakie dane</dt>
+      <dd>
+        Dane identyfikacyjne wymagane przez ustawę. Spisujemy je z dokumentu
+        tożsamości — nie wykonujemy jego kopii.
+      </dd>
+      <dt>Po co</dt>
+      <dd>
+        Jako pośrednik w obrocie nieruchomościami jesteśmy instytucją obowiązaną
+        i przy transakcjach stosujemy środki bezpieczeństwa finansowego.
+        Dokumentację prowadzimy na papierze i przechowujemy w biurze, w
+        zamkniętej szafie; dostęp ma do niej wyłącznie administrator.
+      </dd>
+      <dt>Podstawa prawna</dt>
+      <dd>
+        Art. 6 ust. 1 lit. c RODO w związku z ustawą z 1 marca 2018 r. o
+        przeciwdziałaniu praniu pieniędzy oraz finansowaniu terroryzmu. Podanie
+        tych danych jest obowiązkiem ustawowym — niezależnym od Twojej zgody.
+      </dd>
+    </dl>
+  </div>
+
+  <div class="pp-card" data-policy-group="marketing">
+    <h3>Zgadzasz się na kontakt z ofertami</h3>
+    <dl class="pp-dl">
+      <dt>Jakie dane</dt>
+      <dd>Imię i nazwisko, adres e-mail albo numer telefonu.</dd>
+      <dt>Po co</dt>
+      <dd>
+        Żeby przesyłać Ci oferty nieruchomości i informacje handlowe — mailem
+        albo telefonicznie. W formularzach zgoda brzmi:
+        <q data-policy-consent="marketing">{MARKETING_CONSENT}</q>
+      </dd>
+      <dt>Podstawa prawna</dt>
+      <dd>
+        Art. 6 ust. 1 lit. a RODO — Twoja zgoda, która jest zarazem zgodą z art.
+        398 Prawa komunikacji elektronicznej. Zgoda jest dobrowolna: formularz
+        wyślesz także bez niej, a cofnąć ją możesz w każdej chwili (sekcja <a
+          href="#prawa">Twoje prawa</a
+        >).
+      </dd>
+    </dl>
+  </div>
+
+  <div class="pp-card" data-policy-group="rekrutacja">
+    <h3>Kandydujesz do pracy</h3>
+    <dl class="pp-dl">
+      <dt>Jakie dane</dt>
+      <dd>
+        Imię i nazwisko, dane kontaktowe oraz informacje z CV i wiadomości —
+        wykształcenie, kwalifikacje, przebieg dotychczasowego zatrudnienia.
+        Prosimy, nie umieszczaj w zgłoszeniu danych szczególnie chronionych, na
+        przykład o stanie zdrowia.
+        {
+          SHOW_PRACA &&
+            " CV przesłane formularzem na stronie trafia do nas jako załącznik wiadomości e-mail — strona nie zapisuje pliku."
+        }
+      </dd>
+      <dt>Po co</dt>
+      <dd>
+        Żeby przeprowadzić rekrutację, na którą odpowiadasz, a jeśli się na to
+        zgodzisz — brać Twoje zgłoszenie pod uwagę także w przyszłych
+        rekrutacjach.
+        {
+          SHOW_PRACA && (
+            <>
+              W formularzu ta zgoda brzmi:
+              <q data-policy-consent="rekrutacja">
+                {FUTURE_RECRUITMENT_CONSENT}
+              </q>
+            </>
+          )
+        }
+      </dd>
+      <dt>Podstawa prawna</dt>
+      <dd>
+        Art. 6 ust. 1 lit. b RODO oraz art. 22<sup>1</sup> Kodeksu pracy — w zakresie
+        danych, których pracodawca może żądać od kandydata. Dane wykraczające poza
+        ten zakres, które podasz z własnej inicjatywy — art. 6 ust. 1 lit. a RODO,
+        czyli zgoda wyrażona przez przesłanie zgłoszenia. Udział w przyszłych rekrutacjach
+        — art. 6 ust. 1 lit. a RODO: osobna, dobrowolna zgoda.
+      </dd>
+    </dl>
+  </div>
+
+  <h3>Czy musisz podawać dane</h3>
+  <p data-policy-voluntary>
+    Podanie danych jest dobrowolne, ale bez danych kontaktowych nie odpowiemy na
+    zapytanie, a bez danych potrzebnych do umowy nie zawrzemy jej ani nie
+    wykonamy. Wyjątkiem są dane, których wymagają przepisy — o przeciwdziałaniu
+    praniu pieniędzy oraz podatkowe: ich podanie jest obowiązkiem ustawowym.
+  </p>
+</PolicySection>
+
+<PolicySection id="odbiorcy">
+  <p>
+    Twoich danych nie sprzedajemy. Przekazujemy je tylko wtedy, gdy wymaga tego
+    cel, w którym je mamy, i tylko w niezbędnym zakresie. W biurze dostęp do
+    danych klientów ma dziś wyłącznie administrator — nie zatrudniamy
+    pracowników ani współpracowników, którzy mieliby do nich dostęp.
+  </p>
+
+  <h3>Dostawcy usług, z których korzystamy</h3>
+  <p>
+    Przetwarzają dane w naszym imieniu, na podstawie umów powierzenia i
+    wyłącznie zgodnie z naszymi poleceniami:
+  </p>
+  <dl class="pp-dl pp-dl--list" data-policy-recipients="dostawcy">
+    <dt>Cloudflare</dt>
+    <dd>
+      Hosting tej strony, ochrona formularzy przed spamem (usługa Turnstile —
+      przetwarza między innymi adres IP), zbiorcza statystyka odwiedzin i
+      przechowywanie zdjęć ofert.
+    </dd>
+    <dt>Resend</dt>
+    <dd>
+      Wysyłka wiadomości z formularzy tej strony na naszą skrzynkę pocztową{
+        SHOW_PRACA && " — także CV z formularza rekrutacyjnego"
+      }.
+    </dd>
+    <dt>home.pl</dt>
+    <dd>Skrzynki pocztowe biura i domena.</dd>
+    <dt>EstiCRM</dt>
+    <dd>
+      System, w którym prowadzimy oferty i dane klientów, z którymi łączy nas
+      umowa pośrednictwa.
+    </dd>
+    <dt>Microsoft</dt>
+    <dd>
+      Program pocztowy Outlook, w którym odbieramy pocztę na komputerze i
+      telefonie.
+      <PolicyTodo
+        >czy aplikacja synchronizuje skrzynkę przez chmurę dostawcy</PolicyTodo
+      >
+    </dd>
+    <dt>Wykonawca tej strony</dt>
+    <dd>
+      Utrzymanie i obsługa techniczna strony oraz usług, na których działa.
+    </dd>
+    <dt>Obsługa księgowa</dt>
+    <dd>
+      Dane z faktur i dokumentów rozliczeniowych.
+      <PolicyTodo kind="fill">biuro rachunkowe albo program księgowy</PolicyTodo
+      >
+    </dd>
+  </dl>
+
+  <h3>Odbiorcy związani z transakcją</h3>
+  <dl class="pp-dl pp-dl--list" data-policy-recipients="transakcja">
+    <dt>Notariusz</dt>
+    <dd>Dane stron potrzebne do sporządzenia aktu notarialnego.</dd>
+    <dt>Doradca kredytowy</dt>
+    <dd>
+      Imię i nazwisko, numer telefonu oraz wskazanie oferty — żeby doradca
+      wiedział, kto się z nim kontaktuje i której nieruchomości dotyczy sprawa.
+      Pozostałe dane przekazujesz doradcy samodzielnie.
+      <PolicyTodo
+        >przekazanie wyłącznie na prośbę klienta; podstawa prawna do oceny</PolicyTodo
+      >
+    </dd>
+    <dt>Portale ogłoszeniowe</dt>
+    <dd>
+      Treść i zdjęcia oferty nieruchomości, którą powierzasz nam do sprzedaży
+      albo wynajmu.
+    </dd>
+    <dt>Inne biura nieruchomości</dt>
+    <dd>
+      Przy współpracy przy konkretnej transakcji albo w systemie wymiany ofert
+      między pośrednikami.
+      <PolicyTodo kind="fill"
+        >czy i jakie dane klientów trafiają do systemu wymiany ofert</PolicyTodo
+      >
+    </dd>
+    <dt>Organy publiczne</dt>
+    <dd>
+      Wyłącznie wtedy, gdy zobowiązuje nas do tego przepis prawa — na przykład
+      urząd skarbowy albo Generalny Inspektor Informacji Finansowej.
+    </dd>
+  </dl>
+
+  <h3>Dopiero po Twoim kliknięciu</h3>
+  <p>
+    Film i spacer wirtualny przy ofercie pochodzą od zewnętrznych dostawców
+    (YouTube, serwis spacerów wirtualnych) i ładują się dopiero wtedy, gdy je
+    uruchomisz — opisujemy to w sekcji
+    <a href="#cookies">Pliki cookies, statystyka i treści zewnętrzne</a>.
+  </p>
+</PolicySection>
+
+<PolicySection id="poza-eog">
+  <p>
+    Większość danych przetwarzamy w Polsce i w Unii Europejskiej. Dwóch naszych
+    dostawców — Cloudflare i Resend — to spółki ze Stanów Zjednoczonych, więc
+    dane, które przez nich przechodzą, mogą trafić na serwery poza Europejskim
+    Obszarem Gospodarczym. Wiadomości z formularzy wysyłamy z europejskiego
+    regionu Resend (Irlandia), ale ich treść i dzienniki wysyłki dostawca
+    przechowuje w Stanach Zjednoczonych.
+  </p>
+  <p>
+    Podstawą przekazania jest decyzja Komisji Europejskiej z 10 lipca 2023 r.
+    stwierdzająca odpowiedni stopień ochrony danych w ramach Ram Ochrony Danych
+    UE–USA (Data Privacy Framework) — obaj dostawcy uczestniczą w tym programie
+    — a dodatkowo standardowe klauzule umowne zatwierdzone przez Komisję
+    Europejską.
+  </p>
+  <p>
+    To samo dotyczy treści, które uruchamiasz kliknięciem: film przy ofercie
+    dostarcza YouTube (Google).
+    <PolicyTodo
+      >czy program pocztowy przekazuje dane poza EOG — zależnie od ustaleń w
+      sekcji o odbiorcach</PolicyTodo
+    >
+  </p>
+  <p>
+    Jeśli chcesz dowiedzieć się więcej o zabezpieczeniach stosowanych przy tych
+    przekazaniach albo dostać ich kopię — napisz do nas.
+  </p>
+</PolicySection>
+
+<PolicySection id="okresy">
+  <p>
+    Dane przechowujemy tak długo, jak wymaga tego cel, w którym je mamy, albo
+    przepisy:
+  </p>
+  <table class="pp-table" data-policy-retention>
+    <caption class="pp-sr">Okresy przechowywania danych</caption>
+    <thead>
+      <tr>
+        <th scope="col">Dane</th>
+        <th scope="col">Jak długo</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th scope="row">
+          Zapytanie albo zgłoszenie nieruchomości, które nie zakończyło się
+          umową
+        </th>
+        <td>30 dni od zakończenia korespondencji w tej sprawie</td>
+      </tr>
+      <tr>
+        <th scope="row">
+          Dokumenty transakcji: umowa pośrednictwa, protokoły, korespondencja,
+          faktury
+        </th>
+        <td>
+          6 lat od końca roku, w którym transakcja została rozliczona albo umowa
+          wygasła
+        </td>
+      </tr>
+      <tr>
+        <th scope="row">
+          Dokumentacja wymagana przepisami o przeciwdziałaniu praniu pieniędzy
+        </th>
+        <td>
+          5 lat od dnia zakończenia stosunków gospodarczych z klientem albo od
+          dnia przeprowadzenia transakcji okazjonalnej
+        </td>
+      </tr>
+      <tr>
+        <th scope="row">Dane przetwarzane na podstawie zgody marketingowej</th>
+        <td>do cofnięcia zgody</td>
+      </tr>
+      <tr>
+        <th scope="row">Zgłoszenie rekrutacyjne i CV</th>
+        <td>
+          do zakończenia rekrutacji, nie dłużej niż 6 miesięcy od zgłoszenia
+          <PolicyTodo />
+        </td>
+      </tr>
+      <tr>
+        <th scope="row">Zgłoszenie zachowane na przyszłe rekrutacje</th>
+        <td>
+          do cofnięcia zgody, nie dłużej niż 12 miesięcy od zgłoszenia
+          <PolicyTodo />
+        </td>
+      </tr>
+      <tr>
+        <th scope="row">
+          Wiadomości z formularzy w systemie dostawcy wysyłki
+        </th>
+        <td>
+          30 dni — potem dostawca usuwa treść wiadomości, załączniki i dzienniki
+          wysyłki
+        </td>
+      </tr>
+      <tr>
+        <th scope="row">Dane techniczne z odwiedzin strony</th>
+        <td>
+          nie zapisujemy ich u siebie; dostawca hostingu przechowuje dzienniki
+          techniczne krótko, zgodnie ze swoimi zasadami
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    Jeśli zapytanie zakończy się umową, dane przechodzą do dokumentów
+    transakcji. Po upływie podanych okresów dane usuwamy albo trwale
+    anonimizujemy.
+  </p>
+</PolicySection>
+
+<PolicySection id="prawa">
+  <p>W związku z przetwarzaniem danych masz prawo do:</p>
+  <ol class="pp-list pp-list--num" data-policy-rights>
+    <li>
+      <strong>dostępu</strong> do swoich danych i otrzymania ich kopii,
+    </li>
+    <li>
+      <strong>sprostowania</strong> danych, które są nieprawidłowe albo niepełne,
+    </li>
+    <li>
+      <strong>usunięcia</strong> danych — gdy nie ma już podstaw, żeby je przetwarzać,
+    </li>
+    <li>
+      <strong>ograniczenia przetwarzania</strong> — na przykład na czas wyjaśnienia,
+      czy dane są prawidłowe,
+    </li>
+    <li>
+      <strong>przenoszenia danych</strong>, które przetwarzamy na podstawie
+      zgody albo umowy,
+    </li>
+    <li>
+      <strong>cofnięcia zgody</strong> w dowolnym momencie — cofnięcie nie wpływa
+      na zgodność z prawem przetwarzania, które miało miejsce wcześniej,
+    </li>
+    <li>
+      <strong>sprzeciwu</strong> — opisujemy go osobno w sekcji
+      <a href="#sprzeciw">Prawo sprzeciwu</a>,
+    </li>
+    <li>
+      <strong>skargi</strong> do organu nadzorczego (sekcja
+      <a href="#skarga">Skarga do organu nadzorczego</a>).
+    </li>
+  </ol>
+  <p>
+    Żeby skorzystać z tych praw, napisz albo zadzwoń — dane kontaktowe podajemy
+    w sekcji
+    <a href="#administrator">Kto jest administratorem Twoich danych</a>.
+    Odpowiadamy bez zbędnej zwłoki, najpóźniej w ciągu miesiąca od otrzymania
+    żądania. Jeśli sprawa jest złożona, możemy przedłużyć ten termin o kolejne
+    dwa miesiące — uprzedzimy Cię o tym i podamy przyczynę.
+  </p>
+  <p>
+    Korzystanie z praw jest bezpłatne. Możemy poprosić o dodatkowe informacje,
+    jeśli będą potrzebne, żeby potwierdzić Twoją tożsamość.
+  </p>
+</PolicySection>
+
+<PolicySection id="sprzeciw">
+  <p>
+    <strong
+      >W każdej chwili możesz sprzeciwić się przetwarzaniu Twoich danych, które
+      opieramy na naszym prawnie uzasadnionym interesie</strong
+    >
+    (art. 6 ust. 1 lit. f RODO) — z przyczyn związanych z Twoją szczególną sytuacją.
+    Po sprzeciwie przestaniemy przetwarzać dane w tym celu, chyba że wykażemy ważne,
+    prawnie uzasadnione podstawy, nadrzędne wobec Twoich interesów, praw i wolności,
+    albo dane będą potrzebne do ustalenia, dochodzenia lub obrony roszczeń.
+  </p>
+  <p>
+    <strong
+      >Przetwarzaniu danych na potrzeby marketingu bezpośredniego możesz
+      sprzeciwić się zawsze, bez podawania przyczyny.</strong
+    >
+    Po takim sprzeciwie nie wykorzystamy już Twoich danych do tego celu.
+  </p>
+  <p>
+    Sprzeciw możesz zgłosić w dowolnej formie: e-mailem, telefonicznie albo
+    listownie — dane kontaktowe podajemy w sekcji
+    <a href="#administrator">Kto jest administratorem Twoich danych</a>.
+  </p>
+</PolicySection>
+
+<PolicySection id="cookies">
+  <p data-policy-nostorage>
+    Ta strona nie zapisuje w Twoim urządzeniu plików cookies ani żadnych innych
+    danych i nie odczytuje z niego informacji. Dlatego nie wyświetlamy okna z
+    prośbą o zgodę na cookies.
+  </p>
+
+  <h3>Statystyka odwiedzin</h3>
+  <p>
+    Korzystamy z Cloudflare Web Analytics. Narzędzie liczy odwiedziny zbiorczo:
+    nie używa plików cookies, niczego nie zapisuje w przeglądarce, nie tworzy
+    profili i nie śledzi Cię między stronami. Na podstawie tych danych nie
+    rozpoznajemy konkretnych osób.
+  </p>
+
+  <h3>Ochrona formularzy przed spamem</h3>
+  <p>
+    Formularze chroni usługa Cloudflare Turnstile. Uruchamia się dopiero wtedy,
+    gdy zaczynasz wypełniać formularz. Sprawdza, czy formularz wysyła człowiek,
+    a nie automat, i w tym celu przetwarza między innymi adres IP oraz dane
+    techniczne przeglądarki. Wyłącznie na potrzeby tej weryfikacji może zapisać
+    w przeglądarce niezbędne informacje techniczne.
+  </p>
+
+  <h3>Treści zewnętrzne — dopiero po kliknięciu</h3>
+  <p>
+    Film przy ofercie (YouTube, w trybie rozszerzonej prywatności) i spacer
+    wirtualny ładują się dopiero wtedy, gdy je uruchomisz. Od tej chwili ich
+    dostawcy otrzymują Twój adres IP i mogą zapisywać w przeglądarce własne
+    pliki cookies — na zasadach opisanych w ich politykach prywatności.
+  </p>
+  <p>
+    Linki do map i przyciski udostępniania oferty to zwykłe odnośniki: niczego
+    nie wysyłają, dopóki ich nie klikniesz. Czcionki, mapy i zdjęcia serwujemy z
+    własnych zasobów.
+  </p>
+</PolicySection>
+
+<PolicySection id="czego-nie-robimy">
+  <ul class="pp-list" data-policy-nots>
+    <li>
+      Nie podejmujemy wobec Ciebie decyzji w sposób zautomatyzowany i nie
+      profilujemy.
+    </li>
+    <li>
+      Nie sprzedajemy danych i nie udostępniamy ich nikomu w celach reklamowych.
+    </li>
+    <li>
+      Nie używamy Google Analytics, piksela Meta ani innych narzędzi śledzących
+      i nie wyświetlamy reklam. Nie prowadzimy profili w mediach
+      społecznościowych.
+    </li>
+    <li>Nie wykonujemy kopii dokumentów tożsamości.</li>
+    <li>
+      Nie wyznaczyliśmy inspektora ochrony danych — przepisy tego od nas nie
+      wymagają. W sprawach danych kontaktujesz się bezpośrednio z
+      administratorem.
+    </li>
+  </ul>
+</PolicySection>
+
+<PolicySection id="skarga">
+  <p>
+    Jeśli uznasz, że przetwarzamy Twoje dane niezgodnie z prawem, możesz wnieść
+    skargę do Prezesa Urzędu Ochrony Danych Osobowych:
+    <span data-policy-authority
+      >ul. Stanisława Moniuszki 1A, 00-014 Warszawa</span
+    >,
+    <a href="https://uodo.gov.pl/" target="_blank" rel="noopener noreferrer"
+      >uodo.gov.pl</a
+    >.
+  </p>
+  <p>
+    Zanim to zrobisz, napisz do nas — większość spraw wyjaśnimy szybciej
+    bezpośrednio.
+  </p>
+</PolicySection>
+
+<PolicySection id="zmiany">
+  <p>
+    Politykę aktualizujemy, gdy zmienia się sposób, w jaki przetwarzamy dane,
+    lista naszych dostawców albo przepisy. Aktualna wersja jest zawsze dostępna
+    na tej stronie, a datę ostatniej zmiany i numer wersji podajemy na górze
+    dokumentu. O istotnych zmianach poinformujemy osoby, z którymi pozostajemy w
+    kontakcie.
+  </p>
+  <p>
+    Wersja {POLICY_VERSION} z {formatPolicyDate(POLICY_UPDATED)}
+  </p>
+</PolicySection>

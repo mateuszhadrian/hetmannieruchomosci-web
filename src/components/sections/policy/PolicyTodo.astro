@@ -1,0 +1,20 @@
+---
+// PLACEHOLDER (U9, D23): znacznik niewiadomej w PROJEKCIE polityki —
+// miejsce, które uzupełnia albo potwierdza klientka lub jej prawnik
+// (lista: docs/analiza-polityka.md §12, docs/placeholdery-tresci.md).
+// Widoczny w tekście, żeby czytający projekt widział dokładnie, co jest
+// otwarte. Przed wyłączeniem `POLICY_DRAFT` wszystkie użycia znikają,
+// a razem z nimi ten komponent (testy pilnują zera znaczników).
+interface Props {
+  /** `fill` — brakuje wartości; `confirm` — wartość jest, czeka na
+   *  potwierdzenie. */
+  kind?: "fill" | "confirm";
+}
+const { kind = "confirm" } = Astro.props;
+const label = kind === "fill" ? "do uzupełnienia" : "do potwierdzenia";
+const hasText = Astro.slots.has("default");
+---
+
+<mark class="pp-todo" data-policy-todo={kind}
+  >[{label}{hasText && ": "}<slot />]</mark
+>

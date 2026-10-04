@@ -1,0 +1,42 @@
+---
+// Pas domykający politykę: „Pytania o dane" z kontaktem do administratora.
+// E-mail i telefon przez sloty antyscrapingowe; adres do korespondencji
+// (siedziba) z BUSINESS — czytelny także bez JS. Wiersz z ukrytym slotem
+// znika (policy.css), `<noscript>` to wyjaśnia.
+import { BUSINESS } from "@/lib/jsonld";
+import PolicySlot from "./PolicySlot.astro";
+---
+
+<aside class="pp-contact" data-policy-contact aria-labelledby="pp-contact-h">
+  <h2 class="pp-contact-h" id="pp-contact-h">Masz pytanie o swoje dane?</h2>
+  <p>
+    Napisz albo zadzwoń — odpowiemy bez zbędnej zwłoki, najpóźniej w ciągu
+    miesiąca.
+  </p>
+  <dl class="pp-contact-list">
+    <div class="pp-row">
+      <dt>E-mail</dt>
+      <dd><PolicySlot kind="mail" /></dd>
+    </div>
+    <div class="pp-row">
+      <dt>Telefon</dt>
+      <dd><PolicySlot kind="tel" /></dd>
+    </div>
+    <div>
+      <dt>Adres do korespondencji</dt>
+      <dd>
+        {BUSINESS.legalName}<br />{BUSINESS.seatStreet}, {
+          BUSINESS.seatPostalCode
+        }
+        {BUSINESS.seatLocality}
+      </dd>
+    </div>
+  </dl>
+  <noscript>
+    <p class="pp-nojs">
+      Adres e-mail i numer telefonu wyświetlają się po włączeniu JavaScriptu —
+      chronimy je przed automatycznym zbieraniem. Bez niego napisz na adres do
+      korespondencji podany wyżej.
+    </p>
+  </noscript>
+</aside>
