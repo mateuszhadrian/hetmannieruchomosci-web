@@ -511,8 +511,8 @@ true)`). **Akcja wymagająca przewinięcia strony („Napisz" → `#kontakt`)
 ## Formularze — stan po Etapie 5A (`docs/analiza-formularze-a.md`)
 
 - **Jeden endpoint, jedno źródło reguł.** `functions/api/kontakt.ts`
-  przyjmuje wszystkie formularze (pole `form`: `kontakt`, `sprzedaj`;
-  `oferta` i `praca` dochodzą w 5B). Reguły w `src/lib/contact-form.ts`
+  przyjmuje wszystkie formularze (pole `form`: `kontakt`, `sprzedaj`,
+  `oferta`; `praca` dochodzi w 5B / PR 2). Reguły w `src/lib/contact-form.ts`
   (czysty TS): `validateForm(kind, raw)` zwraca dane albo LISTĘ błędnych
   pól — tę samą funkcję woła moduł kliencki i funkcja, a odpowiedź 400
   z `fields` zapala te same opakowania co walidacja kliencka. Zmiana
@@ -575,8 +575,9 @@ true)`). **Akcja wymagająca przewinięcia strony („Napisz" → `#kontakt`)
 - Pułapki klienckie (honeypot, minimalny czas → udawany sukces bez
   żądania) mają serwerowy odpowiednik w endpointcie — zmiany po jednej
   stronie kontraktu wymagają przeglądu drugiej. Kolejność kroków funkcji:
-  rozmiar po nagłówku → rodzaj → pułapka (200) → walidacja → sekrety →
-  Turnstile → limit dzienny (KV) → Resend.
+  rozmiar po nagłówku (brak `Content-Length` → 411, treść nieczytana) →
+  rodzaj → pułapka (200) → walidacja → sekrety → Turnstile → limit
+  dzienny (KV) → [oferta: indeks ofert] → Resend.
 - **Maile** buduje `buildMail()` (temat stały per formularz — żadnych
   danych klienta w temacie; etykiety słownika zamiast identyfikatorów;
   mail zgłoszenia niesie powierzchnię i cenę; adres strony w stopce
@@ -662,3 +663,49 @@ true)`). **Akcja wymagająca przewinięcia strony („Napisz" → `#kontakt`)
   wysyłce bez JS; e2e mierzy położenie po kliknięciu także na WebKicie.
 - „Wolisz przez telefon?" pod przyciskiem: slot `a[data-tel]`; bez JS
   całe zdanie znika (`:has(> a[hidden])`).
+
+## Zapytanie o ofertę — stan po Etapie 5B / PR 1 (`docs/analiza-formularze-b.md`)
+
+- **Formularz stoi w sekcji kontaktu detalu** (`[data-offer-inquiry]`,
+  `id="formularz"` = cel powrotu po wysyłce bez JS): komponent
+  `src/components/offers/OfferInquiry.astro` na wspólnej ramce
+  `FormFrame` (`kind="oferta"`, `tone="dark"`, `labelledby` = `h2` sekcji
+  — formularz nie ma własnego nagłówka). Uzbraja go skrypt detalu
+  (`initForms(root)` w `offer-detail.ts`, od razu — do czasu uzbrojenia
+  wysyłka poszłaby natywnym POST-em).
+- **Z formularza wychodzi WYŁĄCZNIE numer oferty** (ukryte pole `offer`,
+  kształt `OFFER_NUMBER_RE` — W PARZE z `OfferSchema.number`). Tytuł,
+  lokalizację i adres do maila funkcja bierze sama z indeksu
+  (`OFFERS_INDEX_PATH` przez binding `ASSETS`, dopiero po pułapce,
+  walidacji, Turnstile i liczniku). Nie dokładaj pól „tytuł" / „adres"
+  do formularza — wartości z klienta nie są zaufane. Numer spoza indeksu
+  albo nieczytelny indeks NIE odrzuca zgłoszenia: mail wychodzi
+  z dopiskiem `OFFER_NOT_IN_INDEX` zamiast tytułu i linku.
+- **Błąd pola bez opakowania** (ukryty numer — z walidacji klienckiej
+  albo z odpowiedzi 400) kończy się komunikatem błędu wysyłki:
+  `setErrors()` zwraca, czy cokolwiek się zapaliło. Nowe pole ukryte =
+  ten sam mechanizm, nie ciche „nic się nie stało".
+- **Wariant ciemny ramki** (`fm-frame--dark` w `forms.css`): pola białe
+  bez obrysu, teksty jasne, błąd w `--error-light`, linki i fokus
+  w `--copper-light` / bieli. **Krycia tekstu są z POMIARU kontrastu**
+  nad zdjęciem tła sekcji (axe zwraca „incomplete") — zmiana krycia,
+  gradientu sekcji albo zdjęcia tła = ponowny pomiar (analiza §10).
+- **Przycisk wysyłki na detalu ma wygląd z `offer-detail.css`**
+  (`.od-inquiry .sx-btn.fm-send`): arkusz stron treściowych (`content.css`,
+  klasa `sx-btn`) nie jest ładowany na trasie ofert — bez tej reguły
+  przycisk jest gołym tekstem.
+- **Dosuwanie pod DWA paski:** ramka niesie `under="[data-offer-anchors]"`
+  (`data-form-under`) — `revealUnderBar` dolicza wysokość paska kotwic do
+  wysokości nagłówka. Formularz pod innym elementem sticky = ten sam prop.
+- **Pasek dolny (telefon, tablet) znika na czas fokusu w formularzu**
+  (`.od:has(.od-inquiry:focus-within) .od-bar-host`) — stoi dokładnie
+  tam, gdzie się pisze. „Napisz" paska i lightboxa dalej celuje
+  w `#kontakt`.
+- **Kolejność w DOM sekcji:** kolumna agenta → formularz → link powrotu;
+  od 1025 px siatka stawia link pod lewą kolumną (formularz zajmuje oba
+  wiersze prawej). Zrzut ELEMENTU sekcji chowa pasek, kotwice i pasek
+  dolny.
+- **Arkusze trasy `[...path]` są wspólne dla listy rodzaju i detalu** —
+  wspólny arkusz formularzy ładuje się więc także na listach rodzaju
+  (dodatkowy plik blokujący render); zmiana `forms.css` = pomiar LCP
+  list i detali.

@@ -20,6 +20,7 @@
 import "./offer-detail.css";
 import ctaImage from "@/assets/img/onas-cta.webp";
 import Footer from "@/components/Footer.astro";
+import OfferInquiry from "./OfferInquiry.astro";
 import Navbar from "@/components/navbar/Navbar.astro";
 import JsonLd from "@/components/seo/JsonLd.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
@@ -927,13 +928,19 @@ const videoHref = offer.videoId
               <span class="od-contact-tag">{DETAIL.email}</span>
             </a>
           </div>
-          <a class="od-back" href={kindPath}>
-            <Icon name="chevronLeft" />
-            {DETAIL.backToList}
-          </a>
         </div>
-        {/* miejsce na formularz zapytania (5B) — pusty kontener */}
-        <div class="od-inquiry" data-offer-inquiry></div>
+        {
+          /* formularz zapytania; `id` = cel powrotu po wysyłce bez JS.
+             Link powrotu stoi w DOM po formularzu (telefon: pod nim),
+             na desktopie siatka stawia go pod lewą kolumną */
+        }
+        <div class="od-inquiry" id="formularz" data-offer-inquiry>
+          <OfferInquiry number={offer.number} labelledby="od-h-contact" />
+        </div>
+        <a class="od-back" href={kindPath}>
+          <Icon name="chevronLeft" />
+          {DETAIL.backToList}
+        </a>
       </div>
     </section>
 

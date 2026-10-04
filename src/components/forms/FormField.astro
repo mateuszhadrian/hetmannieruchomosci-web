@@ -24,6 +24,8 @@ interface Props {
   error?: string;
   /** Dodatkowe id opisu spoza pola (np. podpowiedź pary e-mail/telefon). */
   describedby?: string;
+  /** Treść startowa pola wielowierszowego (wraca po „wyślij kolejną"). */
+  value?: string;
 }
 const {
   id,
@@ -39,6 +41,7 @@ const {
   hint,
   error,
   describedby,
+  value,
 } = Astro.props;
 
 // stałe opisy pola (podpowiedzi); komunikaty błędów dopina form-ui.ts
@@ -65,6 +68,7 @@ const desc =
         required={required}
         aria-describedby={desc}
         data-desc={desc}
+        set:text={value}
       />
     ) : (
       <input

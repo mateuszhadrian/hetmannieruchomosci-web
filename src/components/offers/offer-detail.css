@@ -1182,7 +1182,44 @@
 .od-back svg {
   font-size: 1em;
 }
-.od-inquiry:empty {
+/* formularz zapytania (5B): ramka i pola z forms.css w wariancie ciemnym;
+   `id="formularz"` = cel powrotu po wysyłce bez JS */
+.od-inquiry {
+  min-width: 0;
+  scroll-margin-top: calc(var(--hdr-h) + var(--od-anchors-h) + 8px);
+}
+/* fokus i potwierdzenie dosuwa skrypt pod pasek I pasek kotwic */
+.od-inquiry .fm-frame,
+.od-inquiry .fm-input {
+  scroll-margin-top: calc(var(--hdr-h) + var(--od-anchors-h) + 16px);
+}
+.od-inquiry .fm-input--area {
+  min-height: 120px;
+}
+/* przycisk wysyłki: arkusz stron treściowych (`sx-btn`) nie jest tu
+   ładowany — wygląd przycisku miedzianego detalu (tekst `--ink`, AA) */
+.od-inquiry .sx-btn.fm-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  box-sizing: border-box;
+  min-height: 52px;
+  padding: 0 40px;
+  background: var(--copper);
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border-radius: 0 0 0 14px;
+  transition: background 0.3s ease;
+}
+.od-inquiry .sx-btn.fm-send:hover {
+  background: var(--copper-hover);
+}
+/* pasek dolny stoi dokładnie tam, gdzie pisze się w formularzu (i gdzie
+   wyjeżdża klawiatura) — znika na czas fokusu w formularzu */
+.od:has(.od-inquiry:focus-within) .od-bar-host {
   display: none;
 }
 
@@ -1560,14 +1597,27 @@
     margin-top: clamp(48px, 4.5vw, 72px);
     padding: clamp(56px, 5.5vw, 88px) var(--pad);
   }
+  /* lewa kolumna: nagłówek, agent, wiersze kontaktu, pod nimi powrót;
+     prawa: formularz na wysokość obu wierszy */
   .od-contact-in {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: clamp(48px, 5vw, 80px);
+    grid-template-rows: auto 1fr;
+    gap: clamp(24px, 2.4vw, 32px) clamp(48px, 5vw, 80px);
     align-items: start;
   }
   .od-contact-col {
+    grid-column: 1;
+    grid-row: 1;
     gap: clamp(24px, 2.4vw, 32px);
+  }
+  .od-inquiry {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+  .od-back {
+    grid-column: 1;
+    grid-row: 2;
   }
   .od-contact .od-avatar {
     width: 60px;
@@ -1585,9 +1635,6 @@
   }
   .od-contact-row[data-mail] {
     font-size: 16px;
-  }
-  .od-inquiry:empty {
-    display: block;
   }
   .od-bar-host,
   .od-bar {

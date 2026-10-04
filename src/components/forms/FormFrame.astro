@@ -12,6 +12,9 @@
 // Zgoda marketingowa: opcjonalna, odznaczona, bez gwiazdki — formularz
 // wysyła się bez niej. Nota informuje, checkbox zbiera zgodę: nie łączyć.
 // Telefon w komunikatach przez slot antyscrapingowy (`a[data-tel]`).
+//
+// `tone="dark"` — formularz na ciemnym tle (zapytanie przy ofercie):
+// klasa `fm-frame--dark` przestawia kolory w forms.css, markup ten sam.
 import { MARKETING_CONSENT, type ActiveFormKind } from "@/lib/contact-form";
 import { POLICY_PATH } from "@/lib/routes";
 import { FORM_ENDPOINT } from "./form-config";
@@ -24,12 +27,29 @@ interface Props {
   /** Prefiks id elementów (unikalny per formularz na stronie). */
   idPrefix: string;
   copy: FormFrameCopy;
+  tone?: "light" | "dark";
+  /** Id nagłówka, który nazywa formularz (gdy formularz nie ma własnego). */
+  labelledby?: string;
+  /** Selektor DRUGIEGO elementu przyklejonego pod paskiem (np. kotwice
+   *  detalu oferty) — skrypt dosuwa pod niego błędne pole i potwierdzenie. */
+  under?: string;
 }
-const { kind, idPrefix, copy } = Astro.props;
+const { kind, idPrefix, copy, tone = "light", labelledby, under } = Astro.props;
 ---
 
-<div class="fm-frame" data-form-frame data-state="form">
-  <form class="fm-form" data-form={kind} method="post" action={FORM_ENDPOINT}>
+<div
+  class:list={["fm-frame", tone === "dark" && "fm-frame--dark"]}
+  data-form-frame
+  data-state="form"
+  data-form-under={under}
+>
+  <form
+    class="fm-form"
+    data-form={kind}
+    method="post"
+    action={FORM_ENDPOINT}
+    aria-labelledby={labelledby}
+  >
     <input type="hidden" name="form" value={kind} />
     <slot />
 

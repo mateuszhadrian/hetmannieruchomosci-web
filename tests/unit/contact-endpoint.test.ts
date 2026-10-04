@@ -1,6 +1,7 @@
 // Endpoint formularzy (functions/api/kontakt.ts) — kolejność kroków
-// i odpowiedzi z docs/analiza-formularze-a.md §4.2. Resend i Turnstile
-// WYŁĄCZNIE jako atrapy `fetch`; magazyn limitu = atrapa w pamięci.
+// i odpowiedzi z docs/analiza-formularze-a.md §4.2 i analiza-formularze-b.md
+// §3.1. Resend i Turnstile WYŁĄCZNIE jako atrapy `fetch`; magazyn limitu
+// i binding plików statycznych (indeks ofert) = atrapy w pamięci.
 // Żaden test nie wykonuje żądania do sieci.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { onRequest } from "../../functions/api/kontakt";
@@ -8,8 +9,13 @@ import {
   CONTACT_FROM_NOTIFY,
   CONTACT_TO,
   FORM_MAX_BYTES,
+  OFFER_NOT_IN_INDEX,
 } from "../../src/lib/contact-form";
-import { CONTACT_PATH, SELL_PATH } from "../../src/lib/routes";
+import {
+  CONTACT_PATH,
+  OFFERS_INDEX_PATH,
+  SELL_PATH,
+} from "../../src/lib/routes";
 
 const HOST = "https://podglad.example";
 const ENDPOINT = `${HOST}/api/kontakt`;
@@ -46,17 +52,69 @@ const SPRZEDAJ = {
   "cf-turnstile-response": "token-z-atrapy",
 };
 
+// dane SYNTETYCZNE — numer i adres nie istnieją w żadnym źródle
+const OFFER_PATH = "/oferty/mieszkanie-na-sprzedaz/poznan-testowo/xx000111/";
+const OFERTA = {
+  form: "oferta",
+  offer: "XX000111",
+  name: "Ewa Zielińska",
+  email: "ewa@example.com",
+  phone: "",
+  message: "Jestem zainteresowana tą ofertą. Proszę o kontakt.",
+  firma: "",
+  elapsed: "12000",
+  "cf-turnstile-response": "token-z-atrapy",
+};
+const INDEX = {
+  offers: [
+    {
+      number: "XX000222",
+      path: "/oferty/dom-na-sprzedaz/testowo/xx000222/",
+      title: "Inna oferta",
+      location: { city: "Testowo" },
+    },
+    {
+      number: "XX000111",
+      path: OFFER_PATH,
+      title: "Mieszkanie <b>testowe</b> 2 pokoje",
+      location: { city: "Poznań", district: "Testowo", street: "Próbna" },
+    },
+  ],
+  locations: {},
+};
+
+/** Atrapa bindingu plików statycznych: serwuje wyłącznie indeks ofert. */
+function stubAssets(index: unknown = INDEX, status = 200) {
+  const urls: string[] = [];
+  return {
+    urls,
+    ASSETS: {
+      fetch: async (input: string | URL | Request) => {
+        urls.push(String(input));
+        return new Response(JSON.stringify(index), { status });
+      },
+    },
+  };
+}
+
+/** Żądanie formularza. Nagłówek `content-length` ustawiamy jawnie (jak
+ *  przeglądarka) — funkcja rozstrzyga o rozmiarze po nagłówku, zanim
+ *  przeczyta treść; `null` = żądanie bez deklaracji rozmiaru. */
 function post(
   fields: Record<string, string>,
-  headers: Record<string, string> = {},
+  headers: Record<string, string | null> = {},
 ): Request {
   const body = new FormData();
   for (const [key, value] of Object.entries(fields)) body.append(key, value);
-  return new Request(ENDPOINT, {
-    method: "POST",
-    headers: { accept: "application/json", ...headers },
-    body,
-  });
+  const all: Record<string, string> = {};
+  for (const [key, value] of Object.entries({
+    accept: "application/json",
+    "content-length": "2048",
+    ...headers,
+  })) {
+    if (value !== null) all[key] = value;
+  }
+  return new Request(ENDPOINT, { method: "POST", headers: all, body });
 }
 
 interface Call {
@@ -115,17 +173,32 @@ describe("endpoint formularzy: odrzucenia przed wysyłką", () => {
 
   it("za duże żądanie odpada po nagłówku, przed czytaniem treści → 413", async () => {
     const calls = stubFetch();
-    const res = await onRequest({
-      request: post(KONTAKT, { "content-length": String(FORM_MAX_BYTES + 1) }),
-      env: ENV,
+    const request = post(KONTAKT, {
+      "content-length": String(FORM_MAX_BYTES + 1),
     });
+    const read = vi.spyOn(request, "formData");
+    const res = await onRequest({ request, env: ENV });
     expect(res.status).toBe(413);
+    expect(read).not.toHaveBeenCalled();
+    expect(calls).toHaveLength(0);
+  });
+
+  it("żądanie bez deklaracji rozmiaru nie jest czytane → 411", async () => {
+    const calls = stubFetch();
+    for (const value of [null, "", "abc", "-5", "12.5"]) {
+      const request = post(KONTAKT, { "content-length": value });
+      const read = vi.spyOn(request, "formData");
+      const res = await onRequest({ request, env: ENV });
+      expect(res.status, String(value)).toBe(411);
+      expect(await res.json()).toEqual({ ok: false, error: "length-required" });
+      expect(read, String(value)).not.toHaveBeenCalled();
+    }
     expect(calls).toHaveLength(0);
   });
 
   it("nieznany albo jeszcze nieobsługiwany rodzaj → 400 `form`", async () => {
     const calls = stubFetch();
-    for (const form of ["", "inny", "oferta", "praca"]) {
+    for (const form of ["", "inny", "praca"]) {
       const res = await onRequest({
         request: post({ ...KONTAKT, form }),
         env: ENV,
@@ -316,19 +389,168 @@ describe("endpoint formularzy: wysyłka", () => {
   });
 });
 
-describe("endpoint formularzy: wysyłka bez JS", () => {
-  const plain = (referer?: string) => {
-    const body = new FormData();
-    for (const [key, value] of Object.entries(KONTAKT)) body.append(key, value);
-    return new Request(ENDPOINT, {
-      method: "POST",
-      headers: {
-        accept: "text/html,application/xhtml+xml",
-        ...(referer ? { referer } : {}),
-      },
-      body,
+describe("endpoint formularzy: zapytanie o ofertę", () => {
+  it("numer z indeksu → mail z tytułem, lokalizacją i adresem Z INDEKSU", async () => {
+    const calls = stubFetch();
+    const assets = stubAssets();
+    const res = await onRequest({
+      request: post(OFERTA),
+      env: { ...ENV, ASSETS: assets.ASSETS },
     });
-  };
+    expect(res.status).toBe(200);
+    expect(calls.map((c) => c.url)).toEqual([TURNSTILE, RESEND]);
+    expect(assets.urls).toEqual([`${HOST}${OFFERS_INDEX_PATH}`]);
+
+    const mail = sentMail(calls);
+    expect(mail.subject).toMatch(/^Zapytanie do agenta ze strony www /);
+    expect(mail.subject).toMatch(/— oferta XX000111$/);
+    expect(mail.to).toEqual([CONTACT_TO]);
+    expect(mail.reply_to).toBe("ewa@example.com");
+    expect(mail.text).toContain(`${HOST}${OFFER_PATH}`);
+    expect(mail.text).toContain("Mieszkanie <b>testowe</b> 2 pokoje · Poznań");
+    expect(mail.text).toContain("Próbna");
+    expect(mail.text).toContain(`Strona: ${HOST}${OFFER_PATH}`);
+    expect(mail.text).toContain("Jestem zainteresowana tą ofertą.");
+    // wartości z indeksu escapowane jak dane klienta
+    expect(mail.html).toContain("Mieszkanie &lt;b&gt;testowe&lt;/b&gt;");
+    expect(mail.html).not.toContain("<b>testowe</b>");
+    expect(mail.html).toContain(`<a href="${HOST}${OFFER_PATH}"`);
+  });
+
+  it("tytuł i adres dosłane przez klienta NIE trafiają do maila", async () => {
+    const calls = stubFetch();
+    await onRequest({
+      request: post({
+        ...OFERTA,
+        title: "PODSTAWIONY TYTUŁ",
+        url: "https://obcy.example/pulapka",
+        path: "/oferty/podstawiona/",
+      }),
+      env: { ...ENV, ASSETS: stubAssets().ASSETS },
+    });
+    const mail = sentMail(calls);
+    for (const part of [mail.subject, mail.text, mail.html]) {
+      expect(part).not.toContain("PODSTAWIONY");
+      expect(part).not.toContain("obcy.example");
+      expect(part).not.toContain("podstawiona");
+    }
+  });
+
+  it("numer małymi literami jest tym samym numerem", async () => {
+    const calls = stubFetch();
+    await onRequest({
+      request: post({ ...OFERTA, offer: "xx000111" }),
+      env: { ...ENV, ASSETS: stubAssets().ASSETS },
+    });
+    expect(sentMail(calls).subject).toMatch(/— oferta XX000111$/);
+    expect(sentMail(calls).text).toContain(`${HOST}${OFFER_PATH}`);
+  });
+
+  it("numer spoza indeksu → zgłoszenie wychodzi z dopiskiem, bez tytułu i linku", async () => {
+    const calls = stubFetch();
+    const res = await onRequest({
+      request: post({ ...OFERTA, offer: "XX999999" }),
+      env: { ...ENV, ASSETS: stubAssets().ASSETS },
+    });
+    expect(res.status).toBe(200);
+    const mail = sentMail(calls);
+    expect(mail.subject).toMatch(/— oferta XX999999$/);
+    expect(mail.text).toContain(OFFER_NOT_IN_INDEX);
+    expect(mail.text).not.toContain("testowe");
+    expect(mail.html).not.toContain("<a href");
+    expect(mail.text).toContain(`Strona: ${HOST}/oferty/`);
+  });
+
+  it("indeks nieczytelny albo brak bindingu → to samo, bez błędu wysyłki", async () => {
+    for (const env of [
+      { ...ENV },
+      { ...ENV, ASSETS: stubAssets(INDEX, 500).ASSETS },
+      { ...ENV, ASSETS: stubAssets("to nie jest indeks").ASSETS },
+      { ...ENV, ASSETS: stubAssets({ offers: [{ number: 7 }, null] }).ASSETS },
+      {
+        ...ENV,
+        ASSETS: {
+          fetch: async () => {
+            throw new Error("binding");
+          },
+        },
+      },
+    ]) {
+      const calls = stubFetch();
+      const res = await onRequest({ request: post(OFERTA), env });
+      expect(res.status).toBe(200);
+      expect(sentMail(calls).text).toContain(OFFER_NOT_IN_INDEX);
+    }
+    // log bez numeru oferty i bez danych klienta
+    const logged = vi.mocked(console.error).mock.calls.flat().join(" ");
+    expect(logged).not.toContain("XX000111");
+    expect(logged).not.toContain("ewa@example.com");
+  });
+
+  it("wpis indeksu z adresem spoza ofert jest pomijany", async () => {
+    const calls = stubFetch();
+    const index = {
+      offers: [{ ...INDEX.offers[1], path: "https://obcy.example/x" }],
+    };
+    await onRequest({
+      request: post(OFERTA),
+      env: { ...ENV, ASSETS: stubAssets(index).ASSETS },
+    });
+    expect(sentMail(calls).text).toContain(OFFER_NOT_IN_INDEX);
+    expect(sentMail(calls).html).not.toContain("obcy.example");
+  });
+
+  it("numer o złym kształcie → 400 z polem `offer`, indeks nieczytany", async () => {
+    const calls = stubFetch();
+    const assets = stubAssets();
+    for (const offer of ["", "111", "XX 111", "XX000111<script>", "../x"]) {
+      const res = await onRequest({
+        request: post({ ...OFERTA, offer }),
+        env: { ...ENV, ASSETS: assets.ASSETS },
+      });
+      expect(res.status, offer).toBe(400);
+      expect(await res.json(), offer).toEqual({
+        ok: false,
+        error: "fields",
+        fields: ["offer"],
+      });
+    }
+    expect(calls).toHaveLength(0);
+    expect(assets.urls).toHaveLength(0);
+  });
+
+  it("indeks czytany dopiero PO pułapce, walidacji, Turnstile i limicie", async () => {
+    const assets = stubAssets();
+    const env = { ...ENV, ASSETS: assets.ASSETS };
+
+    stubFetch();
+    await onRequest({ request: post({ ...OFERTA, firma: "bot" }), env });
+    await onRequest({ request: post({ ...OFERTA, name: "" }), env });
+    await onRequest({ request: post(OFERTA), env: { ASSETS: assets.ASSETS } });
+
+    stubFetch({ turnstile: false });
+    await onRequest({ request: post(OFERTA), env });
+
+    stubFetch();
+    await onRequest({
+      request: post(OFERTA),
+      env: {
+        ...env,
+        KONTAKT_KV: { get: async () => "80", put: async () => {} },
+      },
+    });
+    expect(assets.urls).toHaveLength(0);
+  });
+});
+
+describe("endpoint formularzy: wysyłka bez JS", () => {
+  const plain = (referer?: string) =>
+    post(KONTAKT, {
+      accept: "text/html,application/xhtml+xml",
+      // zwykły submit odpada PRZED kontrolą rozmiaru i przed czytaniem treści
+      "content-length": null,
+      ...(referer ? { referer } : {}),
+    });
 
   it("zwykły submit → 303 na stronę formularza, bez żądań", async () => {
     const calls = stubFetch();
@@ -341,12 +563,26 @@ describe("endpoint formularzy: wysyłka bez JS", () => {
     expect(calls).toHaveLength(0);
   });
 
+  it("submit z detalu oferty wraca na TEN detal", async () => {
+    const calls = stubFetch();
+    const res = await onRequest({
+      request: plain(`${HOST}${OFFER_PATH}?utm=x`),
+      env: ENV,
+    });
+    expect(res.status).toBe(303);
+    expect(res.headers.get("location")).toBe(`${HOST}${OFFER_PATH}#formularz`);
+    expect(calls).toHaveLength(0);
+  });
+
   it("obcy albo brakujący Referer → strona kontaktu na własnym hoście", async () => {
     stubFetch();
     for (const referer of [
       undefined,
       "https://obcy.example/kontakt/",
+      `https://obcy.example${OFFER_PATH}`,
       `${HOST}/oferty/`,
+      `${HOST}/oferty/mieszkanie-na-sprzedaz/`,
+      `${HOST}/oferty/mieszkanie-na-sprzedaz/poznan/`,
       "nie-adres",
     ]) {
       const res = await onRequest({ request: plain(referer), env: ENV });

@@ -1,0 +1,59 @@
+---
+// Formularz zapytania przy ofercie (Etap 5B, docs/analiza-formularze-b.md)
+// — stoi w sekcji kontaktu detalu, na ciemnym tle. Mechanika i ramka
+// wspólne z pozostałymi formularzami (forms/FormFrame.astro, form-ui.ts);
+// tu tylko pola: imię i nazwisko, para e-mail / telefon (wymagane co
+// najmniej jedno), wiadomość z treścią startową.
+//
+// Z formularza wychodzi WYŁĄCZNIE numer oferty (pole ukryte) — tytuł,
+// lokalizację i adres do maila funkcja bierze sama z indeksu ofert.
+// Nazwę formularzowi daje nagłówek sekcji (`labelledby`).
+import FormContactPair from "@/components/forms/FormContactPair.astro";
+import FormField from "@/components/forms/FormField.astro";
+import FormFrame from "@/components/forms/FormFrame.astro";
+import {
+  FORM_COPY,
+  OFERTA_FORM_COPY as t,
+} from "@/components/forms/forms-copy";
+import { MESSAGE_MAX, NAME_MAX } from "@/lib/contact-form";
+
+interface Props {
+  /** Numer oferty z CRM. */
+  number: string;
+  /** Id nagłówka sekcji kontaktu. */
+  labelledby: string;
+}
+const { number, labelledby } = Astro.props;
+---
+
+<FormFrame
+  kind="oferta"
+  idPrefix="of"
+  copy={t.frame}
+  tone="dark"
+  labelledby={labelledby}
+  under="[data-offer-anchors]"
+>
+  <input type="hidden" name="offer" value={number} />
+  <FormField
+    id="of-name"
+    f="name"
+    label={FORM_COPY.name.label}
+    placeholder={FORM_COPY.name.placeholder}
+    autocomplete="name"
+    maxlength={NAME_MAX}
+    required
+    error={FORM_COPY.errors.name}
+  />
+  <FormContactPair idPrefix="of" />
+  <FormField
+    id="of-message"
+    f="message"
+    type="textarea"
+    label={t.message.label}
+    value={t.message.value}
+    maxlength={MESSAGE_MAX}
+    required
+    error={FORM_COPY.errors.message}
+  />
+</FormFrame>

@@ -64,6 +64,8 @@ html {
   --line-soft: #ece9e3;
   /* błąd pola formularza (design go nie ma): 6,5:1 na białym */
   --error: #b3261e;
+  /* ten sam błąd na ciemnym tle (formularz przy ofercie) */
+  --error-light: #ffb4ab;
 
   /* background */
   --bg: #f3f2ef; /* tło strony */
