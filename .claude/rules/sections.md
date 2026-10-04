@@ -943,3 +943,69 @@ checkCv)`) i funkcja. Ta sama reguła po obu stronach; bez niej
   `wide` — numer · tytuł · opis na linii bazowej przez
   `display: contents`, `cols`); numery to licznik CSS; lista jest JEDNYM blokiem
   reveala (`data-rv` na `<ol>`).
+
+## Polityka prywatności — stan po Etapie 4.7 (`docs/analiza-polityka.md`)
+
+- `src/pages/polityka-prywatnosci.astro` + `sections/policy/`: `PolicyHead`
+  (eyebrow, `h1`, wstęp, informacja o projekcie, pasmo dokumentu),
+  `PolicyToc` (spis treści), `PolicyBody` (dwanaście sekcji — treść jako
+  markup), `PolicySection` (`section[id]` + `h2` z `aria-labelledby`),
+  `PolicyContact` (pas „Pytania o dane"), `PolicySlot` (slot e-maila /
+  telefonu w zdaniu), `PolicyTodo` (znacznik niewiadomej), `policy.css`
+  (klasy globalne `pp-*`; treść sekcji przychodzi slotem, więc style
+  scoped by jej nie sięgały), `policy-config.ts`. Design NIE ma tego
+  widoku — układ wg wzorca z bazy wiedzy, wygląd z tokenów. Pasek stały,
+  bez ruchu, bez `content.css`.
+- **Sekcje i kotwice z jednego źródła:** `POLICY_SECTIONS` (`id` + tytuł)
+  karmi spis treści, nagłówki `h2` i testy. Kotwice są ZNACZĄCE
+  (`#administrator`, `#okresy`, `#sprzeciw` …), bez numerów — prawnik może
+  dopisać albo przestawić sekcję bez zmiany adresów. Numer sekcji i pozycji
+  spisu to licznik CSS (dekoracja). Nowa sekcja = wpis w `POLICY_SECTIONS`
+  oraz `<PolicySection id="…">` w `PolicyBody`, w tej samej kolejności
+  (unit porównuje).
+- **Treść musi zgadzać się ze stanem strony** — to, co da się czytać ze
+  źródeł, jest z nich czytane: dane firmy z `BUSINESS`, brzmienia zgód
+  z `contact-form.ts` (`MARKETING_CONSENT`, `FUTURE_RECRUITMENT_CONSENT`),
+  zdania o formularzu „Praca" za `SHOW_PRACA`. Reszta to deklaracje, które
+  trzeba PRZEJRZEĆ przy każdej zmianie: pól albo zgód formularzy, dostawców
+  (hosting, wysyłka, ochrona przed spamem, statystyka), osadzeń (film,
+  spacer, mapy), wszystkiego, co strona zapisuje w przeglądarce.
+- **Strona niczego nie zapisuje w urządzeniu odwiedzającego** (cookies,
+  `localStorage`, `sessionStorage`) — tak deklaruje sekcja „Pliki cookies…"
+  i pilnuje tego e2e. Przejście wewnętrzne (mikro-fade w `BaseLayout`)
+  rozpoznajemy po `document.referrer`, nie po fladze w pamięci sesji.
+  Nowy zapis w przeglądarce = zmiana polityki ORAZ pytanie o podstawę
+  (Prawo komunikacji elektronicznej, przechowywanie informacji
+  w urządzeniu końcowym) — nie dodawaj go „przy okazji".
+- **Projekt dokumentu (`POLICY_DRAFT`):** niewiadome stoją w tekście jako
+  `<PolicyTodo>` („[do uzupełnienia: …]" / „[do potwierdzenia…]"), nad
+  pasmem dokumentu jest informacja o projekcie. Wyłączenie stałej wymaga
+  zera znaczników i ustawionej daty obowiązywania (`POLICY_EFFECTIVE`) —
+  pilnują unit i e2e. Daty dokumentu to STAŁE (`POLICY_UPDATED`,
+  `POLICY_EFFECTIVE`), nigdy „teraz" builda; zmiana treści = ręczna zmiana
+  `POLICY_UPDATED` i `POLICY_VERSION`.
+- **Dane administratora:** nazwa rejestrowa, siedziba, NIP, REGON i biuro
+  stoją w statycznym HTML (dokument identyfikuje administratora bez JS);
+  telefon i e-mail WYŁĄCZNIE przez sloty (`PolicySlot` — kotwica bez
+  białych znaków w środku). Wiersz z ukrytym slotem znika
+  (`.pp-row:has(a[hidden])`), `<noscript>` kieruje na adres listowny.
+- **Spis treści:** czyste kotwice, bez podświetlania bieżącej sekcji (zero
+  skryptu). Poniżej 1025 px karta nad treścią, od 1025 px
+  `position: sticky` w lewej kolumnie siatki z `align-items: start`
+  (`top` = pasek + `--pp-toc-top`), `max-height` z `svh` i własne
+  przewijanie na niskim oknie. Żaden przodek nie może dostać `overflow`
+  innego niż `visible` (e2e sprawdza cały łańcuch).
+- **Kotwice:** `scroll-margin-top: var(--hdr-h) + --pp-gap` na sekcjach
+  (16 px poniżej progu, 24 px od progu). Wejście z kotwicą w adresie
+  poprawia wspólny `sections/content-anchor.ts` (`armAnchorAlign(selektor)`
+  — logika z `/uslugi/`: po `load` i po fontach, tylko zwykłe wejście,
+  tylko dopóki użytkownik nie przewinął). Bez `scroll-behavior`.
+- **Prawo sprzeciwu** to osobna sekcja z własną pozycją w spisie,
+  wizualnie wyłamana (granat, miedziana kreska) — przepis wymaga
+  przedstawienia go odrębnie od pozostałych informacji; nie przenoś go do
+  listy praw.
+- Preflight Tailwinda zeruje `list-style` — listy w tekście dostają
+  znaczniki z powrotem regułą `.pp-list`.
+- **Druk** (`@media print` na końcu `policy.css`): bez paska, stopki
+  i spisu; ramka sprzeciwu z obrysem i ciemnym tekstem (tła nie są
+  drukowane); informacja o projekcie ZOSTAJE na wydruku.

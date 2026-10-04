@@ -1,7 +1,7 @@
 # Mini-analiza 4.6 — `/uslugi/`
 
 > **Status:** ZAAKCEPTOWANA 2026-10-04 (wszystkie rekomendacje Q1–Q7
-> z §9), zakodowana na gałęzi `feat/uslugi` — uzupełnienia po implementacji
+> z §9), ZMERGOWANA (PR #31, 2026-10-04) — uzupełnienia po implementacji
 > w §10. Część 4.6 Etapu 4 wg instrukcji
 > wykonawczej (dokument lokalny, `docs/plan/`): akapit 4.6, „Tryb pracy",
 > „Zasada rozjazdów"; prompt §4.6 z `etap-4-prompty.md`. Referencja

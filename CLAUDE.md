@@ -1363,12 +1363,36 @@ checkCv)`; `PRACA_FORM_COPY`. Widok: `src/pages/praca.astro` +
   karty i przyciemniony pas zdjęcia, odstępy hero na niskim oknie, kadr
   zdjęcia „umowa" na desktopie.
 
-- **Etap 4 / 4.6 (`/uslugi/`) — W TOKU** (2026-10-04, gałąź `feat/uslugi`,
-  mini-analiza `docs/analiza-uslugi.md` zaakceptowana wg rekomendacji
-  Q1–Q7, uzupełnienia §10; kod i testy gotowe lokalnie, ZOSTAŁO: workflow
-  baseline'ów linux, baseline'y darwin, PR, merge, `prod-smoke`; następna
-  sesja = 4.7 `/polityka-prywatnosci/` + domknięcie etapów). Testy
-  `/o-nas/` na `nowa.` i na telefonie: bez zgłoszeń w tej sesji; chmura
+- **Etap 4 / 4.6 (`/uslugi/`) — WYKONANY** (2026-10-04, PR #31 zmergowany
+  20:01 UTC, commit `8f37ff7`; checki PR-a (bieg 37228670750: `quality`,
+  `e2e`, `lighthouse`), `ci.yml` na main (bieg 37230525913) i `prod-smoke`
+  (bieg 37230525907) zielone; baseline'y linux + darwin w PR: 12 PNG na
+  platformę — same nowe `uslugi-*`, żaden inny baseline nietknięty; gałąź
+  `feat/uslugi`, mini-analiza `docs/analiza-uslugi.md` zaakceptowana wg
+  rekomendacji Q1–Q7, uzupełnienia §10). Pierwszy bieg CI na PR
+  (37223931733) miał czerwony `e2e` z braku 12 baseline'ów linux (stan
+  oczekiwany przed workflowem) ORAZ z jednego testu funkcjonalnego
+  (niżej); `quality` i `lighthouse` zielone; workflow baseline'ów linux:
+  bieg 37223952126; bieg na commicie bota (37224101240) zakończył się bez
+  jobów — to nie jest czerwony check. **Czerwony `e2e` na commicie darwin
+  (bieg 37224624055): 1 z 723 testów** — `uslugi.spec.ts`, „próg 1025":
+  szerokość pasa CTA porównana z `documentElement.clientWidth` różniła się
+  na runnerze o 15 px (rynna paska przewijania: `scrollbar-gutter: stable`
+  w `global.css`; na Linuksie układ jest o nią węższy od `clientWidth`,
+  lokalnie na macOS rynny nie ma). Wygląd bez wady; poprawka w tym samym
+  PR (commit `57a9fc5`): asercja porównuje pas z szerokością SEKCJI
+  (lekcja w testing.md, SV32 w analizie). Weryfikacja na `nowa.` po
+  merge'u (same żądania GET): `/uslugi/` 200 z `x-robots-tag: noindex`
+  fazy podglądu, `h1` z treścią hero, dwa `preload` zdjęcia hero z `media`
+  (kadr `-tall` do 767 px), trzy sekcje z `id` i trzy wejścia hero
+  z kotwicami, w `<main>` zero `tel:` i `mailto:`, jeden slot telefonu
+  z `data-fill="href"`, `data-scroll-nav` na pasku, `data-nav-hero` na
+  hero, bramka `js-motion` w `<head>`, atrybuty `data-px="top"`
+  i `data-px="-1"`, strona w sitemapie; strona główna linkuje trzy
+  kotwice usług. Liczb LHCI z runnera nie odczytano — LCP mobile
+  `/uslugi/` (lokalnie mediana 2 198 ms przy progu 3 200) do pomiaru
+  `lhci-measure.yml` w PR porządkowym 4.7. Testy `/uslugi/` i `/o-nas/`
+  na `nowa.` i na telefonie: pytanie zadane na starcie sesji 4.7; chmura
   bez zmian (blok 5.1 → 5.2 → 5.5 po 4.7).
   `src/pages/uslugi.astro` + `sections/services/`: `ServicesHero` (telefon
   i tablet — eyebrow, `h1` i akapit na jednolitym granacie, pod nimi pole
@@ -1442,6 +1466,81 @@ checkCv)`; `PRACA_FORM_COPY`. Widok: `src/pages/praca.astro` +
   przyciemnienia i ciemne szkło hero, gradient pasa CTA, blok zamykający
   na telefonie, miękkość zdjęcia hero (źródło 1440×617 — ostrzejszy plik
   to prośba do autora designu).
+
+- **Etap 4 / 4.7 PR 1 (`/polityka-prywatnosci/`) — W TOKU** (2026-10-04,
+  gałąź `feat/polityka`, mini-analiza `docs/analiza-polityka.md`
+  zaakceptowana wg rekomendacji Q1–Q10 + polecenie ponownej weryfikacji
+  treści ze źródłami, uzupełnienia §10, lista dla prawnika §12; kod
+  i testy gotowe lokalnie, ZOSTAŁO: workflow baseline'ów linux,
+  baseline'y darwin, PR, merge, `prod-smoke`; potem PR 2 — porządkowy
+  `chore/domkniecie-4-5`, plan w analizie §11). Testy `/uslugi/` i `/o-nas/`
+  na `nowa.` i na telefonie: pytanie zadane, bez odpowiedzi w tej sesji;
+  chmura bez zmian (blok 5.1 → 5.2 → 5.5 po 4.7).
+  `src/pages/polityka-prywatnosci.astro` + `sections/policy/`: `PolicyHead`
+  (eyebrow, `h1`, wstęp, informacja o projekcie, pasmo dokumentu:
+  obowiązuje od · ostatnia aktualizacja · wersja), `PolicyToc` (spis treści
+  na czystych kotwicach; poniżej 1025 px karta nad treścią, od 1025 px
+  `sticky` w lewej kolumnie z własnym przewijaniem na niskim oknie),
+  `PolicyBody` (DWANAŚCIE sekcji: administrator, źródła danych, cele
+  i podstawy w siedmiu kartach wg grup osób, odbiorcy, przekazywanie poza
+  EOG, okresy w jednej tabeli, prawa, **prawo sprzeciwu jako osobna,
+  wyróżniona sekcja**, cookies i treści zewnętrzne, czego nie robimy,
+  skarga, zmiany), `PolicySection`, `PolicyContact` (pas „Pytania
+  o dane"), `PolicySlot`, `PolicyTodo`, `policy.css` (klasy globalne
+  `pp-*`, arkusz druku), `policy-config.ts` (`POLICY_SECTIONS` — kotwice
+  ZNACZĄCE, bez numerów: jedno źródło spisu, nagłówków i testów;
+  `POLICY_VERSION`, `POLICY_UPDATED`, `POLICY_EFFECTIVE`, `POLICY_DRAFT`).
+  Design nie ma tego widoku — układ wg wzorca z bazy wiedzy; pasek stały,
+  bez ruchu, bez `content.css`. **Treść to PROJEKT do przeglądu prawnika
+  klientki (`POLICY_DRAFT = true`):** osiem niewiadomych stoi w tekście
+  jako znaczniki „[do uzupełnienia…]" / „[do potwierdzenia…]", data
+  obowiązywania = dzień uruchomienia strony (stała `null` do Etapu 8);
+  wyłączenie stałej wymaga zera znaczników (unit + e2e). Daty dokumentu to
+  stałe, nie `BUILD_NOW`. Dane firmy z `BUSINESS`, brzmienia zgód ze
+  stałych `contact-form.ts`, telefon i e-mail przez sloty (bez JS dokument
+  identyfikuje administratora ze statycznego HTML i podaje adres listowny).
+  Wspólne: `src/components/sections/content-anchor.ts`
+  (`armAnchorAlign` — korekta pozycji po wejściu z kotwicą w adresie;
+  `/uslugi/` przechodzi na niego w PR 2). **ZMIANA w `BaseLayout`:**
+  przejście wewnętrzne (mikro-fade) rozpoznaje `document.referrer` zamiast
+  flagi `hm:visited` w `sessionStorage` — strona niczego nie zapisuje
+  w urządzeniu odwiedzającego (podstawa: przepisy o przechowywaniu
+  informacji w urządzeniu końcowym; polityka deklaruje to wprost, e2e
+  sprawdza cookies, `localStorage` i `sessionStorage`); komentarz skryptu
+  przeniesiony poza `is:inline` — HTML każdej trasy mniejszy o 705 B.
+  Rozstrzygnięcia PP1–PP28 w analizie §3 i §10.2, w tym po weryfikacji
+  zewnętrznej: osobna sekcja o transferach (obaj dostawcy techniczni
+  z USA, Data Privacy Framework + standardowe klauzule umowne), okres 30
+  dni u dostawcy wysyłki, wykonawca strony jako odbiorca, aktualny adres
+  organu nadzorczego, okres AML z ustawy, okresy rekrutacyjne jako
+  propozycja ze znacznikiem. ROZJAZD znany: statystyka odwiedzin opisana
+  w polityce jest włączana dopiero w Etapie 8 (dziś skrypt nie jest
+  osadzony) — dokument obowiązuje od dnia przełączenia. Testy: unit
+  `policy` (nowy, 8), e2e nowy `polityka.spec.ts` (24 testy; treść
+  `chromium-1920`, kotwice, układ i sloty także `chromium-pixel-5`
+  i `webkit-iphone-14`), visual nowy `polityka.spec.ts` (`polityka-top`,
+  `polityka-full` × 6 profili = 12 PNG na platformę); adres był w obu
+  `lighthouserc*.cjs` od Etapu 3. Weryfikacja lokalna:
+  format/lint/typecheck, unit 547 (545 zielonych + 2 skip), build 89
+  stron, `test:dist` 6/6, e2e 765 (+1 239 skip profili) na 6 profilach —
+  zielone, axe 0 naruszeń (desktop, Pixel 5, niskie okno ze spisem
+  przewijanym); `test:visual` 12 czerwonych OCZEKIWANYCH (nowe zrzuty bez
+  baseline'u), 241 zielonych; progiem 0: 239 zrzutów identycznych co do
+  piksela (wszystkie widoki poza polityką), `not-found-top` różni się na
+  dwóch profilach desktop jak od 4.1 (pod progiem); odcisk HTML na
+  `build:visual` (skrypt przejścia wycięty): 37 z 38 tras identycznych.
+  BUDŻET (`build:visual`, baza = main): polityka HTML 17 122 → 42 758 B,
+  `script` 8 217 / 3 402 B w 4 plikach bez zmian (skrypt strony inline),
+  CSS 35 790 / 8 291 B w 2 arkuszach (+8 105 / +2 227 B); wspólny arkusz
+  +21 B na każdej trasie (klasa użytkowa `.table` ze skanera Tailwinda);
+  wyspa listy co do bajta (38 653 B). LHCI lokalnie (oba configi, asercje
+  czyste na 13 adresach): polityka `script` 5 012 B = 13 % bramki, `total`
+  126 KB, LCP mobile 1 658 ms / desktop 411 ms, TBT 0, CLS ≤ 0,011, zero
+  podmiotów trzecich. Progi nietknięte. Poza kodem
+  (`docs/optional-todos.md`): draft do prawnika z listą §12, powierzenie
+  przetwarzania w umowie o utrzymanie strony (Etap 9), włączenie
+  statystyki i kontrola nagłówków `Set-Cookie` (Etap 8), sprawdzenie
+  widgetu ochrony formularzy (5.1).
 
 ## Dokumentacja
 
