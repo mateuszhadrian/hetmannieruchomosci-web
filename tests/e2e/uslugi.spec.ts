@@ -534,8 +534,11 @@ test.describe("usługi: treść i układ", () => {
 
     // kadr zdjęcia hero: poniżej progu niższy od sekcji, od progu ją
     // wypełnia; pas CTA: poniżej progu w kolumnie treści, od progu na całą
-    // szerokość okna; „Pomoc prawna": zdjęcia między akapitem i listą ↔
-    // obok listy
+    // szerokość SEKCJI (czyli okna); „Pomoc prawna": zdjęcia między
+    // akapitem i listą ↔ obok listy. Szerokość pasa porównujemy z sekcją,
+    // nie z `clientWidth` dokumentu: na Linuksie `scrollbar-gutter: stable`
+    // rezerwuje 15 px, o które układ jest węższy od okna (czerwony `e2e`
+    // na PR #31, lokalnie na macOS zielony).
     const probe = () =>
       page.evaluate(
         ({ heroSel, sellSel, legalSel }) => {
@@ -545,7 +548,7 @@ test.describe("usługi: treść i układ", () => {
             hero: r(heroSel).height,
             frame: r(".uh-media").height,
             ctaWidth: r(`${sellSel} [data-services-cta]`).width,
-            vw: document.documentElement.clientWidth,
+            secWidth: r(sellSel).width,
             text: r(`${legalSel} .ul-text`).bottom,
             photos: r(`${legalSel} .ul-photos`).top,
             list: r(`${legalSel} [data-services-list]`).top,
@@ -562,7 +565,7 @@ test.describe("usługi: treść i układ", () => {
     await settle(page, 150);
     const below = await probe();
     expect(below.frame).toBeLessThan(below.hero - 100);
-    expect(below.ctaWidth).toBeLessThan(below.vw - 20);
+    expect(below.ctaWidth).toBeLessThan(below.secWidth - 20);
     expect(below.photos).toBeGreaterThanOrEqual(below.text);
     expect(below.list).toBeGreaterThan(below.photos);
     await page.setViewportSize({ width: SERVICES_DESKTOP_MIN_PX, height });
@@ -571,7 +574,7 @@ test.describe("usługi: treść i układ", () => {
     expect(Math.abs(above.frame - above.hero)).toBeLessThanOrEqual(
       SUBPIXEL_TOL_PX,
     );
-    expect(Math.abs(above.ctaWidth - above.vw)).toBeLessThanOrEqual(
+    expect(Math.abs(above.ctaWidth - above.secWidth)).toBeLessThanOrEqual(
       SUBPIXEL_TOL_PX,
     );
     expect(above.list).toBeGreaterThanOrEqual(above.text);

@@ -339,6 +339,7 @@ najgorszy wynik ze wszystkich silników, rozmiarów i przystanków.
 | SV29 | Hero na niskim oknie laptopa | odstępy, dopełnienie karty, rozmiar `h1` i wysokość kafli pasa ograniczone przez `svh` (wzorzec A22); przy 1366×768 i 1280×680 karta i pas wejść mieszczą się w oknie |
 | SV30 | Zrzuty spoza zakresu (próg 0) | `home-*` (12), `sprzedaj-*` (24), `o-nas-*` (12), `chrome-*` (24) przy `maxDiffPixelRatio: 0` i `maxDiffPixels: 0`: 0 różnic, bez regeneracji. HTML pozostałych dziesięciu zmierzonych tras bez zmian (odcisk z hashami nazw zasobów znormalizowanymi) |
 | SV31 | Zrzut `uslugi-full` na `webkit-iphone-14` progiem 0 | w 1 z 4 przebiegów 214 pikseli różnicy — wyłącznie w prostokącie logo STOPKI (znana niestabilność skalowania logo w WebKicie, ta sama co `chrome-footer`); ok. 0,00007 obrazu przy progu 0,001 — zrzut stabilny przy progu projektu |
+| SV32 | Czerwony `e2e` na PR #31 (bieg 37224624055) | jeden test: próg 1025 — szerokość pasa CTA porównana z `documentElement.clientWidth` różniła się na runnerze o 15 px. To rynna paska przewijania (`scrollbar-gutter: stable` w `global.css`): na Linuksie układ jest o nią węższy od wartości `clientWidth`, na macOS (paski nakładkowe) rynny nie ma. Wygląd bez wady — pas wypełnia sekcję. **Poprawka w teście:** porównanie z szerokością SEKCJI; pozostałe 722 testy zielone, `quality` i `lighthouse` zielone |
 
 ### 10.3 Budżet (pomiar jak §12.5 analizy 4.2, `pnpm build:visual`)
 

@@ -51,8 +51,12 @@ i `href` = `CONTACT_PATH`; po JS `href` = `tel:`, etykieta bez zmian.
 Próg 1025: `expectBreakpointFlip` na 13 elementach (m.in. `.uh-stage`
 flex ↔ block, wejścia flex ↔ grid, `.ul-main` contents ↔ flex, warianty
 zdjęć none ↔ block) + sonda: kadr hero niższy od sekcji ↔ równy, pas CTA
-węższy od okna ↔ na całą szerokość, zdjęcia „Pomocy prawnej" między
-akapitem i listą ↔ obok listy. Telefon: warianty zdjęć, pięć przycisków
+węższy od SEKCJI ↔ na całą jej szerokość, zdjęcia „Pomocy prawnej" między
+akapitem i listą ↔ obok listy. **Szerokość „na całe okno" porównuj
+z szerokością sekcji, nie z `documentElement.clientWidth`:** na Linuksie
+`scrollbar-gutter: stable` rezerwuje 15 px i układ jest o tyle węższy od
+wartości `clientWidth` (czerwony `e2e` na PR #31, lokalnie na macOS
+zielony — paski nakładkowe nie mają rynny). Telefon: warianty zdjęć, pięć przycisków
 ≥ 48 px, pas CTA w kolumnie treści, brak przewijania w bok. Bez JS: brak
 `js-motion`, każdy `[data-rv]` `opacity 1`, kotwice w HTML, przycisk
 telefonu → `CONTACT_PATH`, `.hdr-bg` `opacity 1`. Ruch: reveal pierwszego
