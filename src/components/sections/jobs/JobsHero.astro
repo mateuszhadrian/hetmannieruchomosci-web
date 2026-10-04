@@ -1,0 +1,124 @@
+---
+// Hero /praca/ (5B / PR 2, docs/analiza-formularze-b.md §1.2): zdjęcie,
+// eyebrow i `h1` dwukolorowy. Telefon i tablet — zdjęcie na pełną szerokość
+// od górnej krawędzi okna (wchodzi POD szklany pasek), tekst pod nim;
+// desktop — zdjęcie w kolumnie strony z zaokrąglonym lewym dolnym rogiem,
+// biała karta z nagłówkiem NASUNIĘTA na dół zdjęcia.
+// Zdjęcie jest kandydatem LCP: `eager`, `fetchpriority`, preload na
+// stronie; mniejszy plik poniżej 768 px (para: JOBS_HERO_SMALL_BELOW_PX).
+// Widok nie ma ruchu (design go tu nie przewiduje).
+import heroSmall from "@/assets/img/praca-hero-m.webp";
+import hero from "@/assets/img/praca-hero.webp";
+import { JOBS_HEADING_ID, JOBS_HERO_SMALL_BELOW_PX } from "./jobs-config";
+import { JOBS_COPY as t } from "./jobs-copy";
+---
+
+<div class="jh" data-jobs-hero>
+  <picture>
+    <source
+      media={`(max-width: ${JOBS_HERO_SMALL_BELOW_PX - 1}px)`}
+      srcset={heroSmall.src}
+      width={heroSmall.width}
+      height={heroSmall.height}
+    />
+    <img
+      class="jh-photo"
+      data-jobs-photo
+      src={hero.src}
+      width={hero.width}
+      height={hero.height}
+      alt={t.imageAlt}
+      loading="eager"
+      fetchpriority="high"
+      decoding="async"
+    />
+  </picture>
+  <div class="jh-text">
+    <p class="sx-eyebrow">{t.eyebrow}</p>
+    <h1 class="jh-h1" id={JOBS_HEADING_ID}>
+      {t.title}
+      <span>{t.accent}</span>
+    </h1>
+  </div>
+</div>
+
+<style>
+  .jh {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  /* Telefon i tablet: zdjęcie leży POD szklanym paskiem, a logo i przycisk
+     menu są granatowe. Rozjaśnienie pasa zdjęcia pod paskiem (kolor --bg)
+     trzyma kontrast tych elementów — krycie z POMIARU
+     (docs/analiza-formularze-b.md §11); poniżej paska nic się nie zmienia.
+     Zmiana krycia, zdjęcia albo jego kadru = ponowny pomiar. */
+  .jh::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: var(--hdr-h);
+    background: rgba(243, 242, 239, 0.5);
+    pointer-events: none;
+  }
+  .jh picture {
+    display: block;
+  }
+  .jh-photo {
+    display: block;
+    width: 100%;
+    height: clamp(240px, 70vw, 360px);
+    object-fit: cover;
+    object-position: 40% 62%;
+    background: var(--bg-photo);
+  }
+  .jh-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: clamp(12px, 3.4vw, 16px);
+    padding: clamp(28px, 8vw, 40px) max(var(--pad), calc((100% - 600px) / 2)) 0;
+  }
+  .jh-h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(24px, 7.2vw, 42px);
+    line-height: 1.18;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--navy);
+    text-wrap: pretty;
+  }
+  /* druga fraza w osobnej linii, w miedzi — odcień trzymający 3:1 na
+     jasnym tle (jak sx-h2) */
+  .jh-h1 span {
+    display: block;
+    color: var(--copper-dark);
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    /* zdjęcie stoi pod paskiem, nie za nim */
+    .jh::before {
+      display: none;
+    }
+    .jh-photo {
+      height: clamp(300px, 27vw, 460px);
+      object-position: 50% 58%;
+      border-radius: 0 0 0 clamp(36px, 3.8vw, 56px);
+    }
+    .jh-text {
+      position: relative;
+      box-sizing: border-box;
+      max-width: 640px;
+      gap: clamp(16px, 1.6vw, 22px);
+      margin: calc(-1 * clamp(80px, 7.4vw, 128px)) 0 0 clamp(32px, 3.4vw, 64px);
+      padding: clamp(28px, 3vw, 44px) clamp(32px, 3.4vw, 52px) 0;
+      background: var(--bg-card);
+    }
+    .jh-h1 {
+      font-size: clamp(34px, 3.6vw, 54px);
+      line-height: 1.1;
+    }
+  }
+</style>

@@ -4,7 +4,8 @@
 // - `stubEndpoint` odpowiada zamiast funkcji i liczy żądania,
 // - `recordPosts` zapisuje pola wysyłanego formularza po stronie strony
 //   (treść multipart w przechwyconym żądaniu nie jest dostępna we
-//   wszystkich silnikach),
+//   wszystkich silnikach); pola plikowe jako nazwa, rozmiar i typ — sam
+//   plik nie opuszcza przeglądarki testowej,
 // - `stubTurnstile` podstawia atrapę `window.turnstile` zamiast skryptu
 //   dostawcy,
 // - `installClock` / `passFillTime` dają deterministyczny czas
@@ -19,8 +20,16 @@ import { MIN_FILL_MS } from "../../src/lib/contact-form";
 export const TURNSTILE_HOST = new URL(TURNSTILE_SRC).host;
 export const STUB_TOKEN = "token-z-atrapy";
 
+export interface FormPostFile {
+  name: string;
+  size: number;
+  type: string;
+}
+
 export interface FormPost {
   fields: Record<string, string>;
+  /** Pola plikowe (formularz „Praca"): opis pliku, bez treści. */
+  files: Record<string, FormPostFile>;
   accept: string | null;
 }
 
@@ -33,11 +42,23 @@ export async function recordPosts(page: Page): Promise<void> {
     window.fetch = (input, init) => {
       if (String(input).includes(endpoint) && init?.body instanceof FormData) {
         const fields: Record<string, string> = {};
+        const files: Record<
+          string,
+          { name: string; size: number; type: string }
+        > = {};
         for (const [key, value] of init.body.entries()) {
           if (typeof value === "string") fields[key] = value;
+          else {
+            files[key] = {
+              name: value.name,
+              size: value.size,
+              type: value.type,
+            };
+          }
         }
         w.__formPosts.push({
           fields,
+          files,
           accept: new Headers(init.headers).get("accept"),
         });
       }

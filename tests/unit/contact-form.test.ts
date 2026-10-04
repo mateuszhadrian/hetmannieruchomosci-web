@@ -1,8 +1,8 @@
 // Logika formularzy (src/lib/contact-form.ts) — pułapki na boty,
 // walidacja per formularz (dwa osobne pola kontaktowe, wymagane co
-// najmniej jedno), słowniki zgłoszenia nieruchomości i treść maili A, B
-// i D (Etap 5: docs/analiza-formularze-a.md §5, analiza-formularze-b.md
-// §4). Dane wyłącznie syntetyczne.
+// najmniej jedno), słowniki zgłoszenia nieruchomości i treść maili A, B,
+// C i D (Etap 5: docs/analiza-formularze-a.md §5, analiza-formularze-b.md
+// §4). Reguły pliku CV: cv-file.test.ts. Dane wyłącznie syntetyczne.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
@@ -15,6 +15,7 @@ import {
   FORM_KINDS,
   FORM_PAGE_PATH,
   formatMailPrice,
+  FUTURE_RECRUITMENT_CONSENT,
   isActiveFormKind,
   isBotTrap,
   isFormPagePath,
@@ -32,9 +33,17 @@ import {
   type FormRaw,
   type KontaktData,
   type OfertaData,
+  type PracaData,
   type SprzedajData,
+  type ValidationResult,
 } from "../../src/lib/contact-form";
-import { CONTACT_PATH, OFFERS_PATH, SELL_PATH } from "../../src/lib/routes";
+import { checkCv, CV_MAX_BYTES, formatFileSize } from "../../src/lib/cv-file";
+import {
+  CONTACT_PATH,
+  JOBS_PATH,
+  OFFERS_PATH,
+  SELL_PATH,
+} from "../../src/lib/routes";
 import { offerRoutesFromData, readOffersTyped } from "../helpers/offers";
 
 const kontaktRaw: FormRaw = {
@@ -106,20 +115,56 @@ const MAIL_OFFER = {
 
 const CTX = { sentAt: "3 paź 2026, 12:00", origin: "https://podglad.example" };
 
+// zgłoszenie do pracy — opis pliku tak, jak buduje go moduł kliencki
+const pracaRaw: FormRaw = {
+  form: "praca",
+  name: "Maria Wiśniewska",
+  email: "maria@example.com",
+  phone: "",
+  message: "",
+  "cv:name": "CV Maria Wiśniewska.pdf",
+  "cv:size": "345678",
+};
+
+const pracaData: PracaData = {
+  form: "praca",
+  name: "Maria Wiśniewska",
+  email: "maria@example.com",
+  phone: "",
+  message: "Od pięciu lat pracuję w sprzedaży.",
+  future: false,
+  cv: {
+    name: "CV-Maria-Wisniewska.pdf",
+    size: 345678,
+    mime: "application/pdf",
+  },
+};
+
+/** Zgoda marketingowa z wyniku walidacji (formularz „Praca" jej nie ma). */
+const marketingOf = (r: ValidationResult): boolean | undefined =>
+  r.ok && r.data.form !== "praca" ? r.data.marketing : undefined;
+
 describe("formularze: rodzaje", () => {
-  it("endpoint zna cztery rodzaje, obsługuje trzy (praca w 5B / PR 2)", () => {
+  it("endpoint zna i obsługuje cztery rodzaje", () => {
     expect(FORM_KINDS).toEqual(["kontakt", "sprzedaj", "oferta", "praca"]);
-    expect(ACTIVE_FORM_KINDS).toEqual(["kontakt", "sprzedaj", "oferta"]);
+    expect(ACTIVE_FORM_KINDS).toEqual(FORM_KINDS);
     for (const kind of ACTIVE_FORM_KINDS) {
-      expect(isActiveFormKind(kind), kind).toBe(true);
+      expect(isActiveFormKind(kind, true), kind).toBe(true);
     }
-    for (const other of ["praca", "", "KONTAKT", "inny"]) {
-      expect(isActiveFormKind(other), other).toBe(false);
+    for (const other of ["", "KONTAKT", "PRACA", "inny"]) {
+      expect(isActiveFormKind(other, true), other).toBe(false);
+    }
+  });
+
+  it("wyłączony przełącznik podstrony „Praca” = rodzaj `praca` nieobsługiwany", () => {
+    expect(isActiveFormKind("praca", false)).toBe(false);
+    for (const kind of ["kontakt", "sprzedaj", "oferta"]) {
+      expect(isActiveFormKind(kind, false), kind).toBe(true);
     }
   });
 
   it("cel powrotu bez JS: strony formularzy i detale ofert, nic więcej", () => {
-    for (const path of [CONTACT_PATH, SELL_PATH, OFFER_PATH]) {
+    for (const path of [CONTACT_PATH, SELL_PATH, JOBS_PATH, OFFER_PATH]) {
       expect(isFormPagePath(path), path).toBe(true);
     }
     for (const path of [
@@ -146,6 +191,7 @@ describe("formularze: rodzaje", () => {
     expect(FORM_PAGE_PATH).toEqual({
       kontakt: CONTACT_PATH,
       sprzedaj: SELL_PATH,
+      praca: JOBS_PATH,
     });
   });
 });
@@ -273,9 +319,9 @@ describe("formularz kontaktowy: validateForm", () => {
 
   it("zgoda marketingowa: domyślnie NIE, zaznaczona = TAK; nigdy warunkiem", () => {
     const off = validateForm("kontakt", kontaktRaw);
-    expect(off.ok && off.data.marketing).toBe(false);
+    expect(marketingOf(off)).toBe(false);
     const on = validateForm("kontakt", { ...kontaktRaw, marketing: "1" });
-    expect(on.ok && on.data.marketing).toBe(true);
+    expect(marketingOf(on)).toBe(true);
   });
 
   it("imię jest zawsze jedną linią", () => {
@@ -346,7 +392,7 @@ describe("zapytanie o ofertę: validateForm", () => {
 
   it("zgoda marketingowa: domyślnie NIE; pola typu i transakcji nie dotyczą", () => {
     const res = validateForm("oferta", { ...ofertaRaw, marketing: "1" });
-    expect(res.ok && res.data.marketing).toBe(true);
+    expect(marketingOf(res)).toBe(true);
   });
 
   it("numer oferty nie jest polem pozostałych formularzy", () => {
@@ -468,6 +514,93 @@ describe("zgłoszenie nieruchomości: validateForm", () => {
       ok: false,
       fields: ["type", "transaction", "name", "contact"],
     });
+  });
+});
+
+describe("zgłoszenie do pracy: validateForm", () => {
+  const validate = (raw: FormRaw) => validateForm("praca", raw, checkCv);
+
+  it("minimum: imię, jeden kanał kontaktu i plik; treść opcjonalna", () => {
+    expect(validate(pracaRaw)).toEqual({
+      ok: true,
+      data: {
+        form: "praca",
+        name: "Maria Wiśniewska",
+        email: "maria@example.com",
+        phone: "",
+        message: "",
+        future: false,
+        cv: {
+          name: "CV-Maria-Wisniewska.pdf",
+          size: 345678,
+          mime: "application/pdf",
+        },
+      },
+    });
+  });
+
+  it("para kontaktowa jak w pozostałych formularzach (sam telefon wystarcza)", () => {
+    const phone = validate({ ...pracaRaw, email: "", phone: "600 100 200" });
+    expect(phone.ok).toBe(true);
+    expect(validate({ ...pracaRaw, email: "" })).toEqual({
+      ok: false,
+      fields: ["contact"],
+    });
+    expect(validate({ ...pracaRaw, email: "maria@x" })).toEqual({
+      ok: false,
+      fields: ["email"],
+    });
+  });
+
+  it("zgoda na przyszłe rekrutacje: domyślnie NIE, zaznaczona = TAK", () => {
+    const off = validate(pracaRaw);
+    expect(off.ok && off.data.form === "praca" && off.data.future).toBe(false);
+    const on = validate({ ...pracaRaw, future: "1" });
+    expect(on.ok && on.data.form === "praca" && on.data.future).toBe(true);
+  });
+
+  it("formularz nie ma zgody marketingowej — pole dosłane jest ignorowane", () => {
+    const res = validate({ ...pracaRaw, marketing: "1" });
+    expect(res.ok && res.data).not.toHaveProperty("marketing");
+  });
+
+  it("treść jest przycinana, nie odrzucana", () => {
+    const res = validate({
+      ...pracaRaw,
+      message: "x".repeat(MESSAGE_MAX + 50),
+    });
+    expect(
+      res.ok && res.data.form === "praca" && res.data.message,
+    ).toHaveLength(MESSAGE_MAX);
+  });
+
+  it("błąd pliku stoi na końcu listy, po polach osobowych", () => {
+    expect(validate({ form: "praca" })).toEqual({
+      ok: false,
+      fields: ["name", "contact", "cv"],
+    });
+    expect(
+      validate({ ...pracaRaw, name: "", "cv:name": "zdjecie.jpg" }),
+    ).toEqual({ ok: false, fields: ["name", "cv-type"] });
+    expect(
+      validate({ ...pracaRaw, "cv:size": String(CV_MAX_BYTES + 1) }),
+    ).toEqual({ ok: false, fields: ["cv-size"] });
+  });
+
+  it("bez kontroli pliku zgłoszenia nie da się przyjąć", () => {
+    expect(validateForm("praca", pracaRaw)).toEqual({
+      ok: false,
+      fields: ["cv"],
+    });
+  });
+
+  it("opis pliku nie jest polem pozostałych formularzy", () => {
+    const res = validateForm("kontakt", {
+      ...kontaktRaw,
+      "cv:name": "cv.pdf",
+      "cv:size": "10",
+    });
+    expect(res.ok && res.data).not.toHaveProperty("cv");
   });
 });
 
@@ -743,6 +876,96 @@ describe("mail D — zapytanie o ofertę", () => {
   });
 });
 
+describe("mail C — zgłoszenie do pracy", () => {
+  const mail = buildMail(pracaData, CTX);
+
+  it("temat: dotychczasowy prefiks + dopisek, bez danych kandydata", () => {
+    expect(mail.subject).toBe(
+      "Zapytanie ze strony www hetmannieruchomosci.com — zgłoszenie do pracy",
+    );
+    const hostile = buildMail(
+      { ...pracaData, name: "Maria\nBcc: spam@evil.example" },
+      CTX,
+    );
+    expect(hostile.subject).toBe(mail.subject);
+  });
+
+  it("etykiety stoją w ustalonej kolejności; bez nagłówka danych kontaktowych", () => {
+    const order = [
+      "ZGŁOSZENIE OFERTY PRACY",
+      "Imię i nazwisko kandydata:",
+      "E-mail kandydata:",
+      "Numer telefonu:",
+      "Treść zgłoszenia:",
+      "CV:",
+      "Zgoda na przyszłe rekrutacje:",
+      "Wysłano:",
+      "Strona:",
+    ];
+    const at = order.map((label) => mail.text.indexOf(label));
+    expect(at.every((i) => i >= 0)).toBe(true);
+    expect([...at].sort((a, b) => a - b)).toEqual(at);
+    expect(mail.text).not.toContain("Dane kontaktowe:");
+  });
+
+  it("linia CV niesie nazwę i rozmiar załącznika", () => {
+    const line = `CV:\n${pracaData.cv.name} (${formatFileSize(pracaData.cv.size)})`;
+    expect(mail.text).toContain(line);
+    expect(mail.html).toContain(
+      `${pracaData.cv.name} (${formatFileSize(pracaData.cv.size)})`,
+    );
+  });
+
+  it("zgoda na przyszłe rekrutacje Tak / Nie + brzmienie; BEZ zgody marketingowej", () => {
+    expect(mail.text).toContain("Zgoda na przyszłe rekrutacje: Nie");
+    expect(mail.text).toContain(FUTURE_RECRUITMENT_CONSENT);
+    expect(mail.html).toContain(escapeHtml(FUTURE_RECRUITMENT_CONSENT));
+    const yes = buildMail({ ...pracaData, future: true }, CTX);
+    expect(yes.text).toContain("Zgoda na przyszłe rekrutacje: Tak");
+    expect(yes.html).toContain("Zgoda na przyszłe rekrutacje: Tak");
+    for (const part of [mail.text, mail.html]) {
+      expect(part).not.toContain("informacje handlowe");
+      expect(part).not.toContain(MARKETING_CONSENT);
+    }
+  });
+
+  it("pusta treść jest pomijana; brakujący kanał = „nie podano”", () => {
+    const bare = buildMail({ ...pracaData, message: "" }, CTX);
+    expect(bare.text).not.toContain("Treść zgłoszenia:");
+    expect(bare.text).toContain("Numer telefonu:\nnie podano");
+    const phoneOnly = buildMail(
+      { ...pracaData, email: "", phone: "600 100 200" },
+      CTX,
+    );
+    expect(phoneOnly.text).toContain("E-mail kandydata:\nnie podano");
+    expect(phoneOnly.text).toContain("skontaktuj się telefonicznie");
+    expect(mail.text).toContain("odpowiadając, piszesz do kandydata");
+  });
+
+  it("stopka wskazuje stronę „Praca” na hoście żądania", () => {
+    expect(mail.text).toContain(`Wysłano: ${CTX.sentAt}`);
+    expect(mail.text).toContain(`Strona: ${CTX.origin}${JOBS_PATH}`);
+  });
+
+  it("HTML jest escapowany; mail nie niesie obrazków ani skryptów", () => {
+    const hostile = buildMail(
+      { ...pracaData, message: "<script>alert(1)</script> & co" },
+      CTX,
+    );
+    expect(hostile.html).toContain(
+      "&lt;script&gt;alert(1)&lt;/script&gt; &amp; co",
+    );
+    expect(hostile.html).not.toContain("<script>");
+    expect(mail.html).not.toMatch(/<img|<script/i);
+  });
+
+  it("dane oferty z kontekstu nie przeciekają do maila C", () => {
+    const withOffer = buildMail(pracaData, { ...CTX, offer: MAIL_OFFER });
+    expect(withOffer.text).toBe(mail.text);
+    expect(withOffer.html).toBe(mail.html);
+  });
+});
+
 describe("maile A i B po dodaniu maila D", () => {
   it("układ początku wiadomości bez zmian: nagłówek, pusta linia, etykieta", () => {
     expect(buildMail(kontaktData, CTX).text.split("\n").slice(0, 3)).toEqual([
@@ -779,7 +1002,8 @@ describe("formularze: adresat i nadawca", () => {
     expect(endpoint).not.toMatch(/Confirm/i);
   });
 
-  it("brzmienie zgody nie zawiera adresu e-mail ani gwiazdki", () => {
+  it("brzmienia zgód nie zawierają adresu e-mail ani gwiazdki", () => {
     expect(MARKETING_CONSENT).not.toMatch(/@|\*/);
+    expect(FUTURE_RECRUITMENT_CONSENT).not.toMatch(/@|\*/);
   });
 });

@@ -1,9 +1,9 @@
 # Mini-analiza 5B — zapytanie o ofertę (detal) i `/praca/` z CV
 
 > **Status:** ZAAKCEPTOWANA 2026-10-04 (wszystkie rekomendacje Q1–Q8
-> z §9). PR 1 (`feat/oferta-zapytanie`: zapytanie o ofertę) zakodowany
-> 2026-10-04 — uzupełnienia w §10; PR 2 (`feat/praca`) czeka na wynik
-> kroku 5.2 (limit CV).
+> z §9). PR 1 (`feat/oferta-zapytanie`: zapytanie o ofertę) ZMERGOWANY —
+> PR #27, 2026-10-04 (uzupełnienia w §10); PR 2 (`feat/praca`) w toku —
+> zakodowany 2026-10-04 (uzupełnienia w §11).
 > Część 5B Etapu 5 wg instrukcji wykonawczej (dokument lokalny,
 > `docs/plan/`): kroki 5.2 (reguły implementacji uploadu), 5.3, akapit 5B,
 > 5.4; prompt §5B z `etap-4-prompty.md`. Referencje wyglądu:
@@ -21,7 +21,14 @@
 > **Warunki startu:** kroki 5.1 (chmura) i 5.2 (pomiar CPU, limit CV
 > 2 MB albo 1 MB) NIE są wykonane (odpowiedź Mateusza 2026-10-04) — kod
 > i testy stoją na atrapach. PR 1 (zapytanie o ofertę) od nich nie
-> zależy; PR 2 (`/praca/`) nie rusza z uploadem bez wyniku 5.2. Testy
+> zależy. **Decyzja zmieniona 2026-10-04 (kolejność):** najpierw cały
+> design (5B PR 2 → 4.5 → 4.6 → 4.7), chmura jednym blokiem na końcu
+> (5.1 → 5.2 → wysyłki 5.5). PR 2 (`/praca/`) powstaje więc z uploadem od
+> razu, z limitem CV jako JEDNĄ stałą `CV_MAX_BYTES`; pomiar 5.2 odbędzie
+> się później na gotowej funkcji (nie na osobnej gałęzi testowej) i może
+> tę stałą obniżyć — §11.7. Warunek, który zostaje: 5.1 i 5.2 przed
+> testami klientki (Etap 7) i przed podaniem jej limitu CV. Zapisy „PR 2
+> nie rusza bez wyniku 5.2" w §9.0 i §10.7 są nieaktualne. Testy
 > dotychczasowych widoków na `nowa.`: bez usterek (pobieżnie); większe
 > poprawki — po całej implementacji, jednym planem.
 
@@ -344,6 +351,9 @@ D21, etykiety i komunikaty pól wspólnych (5A), dopisek typów i limitu
 
 ### 9.0 Z bramki startowej (bez nich nie zamknę PR 2)
 
+> Nieaktualne od 2026-10-04 (decyzja o kolejności — „Warunki startu"):
+> PR 2 nie czeka na 5.2; pomiar odbywa się później, na gotowej funkcji.
+
 - **5.1 wykonane?** Jeśli tak — klucz publiczny Turnstile (osobny commit).
 - **5.2 — wynik pomiaru:** 2 MB czy 1 MB; oraz czym pomiar kodował base64
   (ma znaczenie dla Q3) i czy flaga zgodności z Node jest włączona
@@ -564,9 +574,11 @@ Decyzje Mateusza z 2026-10-04 („wszystko wg rekomendacji"):
 
 1. **Q8** — koszt dodatkowego arkusza przyjęty; rozdzielenie arkuszy
    w PR porządkowym (§10.3).
-2. **Kolejność:** kroki 5.1 i 5.2 nadal przed nami; bez wyniku 5.2 PR 2
-   (`/praca/`) nie rusza. Jeśli pomiaru nie będzie przed następną sesją
-   — najpierw 4.5 (`/o-nas/`), PR 2 po pomiarze.
+2. **Kolejność:** kroki 5.1 i 5.2 nadal przed nami; ~~bez wyniku 5.2
+   PR 2 (`/praca/`) nie rusza~~ — **decyzja zmieniona 2026-10-04:**
+   najpierw cały design (5B PR 2 → 4.5 → 4.6 → 4.7), blok chmury na końcu
+   (5.1 → 5.2 → 5.5); PR 2 powstaje z limitem CV jako stałą, pomiar 5.2
+   później na gotowej funkcji (§11.7).
 3. **Runner CI:** etykieta `ubuntu-latest` zmienia wersję systemu od
    2026-10-19 — workflowy z przeglądarkami i pomiarem (CI, baseline'y
    linux, pomiar LHCI, smoke) dostają przypiętą wersję `ubuntu-24.04`
@@ -574,3 +586,233 @@ Decyzje Mateusza z 2026-10-04 („wszystko wg rekomendacji"):
 4. Zaległe z 5A (analiza 5A §11.7): gradient hero „Sprzedaj z nami" na
    telefonie zostaje (cena kontrastu AA); utwardzenie `chrome-footer`
    i korekta komentarza bramki ruchu — w PR porządkowym.
+
+## 11. Uzupełnienia po implementacji — PR 2 (`feat/praca`)
+
+PR 2 realizuje Q1 (para kontaktowa), Q3 (base64 natywnie z wykrywaniem
+w czasie działania), Q5 (potwierdzenie bez deklaracji czasu), Q7
+(znaczenie wyłączonego przełącznika) oraz F57–F70. Limit CV to jedna
+stała `CV_MAX_BYTES`; pomiar czasu procesora (krok 5.2) odbędzie się na
+tej funkcji po założeniu zasobów w chmurze — §11.7.
+
+### 11.1 Co powstało
+
+- `src/lib/cv-file.ts` (nowy) — `CV_MAX_BYTES`, `CV_TYPES` (rozszerzenie,
+  etykieta, sygnatura, MIME), `detectCvSignature`, `cvTypeOf`,
+  `sanitizeCvName`, `formatFileSize`, teksty i atrybuty liczone ze stałych
+  (`cvAccept()`, `cvTypesLabel()`, `cvLimitLabel()`), reguła `checkCv`.
+- `src/lib/mail-attachment.ts` (nowy) — `pickBase64Encoder` (dwie ścieżki
+  natywne, wykrywane w czasie działania), `withAttachment` (doklejenie
+  załącznika do zserializowanej wiadomości).
+- `src/lib/contact-form.ts` — rodzaj `praca` aktywny (za przełącznikiem:
+  `isActiveFormKind(value, showPraca)`), `CV_REQUEST_MAX_BYTES`,
+  `FUTURE_RECRUITMENT_CONSENT`, pola `cv` / `cv-type` / `cv-size`,
+  `PracaData`, typ `CvCheck` i trzeci parametr `validateForm`, mail C.
+- `functions/api/kontakt.ts` — próg górny żądania przed czytaniem treści,
+  próg formularzy tekstowych i zakaz plików po odczytaniu rodzaju, opis
+  pliku składany przez funkcję (sygnatura z pierwszych bajtów), kodowanie
+  na końcu, treść żądania z doklejonym załącznikiem, log ścieżki kodowania.
+- `src/lib/routes.ts` — `isSitemapPath` (filtr sitemapy za przełącznikiem);
+  `astro.config.mjs` korzysta z niego.
+- `src/components/forms/`: `FormFile.astro`, `FormMail.astro`,
+  `form-file.ts` (nowe); `FormFrame.astro` (propy `consent`, `contact`,
+  `enctype`; potwierdzenie bez czasu przez `doneUntimed` w tekstach),
+  `form-ui.ts` (opis pól plikowych w `readRaw()`, odpowiedź 413,
+  `initForms(root, checkCv)`), `forms-copy.ts` (`PRACA_FORM_COPY`).
+- `src/pages/praca.astro` + `src/components/sections/jobs/` (`JobsHero`,
+  `JobsForm`, `JobsClosed`, `jobs-copy.ts`, `jobs-config.ts`).
+- Testy: unit `cv-file` (nowy, 23), `site-flags` (nowy, 7),
+  `contact-form` (80, +17), `contact-endpoint` (44, +15); e2e
+  `praca.spec.ts` (nowy, 24 testy); visual `praca.spec.ts` (nowy,
+  4 zrzuty × 6 profili); `tests/helpers/forms.ts` — `recordPosts`
+  zapisuje pola plikowe (nazwa, rozmiar, typ); `/praca/` w obu
+  `lighthouserc*.cjs`.
+
+### 11.2 Rozstrzygnięcia w trakcie (ciąg dalszy §2 i §10.2)
+
+| # | Temat | Rozstrzygnięcie |
+| --- | --- | --- |
+| F81 | **Pole pliku: jedna etykieta zamiast strefy-etykiety** (§3.3 pkt 1 zakładał `<label>` „CV" + strefę jako drugi `<label>` i ukryty `input`) | natywny `input type="file"` leży NA CAŁEJ strefie (przezroczysty, fokusowalny). Dwie etykiety jednego pola dawały w axe wynik „do przeglądu" i ryzyko, że czytnik na iOS przeczyta tylko jedną. Zyski uboczne: klik i dotyk w dowolnym miejscu strefy bez pośrednictwa etykiety, upuszczenie pliku działa NATYWNIE także bez JS. Dopisek typów i limitu jest opisem pola (`aria-describedby`), napisy dublujące natywną kontrolkę („Wybierz plik", nazwa pliku) są ukryte przed czytnikami — nazwę wybranego pliku ogłasza samo pole |
+| F82 | F70 — „lub przeciągnij go tutaj" tylko po uzbrojeniu skryptem | po F81 upuszczenie działa bez JS, więc dopisek jest widoczny od 1025 px zawsze (bez przeskoku układu po uzbrojeniu). Moduł `form-file.ts` dokłada podświetlenie strefy i jedną ścieżkę dla wszystkich przeglądarek (pierwszy z upuszczonych plików → pole → `change`) |
+| F83 | **Reguły pliku poza bundlem pozostałych formularzy** (§5 obiecywał „`form-ui` bez dalszego wzrostu") | pierwsza wersja trzymała reguły pliku w `validateForm` — wspólny chunk rósł o 1 483 B brutto / 666 B gzip na `/kontakt/`, `/sprzedaj-z-nami/` i detalu. Reguły przeniesione do `src/lib/cv-file.ts`, a `validateForm` dostaje kontrolę pliku jako PARAMETR (`checkCv`): przekazują ją strona `/praca/` i funkcja — nadal jedna reguła po obu stronach. Wzrost wspólnego chunku: 467 B / 203 B gzip (opis pól plikowych, 413, gałąź `praca`). Skutek: stała `CV_MAX_BYTES` żyje w `cv-file.ts`, nie w `contact-form.ts` (F60 wskazywał ten drugi plik) |
+| F84 | Cykl importów | `cv-file.ts` importował wartość z `contact-form.ts`, a ten — wartość z `cv-file.ts`; stała liczona na poziomie modułu wychodziła `NaN` (wyłapał unit). `cv-file.ts` bierze z `contact-form.ts` wyłącznie typy; `CV_REQUEST_MAX_BYTES` liczy się w `contact-form.ts` |
+| F85 | Kiedy plik jest walidowany | przy WYSYŁCE, jak pozostałe pola (komunikat + fokus na polu pod paskiem); wybór pliku pokazuje od razu nazwę i rozmiar w strefie. Kontrola przy wyborze wymagałaby drugiej ścieżki zapalania błędów obok `form-ui.ts` |
+| F86 | Kolejność kontroli pliku | brak pliku → `cv`; rozszerzenie spoza listy → `cv-type`; rozmiar ponad limit → `cv-size`; plik pusty albo sygnatura niezgodna z rozszerzeniem (tylko funkcja) → `cv-type`. Zły typ wygrywa z rozmiarem (plik i tak nie do przyjęcia). Odpowiedź 413 funkcji zapala `cv-size`, gdy formularz ma takie opakowanie |
+| F87 | Opis pliku po stronie funkcji | funkcja KASUJE pola tekstowe `cv:name` / `cv:size` / `cv:sig` dosłane przez klienta i składa opis sama z obiektu pliku; sygnaturę czyta z pierwszych 8 bajtów (wycinek), pełny plik — dopiero po pułapce, walidacji, sekretach, Turnstile i liczniku. Test mierzy rozmiary odczytów: żądanie odsiane czyta najwyżej 8 bajtów |
+| F88 | Brak natywnego kodowania na platformie | 503 `encoder` tylko dla `praca`, sprawdzane razem z sekretami (przed Turnstile — nie zużywa tokenu ani licznika); pozostałe formularze działają. Funkcja loguje ścieżkę kodowania i rozmiar pliku (bez nazwy pliku i danych kandydata) — pomiar 5.2 ma wiedzieć, co mierzy |
+| F89 | Nazwa załącznika (F64) | bez ścieżki, znaki diakrytyczne → litery podstawowe, wszystko spoza `[A-Za-z0-9._-]` → `-`, do 80 znaków, rozszerzenie z walidacji; nazwa pusta po oczyszczeniu (np. zapis niełaciński) → `CV.{rozszerzenie}` |
+| F90 | Mail C | temat: dotychczasowy prefiks + „zgłoszenie do pracy"; nagłówek i etykiety w kolejności maila dotychczasowej strony (kandydat, e-mail, telefon, treść — pomijana, gdy pusta), linia „CV: nazwa (rozmiar)", zgoda na przyszłe rekrutacje Tak / Nie + brzmienie; bez nagłówka „Dane kontaktowe" i bez linii zgody marketingowej; stopka jak w pozostałych |
+| F91 | **Zdjęcie pod szklanym paskiem (telefon, tablet) a kontrast logo i przycisku menu** | design kładzie zdjęcie pod pasek; logo i kreski przycisku menu są granatowe. POMIAR (kontrast granatu względem każdego piksela tła w prostokącie elementu; mediana i 5. percentyl; 7 rozmiarów okna od 320×568 do 1024×768, Chromium i WebKit): bez korekty przycisk menu na tablecie 2,20–2,65:1 (mediana; 5. percentyl do 1,80:1) — poniżej 3:1 wymaganych dla elementów interfejsu; telefon 3,7–4,8:1. **Wdrożone:** pas zdjęcia pod paskiem rozjaśniony kolorem tła strony (krycie .5, wyłącznie na wysokości paska — poniżej paska zdjęcie bez zmian). Po zmianie: 5. percentyl ≥ 4,58:1, mediana ≥ 4,96:1 we wszystkich rozmiarach i obu silnikach. Axe tego nie liczy — pomiar jest jedynym strażnikiem; chrome bez zmian |
+| F92 | Ramka formularza po zmianach (wymóg: HTML trzech istniejących formularzy bez zmian) | porównanie odciskiem na `build:visual` (hashe nazw zasobów znormalizowane): `/kontakt/`, `/sprzedaj-z-nami/`, detal oferty, „/", `/oferty/`, lista rodzaju, 404 — identyczne. Po drodze wyrażenie warunkowe w miejscu elementu zgubiło jedną spację za slotem telefonu w potwierdzeniu (bez znaczenia dla wyglądu) — przywrócona jawnie |
+| F93 | Potwierdzenie i sloty (Q5, F66) | potwierdzenie: nagłówek + jedno zdanie, bez czasu odpowiedzi i bez kontaktu; adres e-mail biura stoi w trzech miejscach: komunikat o za dużym pliku, błąd wysyłki, „Wolisz mailem?" pod przyciskiem (to zdanie znika bez JS razem ze slotem) |
+| F94 | Stan wyłączonego przełącznika (Q7) | strona: `JobsClosed` (nagłówek, zdanie, przycisk do kontaktu), `noindex`, bez canonicala i preloadów zdjęcia; poza sitemapą i nawigacją; funkcja: `form=praca` → 400 jak nieznany rodzaj; strona nadal jest celem powrotu po wysyłce bez JS. Pilnuje unit `site-flags` (moduły ładowane z podmienionym configiem) + jednorazowa kontrola builda z wyłączonym przełącznikiem (wynik zgodny). E2E biegają na przełączniku włączonym — przestawienie go wymaga przeglądu speców z listą tras statycznych |
+| F95 | Układ desktop | imię, e-mail, telefon w jednym rzędzie: para kontaktowa zajmuje dwie kolumny siatki i trzyma tę samą szczelinę, podpowiedź i błąd pary pod jej dwiema kolumnami; treść (dwie kolumny) obok strefy pliku (ta sama wysokość — także gdy pod strefą stoi komunikat); jeden checkbox i nota w szerokości czytelnej linii zamiast trzech kolumn zgód z designu; przycisk i „Wolisz mailem?" w jednym wierszu |
+| F96 | Style pola pliku | w komponencie `FormFile.astro` (scoped), nie w `forms.css` — wspólny arkusz formularzy ładuje się też na trasach ofert (lekcja §10.3) |
+
+### 11.3 Budżet (pomiar jak §10.3, `pnpm build:visual`; baza = `main` zbudowany tą samą komendą)
+
+| Zasób | main | PR 2 | różnica |
+| --- | --- | --- | --- |
+| `/praca/` `script` (brutto / gzip -9) | 8 205 / 3 393 B, 4 pliki (szkielet) | 16 852 / 7 329 B, 6 plików | chrome + `form-ui` 6 598 / 2 876 B + skrypt strony 2 037 / 1 051 B (pole pliku i reguły pliku) |
+| `/praca/` CSS | 27 685 / 6 064 B, 1 arkusz | 40 837 / 9 578 B, 3 arkusze | wspólny arkusz formularzy 7 079 / 1 865 B + arkusz strony 6 073 / 1 649 B |
+| `/praca/` HTML | 16 989 / 3 486 B | 26 644 / 6 524 B | |
+| `form-ui.*.js` (wspólny chunk) | 6 131 / 2 673 B | 6 598 / 2 876 B | + 467 / + 203 B |
+| `/kontakt/` `script` | 14 378 / 6 128 B | 14 857 / 6 340 B | + 479 / + 212 B |
+| `/sprzedaj-z-nami/` `script` | 16 744 / 7 498 B | 17 223 / 7 709 B | + 479 / + 211 B |
+| detal oferty `script` | 21 843 / 9 309 B | 22 322 / 9 519 B | + 479 / + 210 B |
+| wspólny arkusz formularzy (`/kontakt/`, `/sprzedaj-z-nami/`, trasa ofert) | 7 003 / 1 829 B | 7 079 / 1 865 B | + 76 / + 36 B (reguła slotu adresu) |
+| „/", `/oferty/`, lista rodzaju, 404, szkielety | | | `script` + 12 B (moduł przełączników), CSS bez zmian |
+| wyspa listy `SearchIsland` | 38 653 B | 38 653 B | co do bajta |
+| HTML `/kontakt/`, `/sprzedaj-z-nami/`, detalu, „/", `/oferty/`, 404 | | | identyczny (odcisk) |
+
+**LHCI lokalnie (1 przebieg, oba configi — asercje czyste na 11
+adresach):** `/praca/` `script` 9 696 B = **24 % bramki 40 000 B**,
+`total` 176 KB mobile / 197 KB desktop, LCP mobile 1 964 ms (element LCP
+= zdjęcie hero; margines ok. 1,24 s do 3 200 ms), desktop 488 ms, TBT 0,
+CLS 0,000 / 0,003, zero podmiotów trzecich. Pozostałe: detale `script`
+12 256 B (31 %; było 30 %), LCP mobile 2 118 / 2 570 / 2 711 / 2 723 ms
+(mieszkanie / dom / działka / lokal — w dotychczasowym rozrzucie), lista
+rodzaju 29 003 B (73 %), `/kontakt/` 8 670 B (22 %), `/sprzedaj-z-nami/`
+12 697 B (32 %), „/" 10 590 B (26 %). Progi nietknięte. Arkusz blokujący
+na trasie ofert urósł o 36 B gzip — bez wpływu na pomiar z §10.3.
+
+Czas funkcji: ścieżka `praca` robi kolejno rozbiór `multipart` (kod
+platformy), odczyt 8 bajtów sygnatury, walidację, a po Turnstile
+i liczniku — jeden odczyt pliku do pamięci, base64 natywnie i sklejenie
+treści żądania (bez serializacji załącznika). To jest to, co zmierzy
+krok 5.2 (§11.7).
+
+### 11.4 Weryfikacja lokalna
+
+- format, lint, typecheck — czyste (2 podpowiedzi zastane, spoza zakresu);
+  unit 539 testów w 40 plikach: 537 zielonych + 2 skip przy `dist/`
+  z `build:visual` (532 + 7 skip bez `dist/media`); build 89 stron;
+  `test:dist` 6/6.
+- `pnpm test:e2e` na 6 profilach: **643 zielone** (1 001 pominięć
+  profili), 0 czerwonych; nowy `praca.spec.ts` = 24 testy (52 przebiegi
+  na 3 profilach); axe 0 naruszeń w pięciu stanach formularza (wyjściowy,
+  błędy, za duży plik, plik wybrany, potwierdzenie; desktop i Pixel 5;
+  allowlista PUSTA).
+- `test:visual`: **24 czerwone OCZEKIWANE** (nowe zrzuty `praca-*` bez
+  baseline'u), 193 zielone. Drugi przebieg nowych zrzutów na zapisanych
+  plikach: 24/24 stabilne (zrzuty robocze usunięte — baseline'y powstają
+  wg świętej kolejności). Pomiar progiem 0 pozostałych speców
+  (`kontakt`, `sprzedaj`, `oferta`, `chrome`, `home`, `oferty`,
+  `not-found`): 191 identycznych; różni się wyłącznie zastany
+  `not-found-top` na dwóch profilach desktop (828 i 877 px, pod progiem —
+  stan z 4.1, bez związku z PR 2).
+- Jednorazowy build z wyłączonym przełącznikiem: strona bez formularza,
+  `noindex`, poza sitemapą i nawigacją (F94); przełącznik przywrócony.
+
+### 11.5 PLACEHOLDER (U9)
+
+`jobs-copy.ts`: eyebrow, nagłówek (dwie frazy), opis zdjęcia, teksty
+stanu wyłączonego. `forms-copy.ts` (`PRACA_FORM_COPY`): etykieta
+i placeholder treści, „Wybierz plik", „lub przeciągnij go tutaj", „Nie
+wybrano pliku", trzy komunikaty pola pliku, „Wolisz mailem? Wyślij CV na
+adres:", zdanie o celu w nocie, „Wyślij zgłoszenie", potwierdzenie
+(nagłówek + zdanie, bez deklaracji czasu), błąd wysyłki. **Nota
+rekrutacyjna i brzmienie zgody na przyszłe rekrutacje
+(`FUTURE_RECRUITMENT_CONSENT` w `contact-form.ts`) — do weryfikacji
+prawnej razem z polityką (4.7).** Nie są placeholderami: etykiety
+i komunikaty pól wspólnych, dopisek typów i limitu (liczony ze stałych).
+
+### 11.6 Co sprawdzić na `nowa.` i na fizycznym telefonie
+
+Lista z §8 pkt 1–4 i 8–10 (wybór pliku!) + po implementacji:
+
+1. **iOS (Safari) — wybór pliku:** dotknięcie strefy otwiera arkusz
+   systemowy; czy jest w nim „Wybierz pliki" (a nie tylko zdjęcia); PDF
+   z aplikacji Pliki i z iCloud Drive (plik niepobrany lokalnie) —
+   w strefie pojawia się nazwa i rozmiar; plik `.pages` albo zdjęcie →
+   po wysyłce komunikat o typie.
+2. **Android (Chrome) — wybór pliku:** okno wyboru dokumentów, plik
+   z Dysku Google i z „Pobrane"; powrót z okna nie przeładowuje strony
+   i nie gubi wpisanych pól; rozmiar w strefie zgadza się z plikiem.
+3. **Strefa pliku:** trafialność kciukiem (cała strefa reaguje, nie tylko
+   granatowy przycisk), długa nazwa pliku kończy się wielokropkiem,
+   rozmiar zostaje widoczny.
+4. **Plik większy niż limit:** komunikat pod strefą, adres e-mail
+   klikalny (otwiera pocztę), pola i plik zachowane; po wybraniu
+   mniejszego pliku komunikat znika.
+5. **Zdjęcie pod paskiem (telefon, tablet):** logo i przycisk menu
+   czytelne nad rozjaśnionym pasem zdjęcia — także w słońcu; granica
+   rozjaśnienia niewidoczna pod dolną krawędzią paska przy przewijaniu.
+6. **Desktop:** przeciągnięcie pliku z pulpitu na strefę (podświetlenie,
+   nazwa w strefie); upuszczenie OBOK strefy otwiera plik w karcie —
+   zachowanie przeglądarki, do oceny, czy przeszkadza.
+7. **Klawiatura ekranowa:** pole treści i przycisk wysyłki nie chowają
+   się pod klawiaturą; po błędzie pole z komunikatem stoi pod paskiem.
+8. **Na `nowa.` DO kroku 5.1:** wysyłka z plikiem kończy się komunikatem
+   błędu z adresem e-mail; w narzędziach przeglądarki odpowiedź **503**
+   z treścią JSON `config` (nie 411, nie 413). Plik nieco poniżej limitu
+   też ma dać 503 — gdyby wyszło 413, narzut żądania jest większy niż
+   założony zapas (do zgłoszenia przed 5.2).
+9. **PO 5.1 i 5.2 (wysyłki 5.5 — Mateusz):** mail C z załącznikiem, który
+   się otwiera (PDF, DOC, DOCX), z nazwą bez polskich znaków i właściwym
+   typem; linia „CV: nazwa (rozmiar)"; „Odpowiedz" pisze do kandydata.
+
+### 11.7 Pomiar limitu CV (krok 5.2) na tej funkcji
+
+Pomiar odbywa się na gotowej funkcji `/api/kontakt` z formularza
+`/praca/` — na podglądzie PR-a albo na `nowa.`, po kroku 5.1.
+
+1. **Środowisko (Preview albo Production projektu Pages):** sekrety
+   funkcji z kroku 5.1 (usługa pocztowa, Turnstile) ustawione w TYM
+   środowisku; klucz publiczny Turnstile wpisany w `form-config.ts`
+   (osobny commit — bez niego wysyłka kończy się odmową Turnstile, zanim
+   funkcja dotknie pliku); zmienna `KONTAKT_TO` = własny adres Mateusza
+   (wysyłki pomiarowe nie idą na skrzynkę biura); binding licznika
+   opcjonalny.
+2. **Plik:** PDF o rozmiarze DOKŁADNIE limitu (pierwsze bajty to
+   sygnatura PDF, reszta dowolna) — najdroższy przypadek, który funkcja
+   przyjmuje. Plik o bajt większy ma dać komunikat w przeglądarce, bez
+   żądania.
+3. **Wysyłki:** 10 zgłoszeń z prawdziwej przeglądarki (formularz musi
+   zdobyć token Turnstile), w odstępach kilkunastu sekund.
+4. **Odczyt:** podgląd logów funkcji na żywo w panelu projektu Pages
+   (albo `wrangler pages deployment tail`) — każda wysyłka zostawia linię
+   `kontakt: załącznik … B, base64 przez toBase64 | Buffer` (która
+   ścieżka kodowania działa na platformie) oraz wynik wywołania; czas
+   procesora i przekroczenia limitu — w metrykach funkcji projektu
+   [DO SPRAWDZENIA w panelu: dokładne położenie widoku]. Przekroczenie
+   limitu czasu procesora przeglądarka widzi jako odpowiedź z kodem błędu
+   platformy 1102 (treść NIE jest naszym JSON-em — nasze 503 niosą
+   `config`, `quota` albo `encoder`).
+5. **Wynik ma dwie wartości:** 10/10 bez błędu 1102 → limit zostaje;
+   jakikolwiek błąd 1102 → limit 1 MB.
+6. **Przy wyniku 1 MB:** jedna zmiana — stała `CV_MAX_BYTES` w
+   `src/lib/cv-file.ts`. Dopisek w strefie, komunikat, kontrola
+   w przeglądarce, progi funkcji i testy liczą się z niej same. Do
+   regeneracji: zrzuty z dopiskiem limitu — `praca-full`,
+   `praca-form-errors`, `praca-form-file` × 6 profili (oba komplety,
+   święta kolejność); `praca-form-done` bez zmian. Potem ponowny pomiar
+   plikiem 1 MB.
+7. Gdyby log pokazał `503 encoder` — platforma nie ma żadnej z dwóch
+   ścieżek kodowania (flaga zgodności z Node w ustawieniach funkcji
+   projektu — krok 5.1 pkt 5).
+
+### 11.8 Decyzje i rzeczy do wykonania poza kodem (Mateusz)
+
+Decyzje Mateusza z 2026-10-04 („wszystko wg rekomendacji") — bez zmian
+w kodzie:
+
+1. **F81 — pole pliku jako natywny input na strefie** (odejście od
+   zapisu „strefa-etykieta" z §3.3): ZOSTAJE. Potwierdzenie na telefonie
+   (§11.6 pkt 1–3) przy testach po całej implementacji; gdyby systemowy
+   arkusz wyboru zachowywał się gorzej niż przy etykiecie — pozycja na
+   listę poprawek.
+2. **F91 — rozjaśnienie zdjęcia pod paskiem:** ZOSTAJE (wynika z pomiaru
+   kontrastu); ocena wyglądu na telefonie — lista poprawek po całej
+   implementacji.
+3. **F88 — log ścieżki kodowania i rozmiaru pliku w funkcji:** ZOSTAJE na
+   stałe (nie niesie nazwy pliku ani danych kandydata; przydaje się przy
+   pomiarze 5.2 i przy diagnozie nieudanych wysyłek).
+4. **Upuszczenie pliku obok strefy** (przeglądarka otwiera plik w karcie):
+   bez obsługi; ewentualna blokada na poziomie strony — pozycja na listę
+   poprawek, jeśli test na komputerze pokaże, że przeszkadza.
+5. **Teksty `/praca/`** zostają jako PLACEHOLDER; nota rekrutacyjna
+   i brzmienie zgody na przyszłe rekrutacje — weryfikacja prawna razem
+   z polityką (4.7).
+6. Blok chmury po zakończeniu widoków: 5.1 → 5.2 (§11.7) → 5.5; zapis
+   w `docs/optional-todos.md`.

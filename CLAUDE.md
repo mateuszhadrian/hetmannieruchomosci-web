@@ -1091,15 +1091,34 @@ offer-lightbox.ts` (chunk z dynamicznego `import()` w `offer-detail.ts`,
   TBT 0, CLS ≤ 0,007, zero podmiotów trzecich; „/" `script` 10 576 B
   (26 %), `/kontakt/` 8 312 B (21 %). Progi nietknięte.
 
-- **Etap 5 / 5B PR 1 (formularz zapytania przy ofercie) — W TOKU**
-  (2026-10-04, gałąź `feat/oferta-zapytanie`, mini-analiza
-  `docs/analiza-formularze-b.md` zaakceptowana wg rekomendacji Q1–Q8,
-  uzupełnienia §10; kod i testy gotowe lokalnie, ZOSTAŁO: workflow
-  baseline'ów linux, baseline'y darwin, PR, merge, `prod-smoke`; potem
-  PR 2 — `/praca/` z CV, który CZEKA na wynik kroku 5.2: limit CV 2 MB
-  albo 1 MB; bez pomiaru następną sesją jest 4.5 `/o-nas/`). Kroki 5.1 (chmura) i 5.2 (pomiar CPU)
-  nadal NIE są wykonane — `TURNSTILE_SITE_KEY` pusty, na `nowa.` wysyłka
-  kończy się komunikatem błędu (stan oczekiwany).
+- **Etap 5 / 5B PR 1 (formularz zapytania przy ofercie) — WYKONANY**
+  (2026-10-04, PR #27 zmergowany 11:28 UTC, commit `b8f3c70`; checki
+  PR-a, `ci.yml` na main (bieg 37198858195) i `prod-smoke` zielone;
+  baseline'y linux + darwin w PR: 36 PNG na platformę — 24 zregenerowane
+  `oferta-*` + 12 nowych, żaden inny baseline nietknięty; gałąź
+  `feat/oferta-zapytanie`, mini-analiza `docs/analiza-formularze-b.md`
+  zaakceptowana wg rekomendacji Q1–Q8, uzupełnienia §10). Pierwszy bieg
+  CI na PR miał czerwony `e2e` WYŁĄCZNIE z braku baseline'ów linux (stan
+  oczekiwany przed workflowem); lokalny `pnpm test:visual` po
+  aktualizacji darwin pokazał raz czerwony `chrome-footer` na
+  `webkit-iphone-14` (225 px, znana niestabilność; w izolacji zielony,
+  baseline nietknięty). Weryfikacja na `nowa.` po merge'u (same żądania
+  próbne, nic nie wysłano): detal oferty 200 z formularzem i ukrytym
+  numerem, bez hosta Turnstile w HTML; endpoint: pułapka → 200,
+  zgłoszenie bez sekretów → 503 `config`, zły numer → 400
+  `fields: ["offer"]`, wysyłka bez JS → 303 na TEN detal z `#formularz`,
+  `form=praca` → 400, `/oferty/index.json` 200. PR #28 (`94e5d95`,
+  2026-10-04 12:00 UTC): obraz runnera przypięty do `ubuntu-24.04`
+  w `ci.yml`, `update-visual-baselines.yml`, `lhci-measure.yml`
+  i `prod-smoke.yml` (`sync.yml` zostaje na `ubuntu-latest`); `ci.yml` na
+  main po #28 (bieg 37200709778) zielony na trzech jobach, `prod-smoke`
+  zielony. **DECYZJA O KOLEJNOŚCI (Mateusz, 2026-10-04):** design
+  w całości przed chmurą — 5B PR 2 → 4.5 → 4.6 → 4.7, potem blok chmury
+  5.1 → 5.2 → 5.5; `/praca/` powstaje z limitem CV 2 MB jako jedną stałą,
+  pomiar 5.2 później na gotowej funkcji (warunek: 5.1 i 5.2 przed
+  testami klientki i przed podaniem jej limitu CV). Kroki 5.1 (chmura)
+  i 5.2 (pomiar CPU) nadal NIE są wykonane — `TURNSTILE_SITE_KEY` pusty,
+  na `nowa.` wysyłka kończy się komunikatem błędu (stan oczekiwany).
   `src/lib/contact-form.ts`: rodzaj `oferta` aktywny (`ACTIVE_FORM_KINDS`
   = `kontakt`, `sprzedaj`, `oferta`), `OFFER_NUMBER_RE` (W PARZE
   z `OfferSchema.number`), pole `offer` w `validateForm`, `isFormPagePath`
@@ -1159,6 +1178,85 @@ offer-lightbox.ts` (chunk z dynamicznego `import()` w `offer-detail.ts`,
   zmienia wersję systemu od 2026-10-19 — workflowy z przeglądarkami
   i pomiarem dostają `ubuntu-24.04` osobnym małym PR-em
   (`chore/ci-pin-runner`, `docs/optional-todos.md`). Progi nietknięte.
+
+- **Etap 5 / 5B PR 2 (`/praca/` z formularzem rekrutacyjnym i CV) —
+  W TOKU** (2026-10-04, gałąź `feat/praca`, decyzje Q1, Q3, Q5, Q7
+  i F57–F70 z `docs/analiza-formularze-b.md`, uzupełnienia §11; kod
+  i testy gotowe lokalnie, ZOSTAŁO: workflow baseline'ów linux,
+  baseline'y darwin, PR, merge, `prod-smoke`; następna sesja = 4.5
+  `/o-nas/`). Kroki 5.1 i 5.2 NIE są wykonane — na `nowa.` wysyłka
+  kończy się komunikatem błędu (stan oczekiwany); pomiar limitu CV:
+  analiza §11.7. `src/lib/cv-file.ts` (nowy): **`CV_MAX_BYTES` = 2 MB —
+  JEDYNE miejsce z tą liczbą** (dopisek w strefie, komunikat, kontrola
+  w przeglądarce i progi funkcji liczą się z niej), `CV_TYPES` (PDF, DOC,
+  DOCX: rozszerzenie, sygnatura, MIME), `detectCvSignature`,
+  `sanitizeCvName`, `formatFileSize`, `checkCv`. `src/lib/contact-form.ts`:
+  rodzaj `praca` aktywny (`isActiveFormKind(value, showPraca)`),
+  `CV_REQUEST_MAX_BYTES`, `FUTURE_RECRUITMENT_CONSENT`, pola błędów `cv` /
+  `cv-type` / `cv-size`, `validateForm(kind, raw, checkCv)` — kontrola
+  pliku jako PARAMETR (reguły pliku nie trafiają do bundla pozostałych
+  formularzy), mail C w `buildMail` (temat „zgłoszenie do pracy", linia
+  „CV: nazwa (rozmiar)", zgoda na przyszłe rekrutacje, bez zgody
+  marketingowej). `src/lib/mail-attachment.ts` (nowy): base64 natywnie
+  z wykrywaniem w czasie działania (`Uint8Array.prototype.toBase64`,
+  potem globalny `Buffer`; bez importu modułów Node), `withAttachment`
+  (załącznik DOKLEJANY do zserializowanej wiadomości).
+  `functions/api/kontakt.ts`: próg górny żądania przed czytaniem treści
+  (413), po odczytaniu rodzaju formularz tekstowy ponad `FORM_MAX_BYTES`
+  albo z plikiem → 413; opis pliku składa funkcja (pola `cv:*` od
+  klienta kasowane; sygnatura z pierwszych 8 bajtów); brak kodowania →
+  503 `encoder` tylko dla `praca`; plik czytany w całości i kodowany NA
+  KOŃCU (po pułapce, walidacji, sekretach, Turnstile i liczniku); log
+  ścieżki kodowania bez nazwy pliku i danych kandydata.
+  `src/components/forms/`: `FormFile.astro` (natywny `input type="file"`
+  NA CAŁEJ strefie — jedna etykieta, upuszczenie działa bez JS; trzy
+  komunikaty jako zagnieżdżone opakowania `data-f`; style w komponencie),
+  `FormMail.astro` (slot `a[data-mail="biuro"]` w komunikatach),
+  `form-file.ts` (nazwa i rozmiar w strefie, przeciąganie, reset);
+  `FormFrame` + propy `consent`, `contact`, `enctype` i potwierdzenie bez
+  czasu odpowiedzi (`doneUntimed`); `form-ui.ts`: opis pól plikowych
+  w `readRaw()`, odpowiedź 413 → błąd rozmiaru, `initForms(root,
+checkCv)`; `PRACA_FORM_COPY`. Widok: `src/pages/praca.astro` +
+  `sections/jobs/` (`JobsHero`, `JobsForm`, `JobsClosed`, `jobs-copy.ts`,
+  `jobs-config.ts`) — pasek stały, bez ruchu; zdjęcie `eager` +
+  `fetchpriority` + dwa `preload` z `media` (plik `-m` poniżej 768 px);
+  JEDYNY checkbox = opcjonalna zgoda na przyszłe rekrutacje (`future`).
+  **`SHOW_PRACA = false`**: poza menu także poza sitemapą
+  (`isSitemapPath` w `routes.ts`), `noindex`, strona bez formularza
+  (`JobsClosed`), funkcja odrzuca `form=praca` — pilnuje unit
+  `site-flags`. Rozstrzygnięcia F81–F96 w analizie §11.2, w tym F91:
+  zdjęcie leży na telefonie i tablecie POD szklanym paskiem — pas pod
+  paskiem rozjaśniony z POMIARU kontrastu (przycisk menu na tablecie
+  2,2–2,65:1 → ≥ 4,58:1). Testy: unit `cv-file` (nowy, 23), `site-flags`
+  (nowy, 7), `contact-form` (80, +17), `contact-endpoint` (44, +15); e2e
+  nowy `praca.spec.ts` (24 testy; treść `chromium-1920`, formularz także
+  `chromium-pixel-5` i `webkit-iphone-14`); `recordPosts` zapisuje pola
+  plikowe; visual nowy `praca.spec.ts` (`praca-full`,
+  `praca-form-errors`, `praca-form-file`, `praca-form-done` × 6 profili
+  = 24 PNG na platformę); `/praca/` w obu `lighthouserc*.cjs`.
+  Weryfikacja lokalna: format/lint/typecheck, unit 539 (537 zielonych +
+  2 skip), build 89 stron, `test:dist` 6/6, e2e 643 (+1 001 skip profili)
+  na 6 profilach — zielone, axe 0 naruszeń w pięciu stanach formularza;
+  `test:visual` 24 czerwone OCZEKIWANE (nowe zrzuty bez baseline'u), 193
+  zielone; progiem 0 bez różnic: `kontakt-*`, `sprzedaj-*`, `oferta-*`,
+  `chrome-*`, `home-*`, `oferty-*` (różni się tylko zastany
+  `not-found-top` na dwóch profilach, stan z 4.1). HTML `/kontakt/`,
+  `/sprzedaj-z-nami/` i detalu po zmianie ramki identyczny (odcisk na
+  `build:visual`). BUDŻET (`build:visual`, baza = main): `/praca/`
+  `script` 16 852 B brutto / 7 329 B gzip, CSS 40 837 / 9 578 B
+  w 3 arkuszach; wspólny `form-ui` 6 598 B (+467 B / +203 B gzip — także
+  na `/kontakt/`, `/sprzedaj-z-nami/` i detalu); wspólny arkusz
+  formularzy +76 B; wyspa listy co do bajta (38 653 B). LHCI lokalnie
+  (oba configi, asercje czyste na 11 adresach): `/praca/` `script`
+  9 696 B = 24 % bramki, `total` 176 KB mobile / 197 KB desktop, LCP
+  mobile 1 964 ms (element LCP = zdjęcie hero), desktop 488 ms, TBT 0,
+  CLS ≤ 0,003, zero podmiotów trzecich; detale `script` 12 256 B (31 %).
+  Progi nietknięte. DECYZJE 2026-10-04 (wg rekomendacji, analiza §11.8,
+  bez zmian w kodzie): natywne pole pliku na strefie (F81), rozjaśnienie
+  zdjęcia pod paskiem (F91) i log ścieżki kodowania w funkcji (F88)
+  zostają; ocena F81 i F91 na urządzeniach oraz upuszczenie pliku obok
+  strefy — lista poprawek po zakończeniu widoków
+  (`docs/optional-todos.md`).
 
 ## Dokumentacja
 

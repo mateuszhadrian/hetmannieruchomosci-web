@@ -11,13 +11,17 @@
 //
 // Zgoda marketingowa: opcjonalna, odznaczona, bez gwiazdki — formularz
 // wysyła się bez niej. Nota informuje, checkbox zbiera zgodę: nie łączyć.
-// Telefon w komunikatach przez slot antyscrapingowy (`a[data-tel]`).
+// Formularz rekrutacyjny podmienia ją propem `consent` na zgodę na
+// przyszłe rekrutacje (zgody marketingowej nie ma tam wcale).
+// Kontakt w komunikatach przez slot antyscrapingowy: telefon
+// (`a[data-tel]`) albo — `contact="mail"` — adres biura (`a[data-mail]`).
 //
 // `tone="dark"` — formularz na ciemnym tle (zapytanie przy ofercie):
 // klasa `fm-frame--dark` przestawia kolory w forms.css, markup ten sam.
 import { MARKETING_CONSENT, type ActiveFormKind } from "@/lib/contact-form";
 import { POLICY_PATH } from "@/lib/routes";
 import { FORM_ENDPOINT } from "./form-config";
+import FormMail from "./FormMail.astro";
 import FormTel from "./FormTel.astro";
 import { FORM_COPY, RESPONSE_TIME, type FormFrameCopy } from "./forms-copy";
 import "./forms.css";
@@ -33,8 +37,25 @@ interface Props {
   /** Selektor DRUGIEGO elementu przyklejonego pod paskiem (np. kotwice
    *  detalu oferty) — skrypt dosuwa pod niego błędne pole i potwierdzenie. */
   under?: string;
+  /** Jedyny checkbox bloku końcowego (zawsze opcjonalny): `name` pola
+   *  i brzmienie. Domyślnie zgoda marketingowa. */
+  consent?: { name: string; text: string };
+  /** Slot kontaktu w komunikacie błędu wysyłki i w potwierdzeniu. */
+  contact?: "tel" | "mail";
+  /** Formularz z polem pliku: `multipart/form-data` (wysyłka bez JS). */
+  enctype?: "multipart/form-data";
 }
-const { kind, idPrefix, copy, tone = "light", labelledby, under } = Astro.props;
+const {
+  kind,
+  idPrefix,
+  copy,
+  tone = "light",
+  labelledby,
+  under,
+  consent = { name: "marketing", text: MARKETING_CONSENT },
+  contact = "tel",
+  enctype,
+} = Astro.props;
 ---
 
 <div
@@ -48,14 +69,15 @@ const { kind, idPrefix, copy, tone = "light", labelledby, under } = Astro.props;
     data-form={kind}
     method="post"
     action={FORM_ENDPOINT}
+    enctype={enctype}
     aria-labelledby={labelledby}
   >
     <input type="hidden" name="form" value={kind} />
     <slot />
 
     <label class="fm-consent">
-      <input type="checkbox" name="marketing" value="1" />
-      <span>{MARKETING_CONSENT}</span>
+      <input type="checkbox" name={consent.name} value="1" />
+      <span>{consent.text}</span>
     </label>
 
     <p class="fm-note">
@@ -87,7 +109,7 @@ const { kind, idPrefix, copy, tone = "light", labelledby, under } = Astro.props;
 
     <p class="fm-srv" data-form-error role="alert" hidden>
       {copy.serverError}
-      <FormTel />
+      {contact === "mail" ? <FormMail /> : <FormTel />}
     </p>
 
     <button
@@ -105,14 +127,14 @@ const { kind, idPrefix, copy, tone = "light", labelledby, under } = Astro.props;
     <h3 class="fm-done-h" tabindex="-1" data-done-h>{copy.doneHeading}</h3>
     <p class="fm-done-p">
       {copy.doneBefore}
-      <strong>{RESPONSE_TIME}</strong>{copy.doneAfter}
+      {!copy.doneUntimed && <strong>{RESPONSE_TIME}</strong>}{copy.doneAfter}
       {
         /* numer telefonu tylko tam, gdzie potwierdzenie ma zdanie, które
            do niego prowadzi */
         copy.doneCall && (
           <>
             {`${copy.doneCall} `}
-            <FormTel />
+            {contact === "mail" ? <FormMail /> : <FormTel />}{" "}
           </>
         )
       }

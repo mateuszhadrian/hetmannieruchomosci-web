@@ -2,17 +2,29 @@
 // i odpowiedzi z docs/analiza-formularze-a.md §4.2 i analiza-formularze-b.md
 // §3.1. Resend i Turnstile WYŁĄCZNIE jako atrapy `fetch`; magazyn limitu
 // i binding plików statycznych (indeks ofert) = atrapy w pamięci.
+// Zgłoszenie do pracy: pliki CV to bufory budowane w teście; treść żądania
+// do usługi pocztowej jest sprawdzana bajt w bajt.
 // Żaden test nie wykonuje żądania do sieci.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { onRequest } from "../../functions/api/kontakt";
 import {
   CONTACT_FROM_NOTIFY,
   CONTACT_TO,
+  CV_REQUEST_MAX_BYTES,
   FORM_MAX_BYTES,
+  FUTURE_RECRUITMENT_CONSENT,
+  MARKETING_CONSENT,
   OFFER_NOT_IN_INDEX,
 } from "../../src/lib/contact-form";
 import {
+  CV_MAX_BYTES,
+  CV_SIGNATURE_BYTES,
+  CV_TYPES,
+  formatFileSize,
+} from "../../src/lib/cv-file";
+import {
   CONTACT_PATH,
+  JOBS_PATH,
   OFFERS_INDEX_PATH,
   SELL_PATH,
 } from "../../src/lib/routes";
@@ -101,7 +113,7 @@ function stubAssets(index: unknown = INDEX, status = 200) {
  *  przeglądarka) — funkcja rozstrzyga o rozmiarze po nagłówku, zanim
  *  przeczyta treść; `null` = żądanie bez deklaracji rozmiaru. */
 function post(
-  fields: Record<string, string>,
+  fields: Record<string, string | File>,
   headers: Record<string, string | null> = {},
 ): Request {
   const body = new FormData();
@@ -146,6 +158,52 @@ function stubFetch(
   return calls;
 }
 
+// zgłoszenie do pracy — dane SYNTETYCZNE, pliki to bufory z testu
+const PRACA = {
+  form: "praca",
+  name: "Maria Wiśniewska",
+  email: "maria@example.com",
+  phone: "",
+  message: "Od pięciu lat pracuję w sprzedaży.",
+  firma: "",
+  elapsed: "12000",
+  "cf-turnstile-response": "token-z-atrapy",
+};
+const SIG = {
+  pdf: [0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37],
+  ole: [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1],
+  zip: [0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x06, 0x00],
+};
+
+/** Treść pliku: sygnatura + deterministyczne bajty (pełny zakres 0–255,
+ *  żeby kodowanie nie mogło „przejść" na samym ASCII). */
+function fileBytes(sig: number[], size: number): Uint8Array<ArrayBuffer> {
+  const bytes = new Uint8Array(size);
+  for (let i = 0; i < size; i++) bytes[i] = (i * 31 + 7) & 0xff;
+  bytes.set(sig.slice(0, size));
+  return bytes;
+}
+
+function cvFile(
+  name = "CV Maria Wiśniewska.pdf",
+  bytes: Uint8Array<ArrayBuffer> = fileBytes(SIG.pdf, 4096),
+  type = "application/octet-stream",
+): File {
+  return new File([bytes], name, { type });
+}
+
+/** Żądanie z plikiem — `content-length` jak z przeglądarki (plik + pola). */
+function postCv(
+  file: File | null,
+  fields: Record<string, string> = {},
+  headers: Record<string, string | null> = {},
+): Request {
+  return post(
+    { ...PRACA, ...fields, ...(file ? { cv: file } : {}) },
+    { "content-length": String((file?.size ?? 0) + 2048), ...headers },
+  );
+}
+
 const sentMail = (calls: Call[]) => {
   const call = calls.find((c) => c.url === RESEND);
   return call ? JSON.parse(String(call.init.body)) : undefined;
@@ -153,6 +211,7 @@ const sentMail = (calls: Call[]) => {
 
 beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
+  vi.spyOn(console, "log").mockImplementation(() => {});
 });
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -171,15 +230,48 @@ describe("endpoint formularzy: odrzucenia przed wysyłką", () => {
     expect(calls).toHaveLength(0);
   });
 
-  it("za duże żądanie odpada po nagłówku, przed czytaniem treści → 413", async () => {
+  it("żądanie ponad próg górny odpada po nagłówku, przed czytaniem treści → 413", async () => {
     const calls = stubFetch();
-    const request = post(KONTAKT, {
-      "content-length": String(FORM_MAX_BYTES + 1),
+    for (const request of [
+      post(KONTAKT, { "content-length": String(CV_REQUEST_MAX_BYTES + 1) }),
+      postCv(
+        cvFile(),
+        {},
+        {
+          "content-length": String(CV_REQUEST_MAX_BYTES + 1),
+        },
+      ),
+    ]) {
+      const read = vi.spyOn(request, "formData");
+      const res = await onRequest({ request, env: ENV });
+      expect(res.status).toBe(413);
+      expect(await res.json()).toEqual({ ok: false, error: "too-large" });
+      expect(read).not.toHaveBeenCalled();
+    }
+    expect(calls).toHaveLength(0);
+  });
+
+  it("formularz tekstowy ponad swój próg albo z plikiem → 413", async () => {
+    const calls = stubFetch();
+    for (const [fields, length] of [
+      [KONTAKT, FORM_MAX_BYTES + 1],
+      [SPRZEDAJ, CV_REQUEST_MAX_BYTES],
+      [{ ...KONTAKT, cv: cvFile() }, 8192],
+      [{ ...OFERTA, zalacznik: cvFile("x.pdf") }, 8192],
+    ] as const) {
+      const res = await onRequest({
+        request: post(fields, { "content-length": String(length) }),
+        env: ENV,
+      });
+      expect(res.status, fields.form).toBe(413);
+      expect(await res.json()).toEqual({ ok: false, error: "too-large" });
+    }
+    // dokładnie próg formularza tekstowego jeszcze przechodzi
+    const edge = await onRequest({
+      request: post(KONTAKT, { "content-length": String(FORM_MAX_BYTES) }),
+      env: {},
     });
-    const read = vi.spyOn(request, "formData");
-    const res = await onRequest({ request, env: ENV });
-    expect(res.status).toBe(413);
-    expect(read).not.toHaveBeenCalled();
+    expect(edge.status).toBe(503);
     expect(calls).toHaveLength(0);
   });
 
@@ -196,9 +288,9 @@ describe("endpoint formularzy: odrzucenia przed wysyłką", () => {
     expect(calls).toHaveLength(0);
   });
 
-  it("nieznany albo jeszcze nieobsługiwany rodzaj → 400 `form`", async () => {
+  it("nieznany rodzaj → 400 `form`", async () => {
     const calls = stubFetch();
-    for (const form of ["", "inny", "praca"]) {
+    for (const form of ["", "inny", "PRACA"]) {
       const res = await onRequest({
         request: post({ ...KONTAKT, form }),
         env: ENV,
@@ -543,6 +635,368 @@ describe("endpoint formularzy: zapytanie o ofertę", () => {
   });
 });
 
+describe("endpoint formularzy: zgłoszenie do pracy", () => {
+  /** Rozmiary treści czytanych z pliku w trakcie obsługi żądania. */
+  function spyReads() {
+    const sizes: number[] = [];
+    const original = Blob.prototype.arrayBuffer;
+    vi.spyOn(Blob.prototype, "arrayBuffer").mockImplementation(function (
+      this: Blob,
+    ) {
+      sizes.push(this.size);
+      return original.call(this);
+    });
+    return sizes;
+  }
+
+  it("PDF: mail z załącznikiem — nazwa oczyszczona, MIME z rozszerzenia, treść bajt w bajt", async () => {
+    const calls = stubFetch();
+    const bytes = fileBytes(SIG.pdf, 4096);
+    const res = await onRequest({
+      request: postCv(cvFile("CV Maria Wiśniewska.PDF", bytes)),
+      env: ENV,
+    });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+    expect(calls.map((c) => c.url)).toEqual([TURNSTILE, RESEND]);
+
+    // treść żądania jest poprawnym JSON-em
+    const mail = sentMail(calls);
+    expect(mail.from).toBe(CONTACT_FROM_NOTIFY);
+    expect(mail.to).toEqual([CONTACT_TO]);
+    expect(mail.reply_to).toBe("maria@example.com");
+    expect(mail.subject).toMatch(/— zgłoszenie do pracy$/);
+    expect(mail.headers["X-Entity-Ref-ID"]).toMatch(/^[0-9a-f-]{36}$/);
+    expect(mail.attachments).toHaveLength(1);
+    const [attachment] = mail.attachments;
+    expect(Object.keys(attachment)).toEqual([
+      "filename",
+      "content_type",
+      "content",
+    ]);
+    expect(attachment.filename).toBe("CV-Maria-Wisniewska.pdf");
+    // typ z ROZSZERZENIA po weryfikacji — nie z deklaracji przeglądarki
+    expect(attachment.content_type).toBe("application/pdf");
+    expect(Buffer.from(attachment.content, "base64").equals(bytes)).toBe(true);
+
+    expect(mail.text).toContain(
+      `CV:\nCV-Maria-Wisniewska.pdf (${formatFileSize(bytes.length)})`,
+    );
+    expect(mail.text).toContain("Od pięciu lat pracuję w sprzedaży.");
+    expect(mail.text).toContain("Zgoda na przyszłe rekrutacje: Nie");
+    expect(mail.text).toContain(FUTURE_RECRUITMENT_CONSENT);
+    expect(mail.text).toContain(`Strona: ${HOST}${JOBS_PATH}`);
+    for (const part of [mail.text, mail.html]) {
+      expect(part).not.toContain(MARKETING_CONSENT);
+      expect(part).not.toContain("informacje handlowe");
+    }
+  });
+
+  it("plik o rozmiarze DOKŁADNIE limitu: przechodzi, treść bajt w bajt", async () => {
+    const calls = stubFetch();
+    const bytes = fileBytes(SIG.pdf, CV_MAX_BYTES);
+    const request = postCv(cvFile("cv.pdf", bytes));
+    expect(Number(request.headers.get("content-length"))).toBeLessThanOrEqual(
+      CV_REQUEST_MAX_BYTES,
+    );
+    const res = await onRequest({ request, env: ENV });
+    expect(res.status).toBe(200);
+    const body = String(calls.find((c) => c.url === RESEND)?.init.body);
+    const mail = JSON.parse(body);
+    const decoded = Buffer.from(mail.attachments[0].content, "base64");
+    expect(decoded.length).toBe(CV_MAX_BYTES);
+    expect(decoded.equals(bytes)).toBe(true);
+    // załącznik stoi na końcu treści żądania (doklejony, nie zserializowany)
+    expect(body.endsWith(`${mail.attachments[0].content}"}]}`)).toBe(true);
+  });
+
+  it("DOC i DOCX: sygnatura zgodna z rozszerzeniem, właściwy typ załącznika", async () => {
+    for (const [name, sig, mime] of [
+      ["cv.doc", SIG.ole, CV_TYPES[1].mime],
+      ["cv.DOCX", SIG.zip, CV_TYPES[2].mime],
+    ] as const) {
+      const calls = stubFetch();
+      const res = await onRequest({
+        request: postCv(cvFile(name, fileBytes(sig, 2000))),
+        env: ENV,
+      });
+      expect(res.status, name).toBe(200);
+      const [attachment] = sentMail(calls).attachments;
+      expect(attachment.filename, name).toBe(name.toLowerCase());
+      expect(attachment.content_type, name).toBe(mime);
+    }
+  });
+
+  it("zgoda na przyszłe rekrutacje i sam telefon", async () => {
+    const calls = stubFetch();
+    const res = await onRequest({
+      request: postCv(cvFile(), {
+        email: "",
+        phone: "600 100 200",
+        message: "",
+        future: "1",
+        marketing: "1",
+      }),
+      env: ENV,
+    });
+    expect(res.status).toBe(200);
+    const mail = sentMail(calls);
+    expect(mail).not.toHaveProperty("reply_to");
+    expect(mail.text).toContain("Zgoda na przyszłe rekrutacje: Tak");
+    expect(mail.text).not.toContain("Treść zgłoszenia:");
+    expect(mail.text).not.toContain("informacje handlowe");
+  });
+
+  it("walidacja pliku → 400 z polem pliku, bez żądań", async () => {
+    const calls = stubFetch();
+    const cases: [string, File | null, string[]][] = [
+      ["brak pliku", null, ["cv"]],
+      ["puste pole pliku", new File([], ""), ["cv"]],
+      [
+        "zły typ",
+        cvFile("zdjecie.jpg", fileBytes([0xff, 0xd8], 500)),
+        ["cv-type"],
+      ],
+      ["tekst", cvFile("cv.txt", fileBytes(SIG.pdf, 500)), ["cv-type"]],
+      [
+        "PDF z treścią ZIP",
+        cvFile("cv.pdf", fileBytes(SIG.zip, 500)),
+        ["cv-type"],
+      ],
+      [
+        "DOCX z treścią PDF",
+        cvFile("cv.docx", fileBytes(SIG.pdf, 500)),
+        ["cv-type"],
+      ],
+      [
+        "DOC z treścią ZIP",
+        cvFile("cv.doc", fileBytes(SIG.zip, 500)),
+        ["cv-type"],
+      ],
+      [
+        "krótszy niż sygnatura",
+        cvFile("cv.pdf", fileBytes(SIG.pdf, 3)),
+        ["cv-type"],
+      ],
+      ["pusty", cvFile("cv.pdf", new Uint8Array(0)), ["cv-type"]],
+    ];
+    for (const [label, file, fields] of cases) {
+      const res = await onRequest({ request: postCv(file), env: ENV });
+      expect(res.status, label).toBe(400);
+      expect(await res.json(), label).toEqual({
+        ok: false,
+        error: "fields",
+        fields,
+      });
+    }
+    expect(calls).toHaveLength(0);
+  });
+
+  it("plik ponad limit przy zaniżonej deklaracji rozmiaru → 400 `cv-size`", async () => {
+    const calls = stubFetch();
+    const res = await onRequest({
+      request: postCv(
+        cvFile("cv.pdf", fileBytes(SIG.pdf, CV_MAX_BYTES + 1)),
+        {},
+        { "content-length": "4096" },
+      ),
+      env: ENV,
+    });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({
+      ok: false,
+      error: "fields",
+      fields: ["cv-size"],
+    });
+    expect(calls).toHaveLength(0);
+  });
+
+  it("błąd pliku stoi po błędach pól osobowych", async () => {
+    stubFetch();
+    const res = await onRequest({
+      request: postCv(null, { name: "", email: "" }),
+      env: ENV,
+    });
+    expect(await res.json()).toEqual({
+      ok: false,
+      error: "fields",
+      fields: ["name", "contact", "cv"],
+    });
+  });
+
+  it("opis pliku dosłany jako pola tekstowe NIE zastępuje pliku", async () => {
+    const calls = stubFetch();
+    const spoof = { "cv:name": "cv.pdf", "cv:size": "1000", "cv:sig": "pdf" };
+    const none = await onRequest({ request: postCv(null, spoof), env: ENV });
+    expect(none.status).toBe(400);
+    expect((await none.json()).fields).toEqual(["cv"]);
+
+    // pole `cv` jako tekst to nie plik
+    const text = await onRequest({
+      request: post({ ...PRACA, ...spoof, cv: "%PDF-1.7 udawany" }),
+      env: ENV,
+    });
+    expect(text.status).toBe(400);
+    expect((await text.json()).fields).toEqual(["cv"]);
+
+    // sygnatura liczy się z TREŚCI pliku, nie z dosłanego pola
+    const zip = await onRequest({
+      request: postCv(cvFile("cv.pdf", fileBytes(SIG.zip, 500)), spoof),
+      env: ENV,
+    });
+    expect((await zip.json()).fields).toEqual(["cv-type"]);
+    expect(calls).toHaveLength(0);
+  });
+
+  it("kolejność: plik kodowany NA KOŃCU — odsiane żądanie czyta najwyżej sygnaturę", async () => {
+    const file = () => cvFile("cv.pdf", fileBytes(SIG.pdf, 50_000));
+    const kv = { get: async () => "80", put: async () => {} };
+
+    // pułapka: plik nietknięty, zero żądań
+    let calls = stubFetch();
+    let reads = spyReads();
+    const trap = await onRequest({
+      request: postCv(file(), { firma: "bot" }),
+      env: ENV,
+    });
+    expect(trap.status).toBe(200);
+    expect(reads).toEqual([]);
+    expect(calls).toHaveLength(0);
+    vi.restoreAllMocks();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    // błąd pól osobowych, brak sekretów, odmowa Turnstile, limit dzienny:
+    // z pliku czytany jest wyłącznie początek (sygnatura)
+    for (const [label, request, env, turnstile, status] of [
+      ["pola", postCv(file(), { name: "" }), ENV, true, 400],
+      ["sekrety", postCv(file()), {}, true, 503],
+      ["turnstile", postCv(file()), ENV, false, 403],
+      ["limit", postCv(file()), { ...ENV, KONTAKT_KV: kv }, true, 503],
+    ] as const) {
+      calls = stubFetch({ turnstile });
+      reads = spyReads();
+      const res = await onRequest({ request, env });
+      expect(res.status, label).toBe(status);
+      expect(reads, label).toEqual([CV_SIGNATURE_BYTES]);
+      expect(sentMail(calls), label).toBeUndefined();
+      vi.restoreAllMocks();
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.spyOn(console, "log").mockImplementation(() => {});
+    }
+
+    // zgłoszenie przyjęte: sygnatura, a pełny plik dopiero po Turnstile
+    calls = stubFetch();
+    reads = spyReads();
+    const ok = await onRequest({ request: postCv(file()), env: ENV });
+    expect(ok.status).toBe(200);
+    expect(reads).toEqual([CV_SIGNATURE_BYTES, 50_000]);
+    expect(calls.map((c) => c.url)).toEqual([TURNSTILE, RESEND]);
+  });
+
+  it("kodowanie: metoda silnika ma pierwszeństwo, `Buffer` jest zapasem", async () => {
+    const proto = Uint8Array.prototype as { toBase64?: () => string };
+    const original = Object.getOwnPropertyDescriptor(proto, "toBase64");
+    const bytes = fileBytes(SIG.pdf, 3000);
+    try {
+      // ścieżka silnika (środowisko testów może jej nie mieć — podstawiona)
+      const native = vi.fn(function (this: Uint8Array) {
+        return Buffer.from(this).toString("base64");
+      });
+      Object.defineProperty(proto, "toBase64", {
+        value: native,
+        configurable: true,
+        writable: true,
+      });
+      let calls = stubFetch();
+      await onRequest({ request: postCv(cvFile("cv.pdf", bytes)), env: ENV });
+      expect(native).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(console.log).mock.calls.flat().join(" ")).toContain(
+        "base64 przez toBase64",
+      );
+      expect(
+        Buffer.from(sentMail(calls).attachments[0].content, "base64").equals(
+          bytes,
+        ),
+      ).toBe(true);
+
+      // ścieżka `Buffer`: metody silnika nie ma
+      delete proto.toBase64;
+      calls = stubFetch();
+      const res = await onRequest({
+        request: postCv(cvFile("cv.pdf", bytes)),
+        env: ENV,
+      });
+      expect(res.status).toBe(200);
+      expect(
+        Buffer.from(sentMail(calls).attachments[0].content, "base64").equals(
+          bytes,
+        ),
+      ).toBe(true);
+      expect(vi.mocked(console.log).mock.calls.flat().join(" ")).toContain(
+        `załącznik ${bytes.length} B, base64 przez Buffer`,
+      );
+    } finally {
+      if (original) Object.defineProperty(proto, "toBase64", original);
+      else delete proto.toBase64;
+    }
+  });
+
+  it("Resend odmawia → 502; log bez nazwy pliku i danych kandydata", async () => {
+    stubFetch({ resend: 422 });
+    const res = await onRequest({
+      request: postCv(cvFile("Tajne-CV-Marii.pdf")),
+      env: ENV,
+    });
+    expect(res.status).toBe(502);
+    expect(await res.json()).toEqual({ ok: false, error: "send" });
+    const logged = [
+      ...vi.mocked(console.error).mock.calls,
+      ...vi.mocked(console.log).mock.calls,
+    ]
+      .flat()
+      .join(" ");
+    expect(logged).toContain("422");
+    expect(logged).toContain("base64 przez");
+    for (const secret of ["Tajne", "Maria", "maria@example.com", "sprzedaży"]) {
+      expect(logged).not.toContain(secret);
+    }
+  });
+
+  it("pozostałe formularze nie niosą załącznika", async () => {
+    const calls = stubFetch();
+    await onRequest({ request: post(KONTAKT), env: ENV });
+    expect(sentMail(calls)).not.toHaveProperty("attachments");
+  });
+});
+
+describe("endpoint formularzy: platforma bez natywnego base64", () => {
+  it("zgłoszenie do pracy → 503 `encoder` przed Turnstile; pozostałe formularze działają", async () => {
+    vi.resetModules();
+    vi.doMock("../../src/lib/mail-attachment", async (original) => ({
+      ...(await original<typeof import("../../src/lib/mail-attachment")>()),
+      pickBase64Encoder: () => null,
+    }));
+    try {
+      const { onRequest: handler } =
+        await import("../../functions/api/kontakt");
+      let calls = stubFetch();
+      const res = await handler({ request: postCv(cvFile()), env: ENV });
+      expect(res.status).toBe(503);
+      expect(await res.json()).toEqual({ ok: false, error: "encoder" });
+      expect(calls).toHaveLength(0);
+
+      calls = stubFetch();
+      const other = await handler({ request: post(KONTAKT), env: ENV });
+      expect(other.status).toBe(200);
+      expect(calls.map((c) => c.url)).toEqual([TURNSTILE, RESEND]);
+    } finally {
+      vi.doUnmock("../../src/lib/mail-attachment");
+      vi.resetModules();
+    }
+  });
+});
+
 describe("endpoint formularzy: wysyłka bez JS", () => {
   const plain = (referer?: string) =>
     post(KONTAKT, {
@@ -571,6 +1025,25 @@ describe("endpoint formularzy: wysyłka bez JS", () => {
     });
     expect(res.status).toBe(303);
     expect(res.headers.get("location")).toBe(`${HOST}${OFFER_PATH}#formularz`);
+    expect(calls).toHaveLength(0);
+  });
+
+  it("submit ze strony „Praca” wraca na nią, a plik nie jest czytany", async () => {
+    const calls = stubFetch();
+    const request = postCv(
+      cvFile(),
+      {},
+      {
+        accept: "text/html",
+        "content-length": String(CV_REQUEST_MAX_BYTES * 4),
+        referer: `${HOST}${JOBS_PATH}`,
+      },
+    );
+    const read = vi.spyOn(request, "formData");
+    const res = await onRequest({ request, env: ENV });
+    expect(res.status).toBe(303);
+    expect(res.headers.get("location")).toBe(`${HOST}${JOBS_PATH}#formularz`);
+    expect(read).not.toHaveBeenCalled();
     expect(calls).toHaveLength(0);
   });
 

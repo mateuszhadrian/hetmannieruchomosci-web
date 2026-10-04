@@ -1,0 +1,20 @@
+---
+// Adres e-mail biura w komunikatach formularza — slot antyscrapingowy
+// (`a[data-mail="biuro"]` wypełnia fillContactSlots; bez JS kotwica zostaje
+// ukryta i prowadzi na /kontakt/). Odpowiednik FormTel.astro dla
+// formularza z plikiem: kandydat ma wysłać CV mailem, nie dzwonić.
+// Kotwica bez białych znaków w środku (byłyby podkreślone).
+import { CONTACT_PATH } from "@/lib/routes";
+---
+
+<a class="fm-tel fm-mail" data-mail="biuro" href={CONTACT_PATH} hidden
+  ><span data-slot></span></a
+>
+
+<style>
+  /* adres jest dłuższy niż numer telefonu — może się złamać */
+  .fm-mail {
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+</style>

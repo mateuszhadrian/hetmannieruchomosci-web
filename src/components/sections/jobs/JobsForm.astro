@@ -1,0 +1,175 @@
+---
+// Formularz rekrutacyjny (/praca/, 5B / PR 2 — docs/analiza-formularze-b.md
+// §3.3, F57–F70, Q1, Q5): imię i nazwisko, para e-mail / telefon (wymagane
+// co najmniej jedno — zasada wspólna serwisu), treść (opcjonalna) i plik
+// CV. JEDYNY checkbox to opcjonalna zgoda na przyszłe rekrutacje; zgody
+// rekrutacyjnej `required` i zgody marketingowej tu NIE MA — nota
+// informacyjna stoi osobno, nad przyciskiem. Komunikaty kierują na e-mail
+// biura (kandydat ma wysłać plik, nie dzwonić). Blok końcowy, antyspam
+// i ekran potwierdzenia daje FormFrame.astro; mechanika: forms/form-ui.ts
+// + forms/form-file.ts.
+// Formularz nie ma własnego nagłówka — nazywa go `h1` strony.
+// `id="formularz"` — cel powrotu po wysyłce bez JS (endpoint → 303).
+import FormContactPair from "@/components/forms/FormContactPair.astro";
+import FormField from "@/components/forms/FormField.astro";
+import FormFile from "@/components/forms/FormFile.astro";
+import FormFrame from "@/components/forms/FormFrame.astro";
+import { FORM_COPY, PRACA_FORM_COPY as t } from "@/components/forms/forms-copy";
+import {
+  FUTURE_RECRUITMENT_CONSENT,
+  MESSAGE_MAX,
+  NAME_MAX,
+} from "@/lib/contact-form";
+import { CONTACT_PATH } from "@/lib/routes";
+import { JOBS_FORM_ID, JOBS_HEADING_ID } from "./jobs-config";
+---
+
+<section class="jf" id={JOBS_FORM_ID}>
+  <FormFrame
+    kind="praca"
+    idPrefix="pf"
+    copy={t.frame}
+    labelledby={JOBS_HEADING_ID}
+    contact="mail"
+    enctype="multipart/form-data"
+    consent={{ name: "future", text: FUTURE_RECRUITMENT_CONSENT }}
+  >
+    <div class="jf-row" data-jobs-row>
+      <FormField
+        id="pf-name"
+        f="name"
+        label={FORM_COPY.name.label}
+        placeholder={FORM_COPY.name.placeholder}
+        autocomplete="name"
+        maxlength={NAME_MAX}
+        required
+        error={FORM_COPY.errors.name}
+      />
+      <FormContactPair idPrefix="pf" />
+    </div>
+    <div class="jf-row jf-row--file">
+      <FormField
+        id="pf-message"
+        f="message"
+        type="textarea"
+        label={t.message.label}
+        placeholder={t.message.placeholder}
+        maxlength={MESSAGE_MAX}
+        optional
+      />
+      <FormFile
+        id="pf-cv"
+        label={t.cv.label}
+        pick={t.cv.pick}
+        drag={t.cv.drag}
+        idle={t.cv.idle}
+        hint={t.cv.hint}
+        errors={{
+          missing: t.errors.cv,
+          type: t.errors.cvType,
+          size: t.errors.cvSize,
+        }}
+      />
+    </div>
+
+    {
+      /* adres składany w JS (slot antyscrapingowy); bez JS kotwica zostaje
+         ukryta, a z nią całe zdanie */
+    }
+    <p class="jf-mail" slot="after">
+      {`${t.mail} `}
+      <a class="jf-mail-a" data-mail="biuro" href={CONTACT_PATH} hidden
+        ><span data-slot></span></a
+      >
+    </p>
+  </FormFrame>
+</section>
+
+<style>
+  .jf {
+    --jf-gap: clamp(18px, 5vw, 24px);
+    margin: clamp(28px, 8vw, 40px) max(var(--pad), calc((100% - 600px) / 2)) 0;
+    padding-top: clamp(28px, 8vw, 40px);
+    border-top: 1px solid rgba(var(--glow), 0.16);
+    /* powrót po wysyłce bez JS: kreska sekcji staje pod stałym paskiem */
+    scroll-margin-top: calc(var(--hdr-h) + 16px);
+  }
+  .jf-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--jf-gap);
+  }
+  .jf-mail {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--slate);
+    text-wrap: pretty;
+  }
+  .jf-mail:has(> a[hidden]) {
+    display: none;
+  }
+  .jf-mail-a {
+    font-weight: 600;
+    color: var(--navy);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    overflow-wrap: anywhere;
+  }
+  .jf-mail-a:focus-visible {
+    outline: 2px solid var(--navy);
+    outline-offset: 3px;
+  }
+
+  /* ════ DESKTOP ≥1025 (breakpoint projektu) ════ */
+  @media (min-width: 1025px) {
+    .jf {
+      --jf-gap: clamp(20px, 2vw, 32px);
+      margin: clamp(40px, 4vw, 64px) 0 0;
+      padding-top: clamp(32px, 3.2vw, 48px);
+    }
+    /* trzy kolumny: imię | e-mail | telefon (para zajmuje dwie i trzyma
+       tę samą szczelinę), niżej treść (dwie) obok strefy pliku (jedna,
+       ta sama wysokość) */
+    .jf-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      align-items: start;
+    }
+    .jf-row :global(.fm-pair) {
+      grid-column: span 2;
+    }
+    .jf-row :global(.fm-row2) {
+      gap: var(--jf-gap);
+    }
+    .jf-row--file {
+      align-items: stretch;
+    }
+    .jf-row--file > :global(.fm-field:first-child) {
+      grid-column: span 2;
+    }
+    .jf-row--file :global(.fm-input--area) {
+      flex: 1;
+    }
+    /* przycisk i „Wolisz mailem?" w jednym wierszu */
+    .jf :global(.fm-form) {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: clamp(22px, 2.2vw, 32px) 28px;
+    }
+    .jf :global(.fm-form > *) {
+      grid-column: 1 / -1;
+    }
+    .jf :global(.fm-form > .fm-send) {
+      grid-column: 1;
+    }
+    .jf :global(.fm-form) > .jf-mail {
+      grid-column: 2;
+    }
+    .jf :global(.fm-consent),
+    .jf :global(.fm-note) {
+      max-width: 76ch;
+    }
+  }
+</style>

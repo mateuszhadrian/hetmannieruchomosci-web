@@ -18,6 +18,7 @@ import {
   MIN_FILL_MS,
   validateForm,
   type ActiveFormKind,
+  type CvCheck,
   type FieldName,
   type FormRaw,
 } from "@/lib/contact-form";
@@ -87,7 +88,7 @@ type Control = HTMLInputElement | HTMLTextAreaElement;
  *  i checkbox zgody stoją poza nimi). */
 const CONTROLS = "[data-f] input, [data-f] textarea";
 
-function initForm(frame: HTMLElement): void {
+function initForm(frame: HTMLElement, checkCv?: CvCheck): void {
   const form = frame.querySelector<HTMLFormElement>("form[data-form]");
   const kindAttr = form?.dataset.form ?? "";
   if (!form || !isActiveFormKind(kindAttr)) return;
@@ -270,10 +271,17 @@ function initForm(frame: HTMLElement): void {
     revealUnderBar(frame, under);
   }
 
+  /** Pola tekstowe + opis pól plikowych (`cv:name`, `cv:size`) — te same
+   *  klucze buduje funkcja, więc `validateForm` rozstrzyga o pliku jedną
+   *  regułą po obu stronach. */
   function readRaw(): FormRaw {
     const raw: FormRaw = {};
     for (const [key, value] of new FormData(form!).entries()) {
       if (typeof value === "string") raw[key] = value;
+      else {
+        raw[`${key}:name`] = value.name;
+        raw[`${key}:size`] = String(value.size);
+      }
     }
     return raw;
   }
@@ -281,7 +289,7 @@ function initForm(frame: HTMLElement): void {
   async function handleSubmit(): Promise<void> {
     if (busy) return;
 
-    const result = validateForm(kind, readRaw());
+    const result = validateForm(kind, readRaw(), checkCv);
     srvErr!.hidden = true;
     if (!result.ok) {
       if (setErrors(result.fields)) focusFirstError();
@@ -318,6 +326,12 @@ function initForm(frame: HTMLElement): void {
           return;
         }
       }
+      // żądanie za duże dla funkcji = plik ponad limit (formularz z polem
+      // pliku ma na to własny komunikat; bez niego — błąd wysyłki)
+      if (res.status === 413 && setErrors(["cv-size"])) {
+        focusFirstError();
+        return;
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       showDone();
     } catch {
@@ -348,7 +362,14 @@ function initForm(frame: HTMLElement): void {
     });
 }
 
-/** Uzbraja wszystkie formularze na stronie (`[data-form-frame]`). */
-export function initForms(root: ParentNode = document): void {
-  root.querySelectorAll<HTMLElement>("[data-form-frame]").forEach(initForm);
+/** Uzbraja wszystkie formularze na stronie (`[data-form-frame]`).
+ *  `checkCv` (lib/cv-file.ts) przekazuje strona z polem pliku — reguły
+ *  pliku nie siedzą w tym module. */
+export function initForms(
+  root: ParentNode = document,
+  checkCv?: CvCheck,
+): void {
+  root
+    .querySelectorAll<HTMLElement>("[data-form-frame]")
+    .forEach((frame) => initForm(frame, checkCv));
 }

@@ -512,7 +512,7 @@ true)`). **Akcja wymagająca przewinięcia strony („Napisz" → `#kontakt`)
 
 - **Jeden endpoint, jedno źródło reguł.** `functions/api/kontakt.ts`
   przyjmuje wszystkie formularze (pole `form`: `kontakt`, `sprzedaj`,
-  `oferta`; `praca` dochodzi w 5B / PR 2). Reguły w `src/lib/contact-form.ts`
+  `oferta`, `praca`). Reguły w `src/lib/contact-form.ts`
   (czysty TS): `validateForm(kind, raw)` zwraca dane albo LISTĘ błędnych
   pól — tę samą funkcję woła moduł kliencki i funkcja, a odpowiedź 400
   z `fields` zapala te same opakowania co walidacja kliencka. Zmiana
@@ -575,9 +575,11 @@ true)`). **Akcja wymagająca przewinięcia strony („Napisz" → `#kontakt`)
 - Pułapki klienckie (honeypot, minimalny czas → udawany sukces bez
   żądania) mają serwerowy odpowiednik w endpointcie — zmiany po jednej
   stronie kontraktu wymagają przeglądu drugiej. Kolejność kroków funkcji:
-  rozmiar po nagłówku (brak `Content-Length` → 411, treść nieczytana) →
-  rodzaj → pułapka (200) → walidacja → sekrety → Turnstile → limit
-  dzienny (KV) → [oferta: indeks ofert] → Resend.
+  rozmiar po nagłówku (brak `Content-Length` → 411, ponad próg górny →
+  413; treść nieczytana) → rodzaj (+ próg formularza tekstowego i zakaz
+  plików → 413) → pułapka (200) → walidacja → sekrety (+ kodowanie
+  załącznika dla `praca`) → Turnstile → limit dzienny (KV) → [oferta:
+  indeks ofert] → [praca: base64 pliku] → Resend.
 - **Maile** buduje `buildMail()` (temat stały per formularz — żadnych
   danych klienta w temacie; etykiety słownika zamiast identyfikatorów;
   mail zgłoszenia niesie powierzchnię i cenę; adres strony w stopce
@@ -709,3 +711,83 @@ true)`). **Akcja wymagająca przewinięcia strony („Napisz" → `#kontakt`)
   wspólny arkusz formularzy ładuje się więc także na listach rodzaju
   (dodatkowy plik blokujący render); zmiana `forms.css` = pomiar LCP
   list i detali.
+
+## Praca — stan po Etapie 5B / PR 2 (`docs/analiza-formularze-b.md` §11)
+
+- `src/pages/praca.astro` + `sections/jobs/`: `JobsHero` (zdjęcie +
+  eyebrow + `h1` dwukolorowy), `JobsForm`, `JobsClosed` (stan wyłączony);
+  teksty w `jobs-copy.ts` i `PRACA_FORM_COPY` (`forms-copy.ts`) — całość
+  PLACEHOLDER (U9); stałe w `jobs-config.ts`. Widok NIE ma ruchu (bez
+  bramki `js-motion`), pasek w wariancie stałym. Skrypt strony:
+  `initForms(document, checkCv)` + `initFileFields()`.
+- **Hero:** telefon i tablet — zdjęcie od górnej krawędzi okna, POD
+  szklanym paskiem, tekst pod zdjęciem; desktop — zdjęcie w kolumnie
+  strony pod paskiem, biała karta z nagłówkiem nasunięta na jego dół.
+  Zdjęcie `eager` + `fetchpriority` + dwa `preload` z `media` na stronie
+  (mniejszy plik poniżej 768 px — `JOBS_HERO_SMALL_BELOW_PX`).
+  **Pas zdjęcia pod paskiem jest rozjaśniony** (`.jh::before`, kolor
+  `--bg`, krycie z POMIARU): logo i przycisk menu są granatowe, a bez
+  rozjaśnienia ich kontrast nad zdjęciem spadał na tablecie poniżej 3:1.
+  Zmiana krycia, zdjęcia albo kadru = ponowny pomiar (axe tego nie liczy).
+- **`SHOW_PRACA = false`** (`site-config.ts`) znaczy cztery rzeczy naraz:
+  pozycja znika z menu i stopki (`nav.ts`), strona wypada z sitemapy
+  (`isSitemapPath` w `routes.ts` — filtr w `astro.config.mjs`), dostaje
+  `noindex` i `JobsClosed` zamiast formularza, a funkcja odrzuca
+  `form=praca` (`isActiveFormKind`). Adres zostaje. Stan wyłączony
+  pilnuje unit `site-flags`; e2e biegają na przełączniku włączonym —
+  przestawienie go wymaga przeglądu `seo.spec`, `navigation.spec`
+  i `a11y.spec` (lista tras statycznych) oraz baseline'ów chrome'u.
+- **Limit CV to JEDNA stała `CV_MAX_BYTES` w `src/lib/cv-file.ts`** —
+  dopisek w strefie, komunikat, kontrola w przeglądarce i progi funkcji
+  liczą się z niej (`cvLimitLabel()`, `CV_REQUEST_MAX_BYTES`). Nie wpisuj
+  wartości limitu w teksty ani testy; zmiana stałej = regeneracja zrzutów
+  `praca-*` (dopisek jest na obrazie).
+- **Reguły pliku żyją w `cv-file.ts`, poza bundlem pozostałych
+  formularzy:** `validateForm(kind, raw, checkCv)` dostaje kontrolę pliku
+  jako PARAMETR — przekazują ją strona `/praca/` (`initForms(document,
+checkCv)`) i funkcja. Ta sama reguła po obu stronach; bez niej
+  zgłoszenie do pracy kończy się błędem `cv`. `cv-file.ts` bierze
+  z `contact-form.ts` wyłącznie typy (import wartości w tę stronę robi
+  cykl — stała liczona z drugiego modułu wychodziła `NaN`). Teksty
+  i atrybuty liczone ze stałych to FUNKCJE (`cvAccept()`,
+  `cvTypesLabel()`, `cvLimitLabel()`), nie wyrażenia na poziomie modułu.
+- **Opis pliku w surowych polach:** `cv:name`, `cv:size` (obie strony —
+  `readRaw()` w `form-ui.ts` buduje je dla każdego pola plikowego)
+  i `cv:sig` (tylko funkcja: sygnatura z pierwszych bajtów). Funkcja
+  KASUJE pola tekstowe o tych nazwach i składa opis sama — dosłane przez
+  klienta nie zastępują pliku. Trzy błędy: `cv` (brak pliku), `cv-type`
+  (rozszerzenie spoza listy, plik pusty, sygnatura niezgodna
+  z rozszerzeniem), `cv-size` (ponad limit; także odpowiedź 413).
+- **Pole pliku (`FormFile.astro`):** natywny `input type="file"` leży NA
+  CAŁEJ strefie (przezroczysty) — jedna etykieta `<label>`, dopisek typów
+  i limitu jako opis (`aria-describedby`), napisy dublujące kontrolkę
+  ukryte przed czytnikami; klik, dotyk i upuszczenie pliku działają bez
+  JS. Trzy komunikaty jako ZAGNIEŻDŻONE opakowania `data-f` (`cv` ⊃
+  `cv-type` ⊃ `cv-size`) — mechanika `.err` z `form-ui.ts` bez zmian,
+  `change` gasi wszystkie trzy. Style pola siedzą w komponencie (scoped),
+  nie w `forms.css` — wspólny arkusz ładuje się też na trasach ofert.
+- **`form-file.ts`** (tylko `/praca/`): nazwa i rozmiar w strefie,
+  podświetlenie przy przeciąganiu, upuszczenie (pierwszy plik →
+  `input.files` → `change`), powrót do stanu wyjściowego po `reset`
+  (zdarzenie `reset` odpala się PRZED wyczyszczeniem pól — odczyt
+  w `setTimeout`). Niczego nie waliduje i nie niesie tekstów.
+- **Ramka (`FormFrame`):** `consent={{ name, text }}` podmienia jedyny
+  checkbox (tu: `future` — zgoda na przyszłe rekrutacje; zgody
+  rekrutacyjnej `required` i marketingowej NIE MA), `contact="mail"`
+  daje w komunikatach slot adresu biura (`FormMail.astro`) zamiast
+  telefonu, `enctype`, a `doneUntimed` w tekstach — potwierdzenie bez
+  deklaracji czasu odpowiedzi. **Zmiana ramki = porównanie HTML
+  pozostałych formularzy odciskiem na `build:visual`** (wyrażenie
+  w miejscu elementu gubiło spację — stąd `{" "}` po slocie).
+- **Załącznik (`src/lib/mail-attachment.ts`):** base64 wyłącznie
+  natywnie, wykrywane w czasie działania (`Uint8Array.prototype.toBase64`,
+  potem globalny `Buffer`; brak obu → 503 `encoder` tylko dla `praca`);
+  treść żądania = `JSON.stringify` wiadomości + DOKLEJONY fragment
+  z załącznikiem. Plik czytany w całości dopiero po Turnstile i liczniku
+  (wcześniej tylko `CV_SIGNATURE_BYTES`). Nazwa załącznika z
+  `sanitizeCvName`, MIME z rozszerzenia. CV nie jest nigdzie zapisywane;
+  logi bez nazwy pliku i danych kandydata.
+- Desktop: imię | e-mail | telefon w jednym rzędzie (para zajmuje dwie
+  kolumny i trzyma tę samą szczelinę — `--jf-gap`), treść (dwie kolumny)
+  obok strefy pliku (ta sama wysokość); przycisk i „Wolisz mailem?"
+  w jednym wierszu (siatka na `.fm-form` przez `:global()`).
