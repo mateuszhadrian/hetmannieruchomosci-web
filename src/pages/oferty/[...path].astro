@@ -1,48 +1,34 @@
 ---
-// Trasy ofert: listy typ × transakcja [× lokalizacja] w widoku 4.2
-// (`OffersListPage`) oraz detal w widoku 4.3 (`OfferDetailPage`). Adresy
-// powstają z danych (`data.ts` → `offerRoutes()`) — wyłącznie kombinacje
-// z ≥ 1 ofertą (D30). Kontrakty: `main h1` (smoke), `data-offer-detail/
-// -number/-price` (detal; szkielet S2c niósł je jako pierwsze).
-import OfferDetailPage from "@/components/offers/OfferDetailPage.astro";
+// Listy ofert: typ × transakcja [× lokalizacja] w widoku 4.2
+// (`OffersListPage`). Adresy powstają z danych (`data.ts` →
+// `offerRoutes()`) — wyłącznie kombinacje z ≥ 1 ofertą (D30). Detale mają
+// OSOBNĄ trasę (`[kind]/[location]/[number].astro`): Astro linkuje arkusze
+// per plik trasy, więc wspólny plik ładował style detalu i formularza
+// także na listach. Kontrakt: `main h1` (smoke).
 import OffersListPage from "@/components/offers/OffersListPage.astro";
 import { loadOffersData } from "@/lib/offers/data";
 import { parsePath } from "@/lib/offers/filters";
 import {
-  offerStaticPaths,
-  type OfferRouteProps,
+  offerListStaticPaths,
+  type OfferListStaticPath,
 } from "@/lib/offers/static-paths";
 import { OFFERS_PATH } from "@/lib/offers/urls";
 
 export function getStaticPaths() {
-  return offerStaticPaths(loadOffersData().offers);
+  return offerListStaticPaths(loadOffersData().offers);
 }
 
-const props = Astro.props as OfferRouteProps;
+const { offers } = Astro.props as OfferListStaticPath["props"];
 
 // Kontekst listy ze ścieżki (typ, transakcja, segment lokalizacji);
 // etykieta lokalizacji z pierwszej oferty (wszystkie mają ten sam slug).
-const path = `${OFFERS_PATH}${Astro.params.path}/`;
-const listContext =
-  props.kind === "list"
-    ? (() => {
-        const p = parsePath(path);
-        return {
-          mainType: p.mainType,
-          transaction: p.transaction,
-          locationSlug: p.locationSlug,
-          locationLabel: p.locationSlug
-            ? props.offers[0]?.location.placeName
-            : undefined,
-        };
-      })()
-    : undefined;
+const p = parsePath(`${OFFERS_PATH}${Astro.params.path}/`);
+const listContext = {
+  mainType: p.mainType,
+  transaction: p.transaction,
+  locationSlug: p.locationSlug,
+  locationLabel: p.locationSlug ? offers[0]?.location.placeName : undefined,
+};
 ---
 
-{
-  props.kind === "list" ? (
-    <OffersListPage offers={props.offers} context={listContext!} />
-  ) : (
-    <OfferDetailPage offer={props.offer} />
-  )
-}
+<OffersListPage offers={offers} context={listContext} />

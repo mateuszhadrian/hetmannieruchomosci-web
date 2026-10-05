@@ -49,9 +49,9 @@ describe("urls", () => {
   });
 });
 
-describe("offerRoutes() i offerStaticPaths()", async () => {
-  const { offerRoutes } = await import("../../src/lib/offers/urls");
-  const { offerStaticPaths, restParam } =
+describe("offerRoutes() i ścieżki statyczne tras", async () => {
+  const { offerPath, offerRoutes } = await import("../../src/lib/offers/urls");
+  const { offerDetailStaticPaths, offerListStaticPaths, restParam } =
     await import("../../src/lib/offers/static-paths");
   const { syntheticFullOffers } = await import("../helpers/raw");
   const offers = syntheticFullOffers();
@@ -67,18 +67,41 @@ describe("offerRoutes() i offerStaticPaths()", async () => {
     expect(routes.lists.length).toBeGreaterThan(routes.details.length / 2);
   });
 
-  it("static paths: każda lista ma ≥ 1 ofertę, parametr bez prefiksu i ukośników", () => {
-    const paths = offerStaticPaths(offers);
-    expect(paths.filter((p) => p.props.kind === "detail")).toHaveLength(
-      offers.length,
+  it("trasa list: każda lista ma ≥ 1 ofertę, parametr bez prefiksu i ukośników", () => {
+    const paths = offerListStaticPaths(offers);
+    expect(paths.map((p) => `/oferty/${p.params.path}/`)).toEqual(
+      offerRoutes(offers).lists,
     );
     for (const p of paths) {
       expect(p.params.path).not.toMatch(/^\/|\/$/);
-      if (p.props.kind === "list")
-        expect(p.props.offers.length).toBeGreaterThan(0);
+      // lista ma jeden albo dwa segmenty — trzy to adres detalu
+      expect(p.params.path.split("/").length).toBeLessThanOrEqual(2);
+      expect(p.props.offers.length).toBeGreaterThan(0);
     }
     expect(restParam("/oferty/dom-na-sprzedaz/baranowo/sw900003/")).toBe(
       "dom-na-sprzedaz/baranowo/sw900003",
     );
+  });
+
+  it("trasa detali: trzy parametry składają dokładnie adres oferty", () => {
+    const paths = offerDetailStaticPaths(offers);
+    expect(paths).toHaveLength(offers.length);
+    for (const [i, p] of paths.entries()) {
+      const { kind, location, number } = p.params;
+      for (const segment of [kind, location, number]) {
+        expect(segment).not.toContain("/");
+        expect(segment.length).toBeGreaterThan(0);
+      }
+      expect(`/oferty/${kind}/${location}/${number}/`).toBe(
+        offerPath(offers[i]!),
+      );
+      expect(p.props.offer).toBe(offers[i]);
+    }
+    // adresy detali i list nie nachodzą na siebie
+    const lists = new Set(offerRoutes(offers).lists);
+    for (const p of paths) {
+      const { kind, location, number } = p.params;
+      expect(lists.has(`/oferty/${kind}/${location}/${number}/`)).toBe(false);
+    }
   });
 });
