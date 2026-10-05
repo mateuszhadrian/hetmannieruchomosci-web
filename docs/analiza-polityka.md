@@ -3,9 +3,9 @@
 > **Status:** ZAAKCEPTOWANA 2026-10-04 (Q1–Q10 wg rekomendacji; do tego
 > polecenie Mateusza: ponowna weryfikacja treści z materiałami źródłowymi
 > projektu i ze źródłami prawnymi, dokument możliwie kompletny — tak, żeby
-> klientka i jej prawnik mieli jak najmniej do uzupełnienia), zakodowana
-> na gałęzi `feat/polityka` — uzupełnienia po implementacji w §10, lista
-> dla prawnika w §12. Część 4.7 Etapu 4 wg instrukcji wykonawczej (dokument
+> klientka i jej prawnik mieli jak najmniej do uzupełnienia), ZMERGOWANA
+> (PR #32, 2026-10-04) — uzupełnienia po implementacji w §10, lista dla
+> prawnika w §12; PR 2 opisuje `analiza-domkniecie-4-5.md`. Część 4.7 Etapu 4 wg instrukcji wykonawczej (dokument
 > lokalny, `docs/plan/`): akapit 4.7, „Tryb pracy", „Zasada rozjazdów",
 > krok 7.7 (finalizacja treści); prompt §4.7 z `etap-4-prompty.md`.
 > Referencja wyglądu: BRAK — `docs/design/export/polityka-prywatnosci.html`
@@ -479,7 +479,7 @@ Lista z §8 (pkt 1–9) + po implementacji:
    z PP14; wtedy przed merge'em trzeba przywrócić zdanie o fladze sesji
    w sekcji 09 i usunąć test „strona niczego nie zapisuje w urządzeniu".
 
-## 11. Plan PR 2 — domknięcie Etapów 4 i 5 (szkic; szczegóły w osobnym dokumencie po Q9)
+## 11. Plan PR 2 — domknięcie Etapów 4 i 5 (szkic; wykonanie i pomiary: `analiza-domkniecie-4-5.md`)
 
 1. `docs/placeholdery-tresci.md` — każdy PLACEHOLDER z `src/` (dziś 12
    plików + polityka) z adresem i osobą zamykającą; warianty i wartości
