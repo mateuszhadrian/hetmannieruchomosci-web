@@ -4,35 +4,27 @@
 // html.js-motion (uzbraja stany startowe reveali i zapas kadrów parallaxu
 // z content.css); moduł ruchu strony (`<widok>-motion.ts`) ładuje się
 // osobno, dynamicznym import(). Bezpiecznik: 3 s po `load` klasa schodzi,
-// jeśli moduł nie ustawił `data-motion` na <html> — treść NIGDY nie zostaje
-// ukryta. Bez JS i przy reduce klasy nie ma: strona jest statyczna
-// i kompletna (.claude/rules/sections.md).
+// jeśli moduł ruchu się nie wczytał (nie ustawił `data-motion` na <html>)
+// — treść NIGDY nie zostaje ukryta. Bez JS i przy reduce klasy nie ma:
+// strona jest statyczna i kompletna (.claude/rules/sections.md).
 //
-// Użycie: `<MotionGate slot="head" />` wewnątrz BaseLayout (strona główna,
-// /sprzedaj-z-nami/; kolejne strony treściowe w 4.5–4.6).
+// Użycie: `<MotionGate slot="head" />` wewnątrz BaseLayout — strony
+// z ruchem: „/", /sprzedaj-z-nami/, /o-nas/, /uslugi/.
 //
-// Wydzielone z index.astro (docs/analiza-formularze-a.md Q5). Treść
-// skryptu — razem z komentarzem i wcięciem — jest dosłownie ta ze strony
-// głównej po 4.4: wydzielenie miało zostawić HTML „/" bajt w bajt ten sam
-// (stąd <Fragment>: formatter wcina skrypt tak samo jak w slocie strony).
+// Komentarze stoją TUTAJ, nie w skrypcie: `is:inline` wysyła treść
+// skryptu bez zmian, razem z komentarzami, na każdej stronie.
 ---
 
-<Fragment>
-  <script is:inline>
-    // PRZED malowaniem: ruch dozwolony → html.js-motion (uzbraja stany
-    // startowe reveali i zapas kadrów parallaxu; reszta w home-motion.ts).
-    // Bezpiecznik: gdyby moduł ruchu się nie wczytał (nie ustawi
-    // data-motion), klasa schodzi i treść NIE zostaje ukryta.
-    if (matchMedia("(prefers-reduced-motion: no-preference)").matches) {
-      const root = document.documentElement;
-      root.classList.add("js-motion");
-      addEventListener("load", () => {
-        setTimeout(() => {
-          if (!root.hasAttribute("data-motion")) {
-            root.classList.remove("js-motion");
-          }
-        }, 3000);
-      });
-    }
-  </script>
-</Fragment>
+<script is:inline>
+  if (matchMedia("(prefers-reduced-motion: no-preference)").matches) {
+    const root = document.documentElement;
+    root.classList.add("js-motion");
+    addEventListener("load", () => {
+      setTimeout(() => {
+        if (!root.hasAttribute("data-motion")) {
+          root.classList.remove("js-motion");
+        }
+      }, 3000);
+    });
+  }
+</script>

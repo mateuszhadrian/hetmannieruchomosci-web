@@ -72,6 +72,9 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
   const services = document.querySelector<HTMLElement>("main.services");
   if (services) armViewportPin(services);
 
+  // Ta sama logika żyje w sections/content-anchor.ts (polityka) — zmiany
+  // trzymać W PARZE. Kopia zostaje tutaj celowo: wspólny moduł robił
+  // z niego osobny plik na obu stronach (pomiar w docs/analiza-domkniecie-4-5.md).
   // Wejście z kotwicą w adresie (np. z kafli „Usługi" strony głównej):
   // przeglądarka skacze do celu, zanim układ jest ostateczny (fonty,
   // pomiar wysokości paska), a silniki bez kotwiczenia przewijania
