@@ -63,6 +63,10 @@ test("chrome: pasek na „/” po przewinięciu (pełny) vs baseline", async ({
   );
 });
 
+/** Odczekanie po przewinięciu do stopki — WebKit poprawia jakość
+ *  skalowanego logo z opóźnieniem (opis przy zrzucie). */
+const FOOTER_SETTLE_MS = 1500;
+
 test("chrome: stopka vs baseline", async ({ page }) => {
   await prepareSweep(page, CONTACT_PATH);
   // Zrzut ELEMENTU wyższego niż okno Playwright zszywa z kilku przewinięć,
@@ -79,6 +83,12 @@ test("chrome: stopka vs baseline", async ({ page }) => {
   });
   const footer = page.locator("footer");
   await footer.scrollIntoViewIfNeeded();
-  await settle(page, 300);
+  // WebKit po przewinięciu rysuje skalowane obrazy najpierw w niższej
+  // jakości i dopiero po chwili poprawia je do pełnej. Pod obciążeniem
+  // równoległym ta poprawka przychodziła po krótkim settle: zrzut łapał
+  // logo stopki w niższej jakości (225 px różnicy wyłącznie w prostokącie
+  // logo, 12 z 40 przebiegów przy 10 workerach). Dłuższe odczekanie daje
+  // 0 z 120 — baseline bez zmian.
+  await settle(page, FOOTER_SETTLE_MS);
   await expect(footer).toHaveScreenshot("chrome-footer.png");
 });

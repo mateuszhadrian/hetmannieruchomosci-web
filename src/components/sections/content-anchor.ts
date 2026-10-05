@@ -6,6 +6,11 @@
 // odświeżeniu i „wstecz" pozycję przywraca przeglądarka) i tylko dopóki
 // użytkownik sam nie zaczął przewijać. Kliknięcia odnośników na stronie
 // zostają natywne; bez JS kotwice działają jak zwykle.
+//
+// Używa go polityka prywatności. `/uslugi/` trzyma WŁASNĄ kopię tej logiki
+// w skrypcie strony (zmiany W PARZE): moduł współdzielony przez dwie strony
+// bundler wydziela do osobnego pliku — polityka traciła wtedy skrypt inline
+// (+2 żądania), a usługi dostawały kolejne żądanie.
 
 /** `selector` — które elementy z `id` są celami kotwic tej strony
  *  (identyfikatory są czystym ASCII — bez dekodowania adresu). */

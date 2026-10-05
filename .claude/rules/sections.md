@@ -728,10 +728,14 @@ true)`). **Akcja wymagająca przewinięcia strony („Napisz" → `#kontakt`)
   od 1025 px siatka stawia link pod lewą kolumną (formularz zajmuje oba
   wiersze prawej). Zrzut ELEMENTU sekcji chowa pasek, kotwice i pasek
   dolny.
-- **Arkusze trasy `[...path]` są wspólne dla listy rodzaju i detalu** —
-  wspólny arkusz formularzy ładuje się więc także na listach rodzaju
-  (dodatkowy plik blokujący render); zmiana `forms.css` = pomiar LCP
-  list i detali.
+- **Listy i detale ofert to DWIE trasy** (od domknięcia Etapów 4 i 5):
+  `src/pages/oferty/[...path].astro` (listy) i
+  `src/pages/oferty/[kind]/[location]/[number].astro` (detale). Astro
+  linkuje arkusze per PLIK trasy, nie per gałąź renderowania — wspólny
+  plik ładował style detalu i formularza także na listach. Nie łącz ich
+  z powrotem i nie importuj `offer-detail.css` ani komponentów formularzy
+  do drzewa listy; nowy widok ofert = własny plik trasy. Zmiana
+  `forms.css` dotyczy teraz detali (i stron z formularzami), nie list.
 
 ## Praca — stan po Etapie 5B / PR 2 (`docs/analiza-formularze-b.md` §11)
 

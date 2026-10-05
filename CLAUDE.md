@@ -71,6 +71,9 @@ formularz, nakładki) została, widoki powstają od nowa wg `docs/design/`.
   `offerDetailPath`): `/oferty/{typ}-na-{transakcja}/`,
   `…/{lokalizacja}/`, `…/{lokalizacja}/{numer}/` oraz indeks wyszukiwarki
   `/oferty/index.json`. Wchodzą w Etapie 2 (szkielety) i 4 (widoki).
+  DWA pliki tras: `src/pages/oferty/[...path].astro` (listy)
+  i `[kind]/[location]/[number].astro` (detale) — osobno, żeby każdy
+  widok ładował tylko własne arkusze.
 - **Przełączniki i stałe** w jednym miejscu: `src/lib/site-config.ts`
   (progi układu, `SHOW_PRACA`, `MAP_MARKER`, `SHOW_PRICE_WHEN_SOLD`,
   `SHOW_TAGS`, `INTERACTIVE_MAP`, `SORT_NEWEST_BY`, `NEW_BADGE_DAYS`,
@@ -1467,15 +1470,29 @@ checkCv)`; `PRACA_FORM_COPY`. Widok: `src/pages/praca.astro` +
   na telefonie, miękkość zdjęcia hero (źródło 1440×617 — ostrzejszy plik
   to prośba do autora designu).
 
-- **Etap 4 / 4.7 PR 1 (`/polityka-prywatnosci/`) — W TOKU** (2026-10-04,
-  gałąź `feat/polityka`, mini-analiza `docs/analiza-polityka.md`
-  zaakceptowana wg rekomendacji Q1–Q10 + polecenie ponownej weryfikacji
-  treści ze źródłami, uzupełnienia §10, lista dla prawnika §12; kod
-  i testy gotowe lokalnie, ZOSTAŁO: workflow baseline'ów linux,
-  baseline'y darwin, PR, merge, `prod-smoke`; potem PR 2 — porządkowy
-  `chore/domkniecie-4-5`, plan w analizie §11). Testy `/uslugi/` i `/o-nas/`
-  na `nowa.` i na telefonie: pytanie zadane, bez odpowiedzi w tej sesji;
-  chmura bez zmian (blok 5.1 → 5.2 → 5.5 po 4.7).
+- **Etap 4 / 4.7 PR 1 (`/polityka-prywatnosci/`) — WYKONANY** (2026-10-04,
+  PR #32 zmergowany 22:14 UTC, commit `969485d`; checki PR-a (bieg
+  37237335009: `quality`, `e2e`, `lighthouse`), `ci.yml` na main
+  (bieg 37239254329) i `prod-smoke` (bieg 37239254392) zielone; baseline'y
+  linux + darwin w PR: 12 PNG na platformę — same nowe `polityka-*`,
+  żaden inny baseline nietknięty; gałąź `feat/polityka`, mini-analiza
+  `docs/analiza-polityka.md` zaakceptowana wg rekomendacji Q1–Q10 +
+  polecenie ponownej weryfikacji treści ze źródłami, uzupełnienia §10,
+  lista dla prawnika §12). Pierwszy bieg CI na PR (37236665060) miał
+  czerwony `e2e` WYŁĄCZNIE z braku 12 baseline'ów linux (`quality`
+  i `lighthouse` zielone; funkcjonalne e2e i 241 zrzutów zielone);
+  workflow baseline'ów linux: bieg 37236675748; bieg na commicie bota
+  (37236809111) zakończył się bez jobów — to nie jest czerwony check.
+  Weryfikacja na `nowa.` po merge'u (same żądania GET):
+  `/polityka-prywatnosci/` 200 z `x-robots-tag: noindex` fazy podglądu,
+  HTML 42 758 B, dwanaście sekcji i dwanaście pozycji spisu, osiem
+  znaczników projektu, w `<main>` zero `tel:` i `mailto:`, cztery sloty,
+  dane rejestrowe i aktualny adres organu nadzorczego w HTML, skrypt
+  przejścia na `document.referrer` (bez `sessionStorage`), brak
+  nagłówka `Set-Cookie`, strona w sitemapie; stary adres klauzuli → 301
+  na politykę. Testy `/uslugi/` i `/o-nas/` na `nowa.` i na telefonie:
+  pytanie zadane, bez odpowiedzi w tej sesji; chmura bez zmian (blok
+  5.1 → 5.2 → 5.5 po 4.7).
   `src/pages/polityka-prywatnosci.astro` + `sections/policy/`: `PolicyHead`
   (eyebrow, `h1`, wstęp, informacja o projekcie, pasmo dokumentu:
   obowiązuje od · ostatnia aktualizacja · wersja), `PolicyToc` (spis treści
@@ -1542,12 +1559,72 @@ checkCv)`; `PRACA_FORM_COPY`. Widok: `src/pages/praca.astro` +
   statystyki i kontrola nagłówków `Set-Cookie` (Etap 8), sprawdzenie
   widgetu ochrony formularzy (5.1).
 
+- **Etap 4 / 4.7 PR 2 (domknięcie Etapów 4 i 5 — porządkowy) — W TOKU**
+  (2026-10-05, gałąź `chore/domkniecie-4-5`, zapis i pomiary:
+  `docs/analiza-domkniecie-4-5.md`; kod i testy gotowe lokalnie, ZOSTAŁO:
+  PR, merge, `prod-smoke`, potem pomiar `lhci-measure.yml` na main
+  i propozycja progów LHCI osobnym małym PR-em `chore/lhci-budgets`;
+  baseline'ów ten PR NIE zmienia). Zasada PR-a: zero zmian wyglądu
+  i zachowania — każdą pozycję zamyka pomiar. **Trasy ofert rozdzielone
+  na dwa pliki:** `src/pages/oferty/[...path].astro` (listy)
+  i `src/pages/oferty/[kind]/[location]/[number].astro` (detale);
+  `static-paths.ts` ma `offerListStaticPaths()`
+  i `offerDetailStaticPaths()`; adresy bez zmian. Astro linkuje arkusze
+  per plik trasy, więc lista rodzaju ładuje teraz 2 arkusze (51 293 /
+  11 104 B) zamiast 4 (90 775 / 19 660 B), a detal 3 (67 188 / 14 628 B)
+  zamiast 4; HTML list i detali różni się wyłącznie odnośnikami do
+  arkuszy (porównanie tokenowe), `script` bez zmian, wyspa listy co do
+  bajta (38 653 B). LHCI lokalnie, mobile, mediana z 3 przebiegów (baza →
+  po): lista rodzaju LCP 2 492 → 2 422 ms, detal działki 2 790 →
+  2 711 ms, detal mieszkania 2 186 → 2 114 ms. **`chrome-footer` na
+  `webkit-iphone-14` utwardzony w specu** (przyczyna: WebKit poprawia
+  jakość skalowanego logo z opóźnieniem po przewinięciu; reprodukcja
+  12 z 40 przy 10 workerach, po zmianie 0 z 120; baseline nietknięty).
+  Usunięte: `CollapsibleText.astro`, `collapsible.ts`,
+  `SkeletonPage.astro`, `uslugi-hero-m.webp`, `uslugi-prawne2.webp`.
+  `MotionGate.astro`: komentarze poza skryptem `is:inline` — HTML „/",
+  `/sprzedaj-z-nami/`, `/o-nas/`, `/uslugi/` mniejszy o 309 B. DECYZJE
+  „bez zmiany": hero `/sprzedaj-z-nami/` zostaje na wzorze CSS F41;
+  `/uslugi/` zostaje przy własnej kopii logiki kotwic — wspólny moduł
+  `content-anchor.ts` dawał +2 żądania na polityce (skrypt przestawał
+  być inline) i +1 na usługach; obie kopie mają dopisek „W PARZE".
+  Nowe dokumenty: `docs/placeholdery-tresci.md` (87 znaczników
+  `PLACEHOLDER` w 15 plikach, cztery warianty do wyboru klientki, sześć
+  wartości do potwierdzenia; bramka 7.7: zero znaczników),
+  `docs/poprawki-po-implementacji.md` (jedna lista pozycji do oceny na
+  urządzeniach — materiał do planu poprawek, bez naprawiania). Testy:
+  unit `offers-urls` (+ kontrakty obu tras), reszta speców bez zmian.
+  Weryfikacja lokalna: format/lint/typecheck, unit 548 (546 zielonych +
+  2 skip), build 89 stron (`_redirects` 227 reguł jak przed zmianą),
+  `test:dist` 6/6, e2e 765 (+1 239 skip profili) na 6 profilach —
+  zielone; `test:visual` progiem 0: 251 zrzutów identycznych co do
+  piksela, `not-found-top` różni się na dwóch profilach desktop jak od
+  4.1 (pod progiem); LHCI lokalnie (oba configi) — asercje czyste na 13
+  adresach. Progi nietknięte.
+- **ETAPY 4 i 5 — KOD WYKONANY** (stan na 2026-10-05, po zmergowaniu
+  PR-a porządkowego): Etap 4 — 4.1 chrome (#13), 4.2 lista i wyszukiwarka
+  (#14–#19), 4.3 detal, lightbox, druk, 404 (#21–#23), 4.4 strona główna
+  (#24), 4.5 `/o-nas/` (#30), 4.6 `/uslugi/` (#31), 4.7 polityka (#32)
+  oraz domknięcie; Etap 5 — 5A `/kontakt/`, `/sprzedaj-z-nami/` (#25,
+  #26), 5B zapytanie o ofertę, `/praca/` (#27, #29). Wszystkie osiem tras
+  statycznych i trasy ofert mają widoki docelowe; szkieletów nie ma.
+  **ZOSTAJE z Etapu 5 — blok chmury: 5.1 (zasoby i sekrety formularzy,
+  klucz publiczny Turnstile) → 5.2 (pomiar limitu CV na gotowej funkcji)
+  → 5.5 (wysyłki rzeczywiste z podglądu)** — do tego czasu formularze na
+  `nowa.` kończą wysyłkę komunikatem błędu (stan oczekiwany). Potem
+  Etap 6. Otwarte poza kodem: draft polityki u prawnika klientki
+  (`docs/analiza-polityka.md` §12), treści do potwierdzenia
+  (`docs/placeholdery-tresci.md`), ocena na urządzeniach
+  (`docs/poprawki-po-implementacji.md`), progi LHCI z median runnera.
+
 ## Dokumentacja
 
 - Indeks i statusy plików: `docs/README.md` (tam też kolejność lektury
   dla nowej sesji).
 - Codzienny proces pracy: `docs/daily-workflow.md`.
 - Zadania cykliczne i świadomie odłożone: `docs/optional-todos.md`.
+- Treści robocze i decyzje klientki: `docs/placeholdery-tresci.md`;
+  pozycje do oceny na urządzeniach: `docs/poprawki-po-implementacji.md`.
 - Design-referencje: `docs/design/README.md` + 9 plików HTML eksportu.
 - Reguły szczegółowe: `.claude/rules/` — `testing.md`, `sections.md`,
   `scroll.md`, `capture-scripts.md`, `data-sync.md`.

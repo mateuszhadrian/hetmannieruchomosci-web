@@ -1,0 +1,22 @@
+---
+// Detal oferty w widoku 4.3 (`OfferDetailPage`):
+// `/oferty/{typ}-na-{transakcja}/{lokalizacja}/{numer}/`. Osobna trasa od
+// list (`[...path].astro`), żeby detal ładował wyłącznie własne arkusze,
+// a listy nie niosły stylów detalu i formularza. Adresy powstają z danych
+// (`data.ts`). Kontrakty: `main h1` (smoke), `data-offer-detail/-number/
+// -price`.
+import OfferDetailPage from "@/components/offers/OfferDetailPage.astro";
+import { loadOffersData } from "@/lib/offers/data";
+import {
+  offerDetailStaticPaths,
+  type OfferDetailStaticPath,
+} from "@/lib/offers/static-paths";
+
+export function getStaticPaths() {
+  return offerDetailStaticPaths(loadOffersData().offers);
+}
+
+const { offer } = Astro.props as OfferDetailStaticPath["props"];
+---
+
+<OfferDetailPage offer={offer} />

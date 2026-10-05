@@ -4,6 +4,32 @@ Harness odziedziczony z szablonu projektu (konfiguracja
 Playwright/Vitest/axe/LHCI, 6 profili, helpery); liczby szablonu NIE
 obowiązują — baseline'y i budżety powstają od nowa w Etapie 3.
 
+STAN po domknięciu Etapów 4 i 5 (PR porządkowy; `docs/analiza-domkniecie-4-5.md`):
+unit `offers-urls` — `offerListStaticPaths` (adresy = `offerRoutes().lists`,
+parametr rest o jednym albo dwóch segmentach, każda lista z ≥ 1 ofertą)
+i `offerDetailStaticPaths` (trzy parametry bez ukośników składają
+DOKŁADNIE `offerPath(oferta)`, żaden adres detalu nie jest adresem listy).
+E2E i visual bez zmian speców: trasy ofert rozdzielone na dwa pliki
+(`[...path].astro` — listy, `[kind]/[location]/[number].astro` — detale)
+dają te same adresy i ten sam HTML poza odnośnikami do arkuszy
+(porównanie tokenowe na `build:visual`); zrzuty `oferty-*`, `oferta-*`,
+`not-found-*` progiem 0 — identyczne. **`chrome-footer` na
+`webkit-iphone-14` utwardzony w specu:** WebKit po przewinięciu rysuje
+skalowane obrazy najpierw w niższej jakości i poprawia je z opóźnieniem;
+pod obciążeniem poprawka przychodziła po krótkim `settle` (12 z 40
+czerwonych przy 10 workerach, zawsze 225 px w prostokącie logo). Spec
+czeka `FOOTER_SETTLE_MS` (1500 ms) po `scrollIntoViewIfNeeded` — 0 z 120;
+baseline nietknięty. **Wzorzec na każdy zrzut ELEMENTU ze skalowanym
+obrazem rastrowym, do którego test przewija:** dłuższe odczekanie po
+przewinięciu, nie podnoszenie progu. Reprodukcja takiej niestabilności:
+`--repeat-each=40 --workers=10` na jednym profilu. Bramka ruchu
+(`MotionGate.astro`) i skrypt przejścia (`BaseLayout`) trzymają
+komentarze POZA skryptem `is:inline` — porównanie odciskiem HTML po
+zmianie takiego skryptu robi się po jego wycięciu z obu wersji.
+`SkeletonPage.astro`, `CollapsibleText.astro` i `collapsible.ts` usunięte
+(bez użytkowników). LHCI: po merge'u pomiar `lhci-measure.yml` na main
+i propozycja progów z median — osobny commit, decyzja Mateusza.
+
 STAN po Etapie 4.7 (`/polityka-prywatnosci/`; przejście wewnętrzne
 w `BaseLayout` rozpoznawane po `document.referrer`): unit `policy` (NOWY:
 `POLICY_SECTIONS` — dwanaście kotwic unikalnych, czyste ASCII, bez cyfr;
@@ -532,7 +558,8 @@ na `webkit-iphone-14` pod obciążeniem równoległym bywa czerwony w ok.
 1 na 10 przebiegów — WebKit rysuje wtedy logo stopki w niższej jakości
 skalowania (różnica wyłącznie w prostokącie logo, 225 px wg Playwrighta);
 w izolacji zielony. Czerwony `chrome-footer` bez zmiany stopki = powtórz
-spec w izolacji, zanim uznasz to za regres. LHCI mierzy dodatkowo
+spec w izolacji, zanim uznasz to za regres. **ROZWIĄZANE w domknięciu
+Etapów 4 i 5** (opis w bloku STAN na górze). LHCI mierzy dodatkowo
 `/sprzedaj-z-nami/`.
 
 STAN po Etapie 5A / PR 1 (wspólna mechanika formularzy + `/kontakt/`):
@@ -967,7 +994,7 @@ spec otwierający trasy ofert), `useChromium1920Only`, `collectPageIssues`.
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `scripts/sync/**`, `src/lib/offers/**` (allow-lista, schemat, parser)                                                                                                                                                                                                                     | `pnpm test:unit` (kontrakt danych)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `src/lib/img.ts`, `MEDIA_BASE`, `IMG_VARIANTS`                                                                                                                                                                                                                                            | `pnpm test:unit` (`img`, `media-r2`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `src/lib/offers/data.ts`, `redirects.ts`, integracje, `[...path].astro`                                                                                                                                                                                                                   | `pnpm test:unit && pnpm build && pnpm test:dist`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `src/lib/offers/data.ts`, `redirects.ts`, `static-paths.ts`, integracje, trasy ofert (`[...path].astro`, `[kind]/[location]/[number].astro`)                                                                                                                                              | `pnpm test:unit && pnpm build && pnpm test:dist`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `scripts/sync/pipeline.ts`, `index.ts`, `fixtures.ts`, `sync.yml`                                                                                                                                                                                                                         | `pnpm test:unit` (`sync-index`, `sync-fixtures`); workflow NIE uruchamiać w sesji                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `src/i18n/**`, `src/lib/*.ts` (img, routes, contact-form, jsonld, …)                                                                                                                                                                                                                      | `pnpm test:unit`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `scripts/subset-fonts.mjs`, `src/styles/fonts.css`                                                                                                                                                                                                                                        | `pnpm test:unit` (kontrakt subsetów)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |

@@ -375,7 +375,7 @@ if (descWrap && descBtn) {
       return;
     }
     // zwinięcie zabiera wysokość nad pozycją scrolla — przycisk zostaje
-    // pod palcem (korekta jak w collapsible.ts)
+    // pod palcem (pozycja korygowana o różnicę)
     const before = descBtn.getBoundingClientRect().top;
     descWrap.setAttribute("data-collapsed", "");
     descBtn.setAttribute("aria-expanded", "false");

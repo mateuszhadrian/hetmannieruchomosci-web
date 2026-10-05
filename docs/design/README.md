@@ -94,7 +94,7 @@ Pochodne generuje `node scripts/optimize-images.mjs <src> <out.webp>
 | `praca-hero.png`          | 1456×816  | `praca-hero{,-m}.webp`             | 1456 / 1024 |
 | `sprzedaj-doradca.png`    | 1456×816  | `sprzedaj-doradca{,-m}.webp`       | 1456 / 1024 |
 | `onas-cta.png`            | 1680×720  | `onas-cta{,-m}.webp`               | 1680 / 1024 |
-| `uslugi-hero.jpg`         | 1440×617  | `uslugi-hero{,-tall,-m}.webp`      | 1440 / 864 (kadr o pełnej wysokości — niżej) / 1024 (nieużywany od 4.6) |
+| `uslugi-hero.jpg`         | 1440×617  | `uslugi-hero{,-tall}.webp`         | 1440 / 864 (kadr o pełnej wysokości — niżej); wariant `-m` usunięty w domknięciu Etapów 4 i 5 (nieużywany od 4.6) |
 | `home-o-nas.png`          | 960×1200  | `home-o-nas{,-m}.webp`             | 960 / 720   |
 | `kontakt-biuro.png`       | 960×1200  | `kontakt-biuro{,-m}.webp`          | 960 / 720   |
 | `onas-dokumenty.png`      | 960×1200  | `onas-dokumenty{,-m}.webp`         | 960 / 720   |
@@ -103,7 +103,7 @@ Pochodne generuje `node scripts/optimize-images.mjs <src> <out.webp>
 | `uslugi-klucze.png`       | 896×1344  | `uslugi-klucze{,-m}.webp`          | 896 / 720   |
 | `uslugi-doradcy.jpg`      | 900×1125  | `uslugi-doradcy{,-m}.webp`         | 900 / 720   |
 | `uslugi-prawne1.jpg`      | 900×1125  | `uslugi-prawne1{,-m}.webp`         | 900 / 720   |
-| `uslugi-prawne2.jpg`      | 900×1125  | `uslugi-prawne2{,-m}.webp`         | 900 / 720   |
+| `uslugi-prawne2.jpg`      | 900×1125  | `uslugi-prawne2-m.webp`            | 720 (zdjęcie tylko poniżej 1025 px; pełny plik usunięty w domknięciu Etapów 4 i 5) |
 | `uslugi-prawne3.jpg`      | 900×1125  | `uslugi-prawne3{,-m}.webp`         | 900 / 720   |
 | `uslugi-prezentacja1.jpg` | 900×1125  | `uslugi-prezentacja1{,-m}.webp`    | 900 / 720   |
 | `uslugi-prezentacja2.jpg` | 900×1125  | `uslugi-prezentacja2{,-m}.webp`    | 900 / 720   |
