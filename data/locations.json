@@ -5,14 +5,14 @@
       "level": "province",
       "name": "Wielkopolskie",
       "parent": null,
-      "count": 46
+      "count": 45
     },
     {
       "id": "wielkopolskie/poznan",
       "level": "county",
       "name": "Poznań",
       "parent": "wielkopolskie",
-      "count": 39
+      "count": 38
     },
     {
       "id": "wielkopolskie/poznan/poznan",
@@ -27,7 +27,7 @@
         "Poznań-Stare Miasto",
         "Poznań-Wilda"
       ],
-      "count": 39
+      "count": 38
     },
     {
       "id": "wielkopolskie/poznan/poznan/grunwald",
@@ -35,7 +35,7 @@
       "name": "Grunwald",
       "label": "Poznań Grunwald",
       "parent": "wielkopolskie/poznan/poznan",
-      "count": 3
+      "count": 2
     },
     {
       "id": "wielkopolskie/poznan/poznan/grunwald/lazarz",
@@ -276,11 +276,6 @@
       }
     ],
     "wielkopolskie/poznan/poznan/grunwald": [
-      {
-        "name": "Pogodna",
-        "type": "ul.",
-        "count": 1
-      },
       {
         "name": "Stanisława Wyspiańskiego",
         "type": "ul.",
