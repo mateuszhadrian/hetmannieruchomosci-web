@@ -792,6 +792,40 @@ Pomiar odbywa się na gotowej funkcji `/api/kontakt` z formularza
    ścieżek kodowania (flaga zgodności z Node w ustawieniach funkcji
    projektu — krok 5.1 pkt 5).
 
+**WYNIK POMIARU (2026-10-17, krok 5.2):** podgląd PR #34 (gałąź
+`chore/formularze-chmura`, środowisko Preview projektu Pages z sekretami
+z 5.1 i `KONTAKT_TO` = adres Mateusza), formularz `/praca/` w prawdziwej
+przeglądarce z tokenem widgetu, plik PDF o rozmiarze DOKŁADNIE
+`CV_MAX_BYTES` (2 097 152 B — sygnatura `%PDF-` + wypełnienie), plik
+o bajt większy zatrzymany w przeglądarce bez żądania. **11 wysyłek**
+(20:01–20:11 czasu lokalnego, odstępy 40–190 s, różne warianty pól:
+z treścią i bez, z telefonem, ze zgodą na przyszłe rekrutacje) —
+**11/11 ze statusem wywołania `Ok`**, każda z linią
+`kontakt: załącznik 2097152 B, base64 przez toBase64` (ścieżka silnika,
+`Buffer` niepotrzebny; data zgodności projektu 2026-09-30 ⇒ zgodność
+z Node domyślna), **zero błędów 1102** w logu (`wrangler pages deployment
+tail`) i w metrykach projektu (Pages → Metrics → Preview, ostatnie 24 h:
+Requests 16 Success / 0 Errors; Errors: Internal 0, Script Threw
+Exception 0, **Exceeded CPU Time Limits 0**, Exceeded Memory 0; Request
+duration p50 0,072 / p99 0,166; Median CPU Time p50 24 148 / p75 38 904 /
+p99 54 954 — oś wykresu podpisana „ms", ale wartości są rzędu
+mikrosekund, czyli ok. **24 ms mediana i 55 ms p99** na wywołanie
+z załącznikiem 2 MB; Production dla czterech lekkich sond: p50 2 742,
+czyli ok. 2,7 ms). Plan konta: **Workers Free** („Up to 10 ms CPU time
+per request") — zmierzony koszt przekracza nominalny limit, a mimo to
+żadne wywołanie nie zostało przerwane: dokumentacja runtime'u opisuje
+tolerancję dla sporadycznych przekroczeń (przeniesienie niewykorzystanego
+czasu z tańszych wywołań). Obie wartości limitu (2 MB ≈ 24 ms, 1 MB
+≈ 12 ms) leżą nad 10 ms, więc zejście do 1 MB nie zdjęłoby ryzyka —
+rozstrzyga reguła z planu (zero 1102). **Decyzja wg reguły: limit 2 MB
+ZOSTAJE** — `CV_MAX_BYTES` bez zmian, zrzuty `praca-*` bez regeneracji.
+Ryzyko do obserwacji (`docs/optional-todos.md`): seria kilku zgłoszeń
+z CV w krótkim czasie może trafić na 1102 — sygnał to pozycja „Exceeded
+CPU Time Limits" w metrykach projektu; plan awaryjny bez zmiany kodu:
+Workers Paid (5 USD/mies., limit 5 min CPU) albo stała 1 MB. Maile
+z załącznikiem: Resend `Delivered` (kontrola skrzynki — Mateusz). Do
+przekazania klientce: „CV do 2 MB (PDF, DOC, DOCX)".
+
 ### 11.8 Decyzje i rzeczy do wykonania poza kodem (Mateusz)
 
 Decyzje Mateusza z 2026-10-04 („wszystko wg rekomendacji") — bez zmian

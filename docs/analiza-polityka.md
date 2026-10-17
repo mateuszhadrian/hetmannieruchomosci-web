@@ -535,6 +535,22 @@ z informacją o projekcie). Numery sekcji = numery w dokumencie.
 12. **Prawo sprzeciwu** (sekcja 08): marketing opiera się na zgodzie; zdanie o sprzeciwie wobec marketingu bezpośredniego zostawione dla pełności art. 21 ust. 2–3.
 13. **Brak inspektora ochrony danych** (sekcja 10) — przyjęte, że obowiązek nie powstaje.
 14. **Ochrona formularzy** (sekcja 09): usługa uruchamia się dopiero przy wypełnianiu formularza i „może zapisać w przeglądarce niezbędne informacje techniczne" — do oceny, czy mieści się w wyjątku dla informacji koniecznych do świadczenia usługi; weryfikacja techniczna po uruchomieniu widgetu (krok 5.1).
+    **Wynik kontroli (2026-10-17, krok 5.1, podgląd PR #34, czysty profil
+    Chromium przez Playwright + powtórzenie w przeglądarce Mateusza):**
+    po wejściu na stronę i po 10 s od pierwszego fokusu w polu formularza
+    (skrypt widgetu już załadowany) — zero cookies w jakiejkolwiek domenie,
+    `localStorage` i `sessionStorage` strony puste, bez ramek. Po
+    uruchomieniu wyzwania (widget wyrenderowany i wykonany ręcznie, token
+    nigdzie nie wysłany): nadal zero cookies w każdej domenie i pusty
+    storage STRONY; jedyny zapis to klucz `cf.turnstile.u` w `localStorage`
+    RAMKI dostawcy (origin `challenges.cloudflare.com` — niedostępny dla
+    strony, zapis po stronie usługi ochrony). Pre-clearance widgetu jest
+    wyłączone, więc cookie `cf_clearance` nie jest wydawane. Zdanie polityki
+    („usługa … może zapisać w przeglądarce niezbędne informacje techniczne")
+    jest zgodne ze stanem; treść bez zmian. Procedura powtórki: skrypt
+    pomiarowy sesji (Playwright: `ctx.cookies()` dla wszystkich domen +
+    `evaluate` w ramce dostawcy) — powtórzyć po zmianie trybu widgetu albo
+    włączeniu pre-clearance.
 15. **Statystyka** (sekcja 09): opis dotyczy stanu z dnia obowiązywania — narzędzie jest włączane przy uruchomieniu strony pod domeną główną (dziś skrypt nie jest osadzony).
 16. **Brzmienia zgód** cytowane w sekcji 03 pochodzą wprost z formularzy; zgoda na przyszłe rekrutacje ma w kodzie status roboczy.
 17. **Zdanie o braku pracowników i współpracowników** z dostępem do danych (sekcja 04) — prawdziwe dziś; do aktualizacji po zatrudnieniu pierwszej osoby.

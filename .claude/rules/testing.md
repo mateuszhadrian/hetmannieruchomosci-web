@@ -1092,7 +1092,15 @@ spec otwierający trasy ofert), `useChromium1920Only`, `collectPageIssues`.
   (`tests/helpers/forms.ts`), Resend w unit to atrapa `fetch`. Wysyłki
   rzeczywiste robi wyłącznie Mateusz, ręcznie. Pliki w testach to bufory
   budowane w teście — żaden plik nie opuszcza przeglądarki testowej ani
-  procesu testów.
+  procesu testów. **Zaślepkę Turnstile instaluj PRZED nawigacją:** skrypt
+  widgetu ładuje się przy pierwszym fokusie w formularzu, więc
+  `stubTurnstile()` wołany później nie przechwyci go, a prawdziwy widget
+  (z prawdziwym kluczem publicznym od 5.1) czeka na wyzwanie i test pada
+  na limicie czasu. Z pustym kluczem ten błąd był niewidoczny — prawdziwy
+  skrypt odrzucał pusty widget natychmiast (czerwony `praca` ×3 profile
+  po wpisaniu klucza, PR #34). Test, który w ogóle nie instaluje zaślepki
+  (sama walidacja kliencka), ładuje przy fokusie prawdziwy skrypt
+  dostawcy — do uporządkowania wspólnym `beforeEach` (osobna decyzja).
 - NIE emuluj `prefers-reduced-motion: reduce` (bramka ruchu = testy
   „przechodzą" na martwej stronie); świadome, punktowe wyjątki per test
   weryfikujące ścieżkę reduce są dozwolone — oznaczaj je komentarzem
