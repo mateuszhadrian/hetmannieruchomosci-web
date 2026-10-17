@@ -37,18 +37,25 @@ module.exports = {
       numberOfRuns: 5,
       settings: { preset: "desktop" },
     },
+    // Jedna grupa: na desktopie mediany LCP wszystkich 13 adresów mieszczą
+    // się w 409–634 ms (pomiar 2026-10-05, bieg 37296485321), więc podział
+    // na detale i resztę (lighthouserc.cjs) nie jest potrzebny.
     assert: {
       aggregationMethod: "median-run",
       assertions: {
+        // mediany z runnera 1,00 na każdym adresie
         "categories:performance": ["error", { minScore: 0.95 }],
-        // mediana 411 ms + 1 300 ms = 1 711 → 1 800
-        "largest-contentful-paint": ["error", { maxNumericValue: 1800 }],
+        // najwyższa mediana: detal lokalu 634 ms („/" 629, działka 582) +
+        // 1 300 = 1 934 → 2 000 (było 1 800 z mediany szkieletu 411 ms;
+        // sześć adresów miało margines < 1 300 ms)
+        "largest-contentful-paint": ["error", { maxNumericValue: 2000 }],
         // TBT po wyspie wyszukiwarki (R27): pomiar lhci-measure.yml
         // 2026-10-02 (5 przebiegów): wszystkie trasy 0 ms (zadanie hydratacji
         // < 50 ms bez dławienia CPU). Reguła TBT jak w lighthouserc.cjs:
-        // max(mediana × 2; mediana + 300 ms) → 300 ms.
+        // max(mediana × 2; mediana + 300 ms) → 300 ms. Pomiar 2026-10-05:
+        // 0 ms wszędzie — bez zacieśniania (odstające przebiegi runnera).
         "total-blocking-time": ["error", { maxNumericValue: 300 }],
-        // mediana 0,0032
+        // mediany 0,0000–0,0111 (2026-10-05)
         "cumulative-layout-shift": ["error", { maxNumericValue: 0.05 }],
         // `script` po 4.2 (c) (wyspa wyszukiwarki + sheety): pomiar
         // lhci-measure.yml 2026-10-02 22:06 UTC (main po #19, 5 przebiegów):
@@ -58,10 +65,15 @@ module.exports = {
         // dałaby 39 000 B; decyzja Mateusza 2026-10-03: 40 000 B
         // (zapas ok. 11,8 KB, żeby lightbox 4.3 — chunk na overlay.ts,
         // ok. 4–6 KB gzip — i hero/ruch 4.4 — ok. 2–3 KB — weszły bez
-        // kolejnej zmiany progu). Zapas to WYŁĄCZNIE miejsce na widoki;
-        // przekroczenie = STOP i decyzja, nie ciche podniesienie.
+        // kolejnej zmiany progu). Pomiar 2026-10-05: listy 28 KB (72 %),
+        // detale 12 KB — próg zostaje (zapas na Etap 6). Zapas to
+        // WYŁĄCZNIE miejsce na widoki; przekroczenie = STOP i decyzja,
+        // nie ciche podniesienie.
         "resource-summary:script:size": ["error", { maxNumericValue: 40000 }],
-        // mediana 130 KB; desktop dostaje większe kadry niż mobile
+        // pomiar 2026-10-05: najcięższy adres „/" 825 KB = 844 800 B
+        // (w tym film hero 443 KB) = 70 % progu; łagodniejsza kompresja
+        // filmu z listy poprawek (ok. +140 KB) dałaby ok. 82 % — próg
+        // zostaje bez zacieśniania.
         "resource-summary:total:size": ["error", { maxNumericValue: 1200000 }],
         "resource-summary:font:count": ["error", { maxNumericValue: 4 }],
         // mediana 67 KB → +10 %
