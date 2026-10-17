@@ -1559,12 +1559,17 @@ checkCv)`; `PRACA_FORM_COPY`. Widok: `src/pages/praca.astro` +
   statystyki i kontrola nagłówków `Set-Cookie` (Etap 8), sprawdzenie
   widgetu ochrony formularzy (5.1).
 
-- **Etap 4 / 4.7 PR 2 (domknięcie Etapów 4 i 5 — porządkowy) — W TOKU**
-  (2026-10-05, gałąź `chore/domkniecie-4-5`, zapis i pomiary:
-  `docs/analiza-domkniecie-4-5.md`; kod i testy gotowe lokalnie, ZOSTAŁO:
-  PR, merge, `prod-smoke`, potem pomiar `lhci-measure.yml` na main
-  i propozycja progów LHCI osobnym małym PR-em `chore/lhci-budgets`;
-  baseline'ów ten PR NIE zmienia). Zasada PR-a: zero zmian wyglądu
+- **Etap 4 / 4.7 PR 2 (domknięcie Etapów 4 i 5 — porządkowy) —
+  WYKONANY** (2026-10-05, PR #33 zmergowany 10:20 UTC, commit `8539599`;
+  checki PR-a (bieg 37282656777: `quality`, `e2e`, `lighthouse`),
+  `ci.yml` na main (bieg 37295971039) i `prod-smoke` (bieg 37295971040)
+  zielone; trzy commity w PR — rozdzielenie tras, porządki, dokumenty;
+  baseline'ów PR NIE zmieniał; gałąź `chore/domkniecie-4-5`, zapis
+  i pomiary: `docs/analiza-domkniecie-4-5.md`). Pomiar `lhci-measure.yml`
+  na main po merge'u: bieg 37296485321 (2026-10-05 10:25 UTC, 5 × 2
+  configi) — mediany odczytane w sesji bloku chmury (2026-10-17),
+  propozycja progów osobnym małym PR-em `chore/lhci-budgets` (decyzja
+  Mateusza). Zasada PR-a: zero zmian wyglądu
   i zachowania — każdą pozycję zamyka pomiar. **Trasy ofert rozdzielone
   na dwa pliki:** `src/pages/oferty/[...path].astro` (listy)
   i `src/pages/oferty/[kind]/[location]/[number].astro` (detale);
@@ -1602,7 +1607,7 @@ checkCv)`; `PRACA_FORM_COPY`. Widok: `src/pages/praca.astro` +
   4.1 (pod progiem); LHCI lokalnie (oba configi) — asercje czyste na 13
   adresach. Progi nietknięte.
 - **ETAPY 4 i 5 — KOD WYKONANY** (stan na 2026-10-05, po zmergowaniu
-  PR-a porządkowego): Etap 4 — 4.1 chrome (#13), 4.2 lista i wyszukiwarka
+  PR-a porządkowego #33): Etap 4 — 4.1 chrome (#13), 4.2 lista i wyszukiwarka
   (#14–#19), 4.3 detal, lightbox, druk, 404 (#21–#23), 4.4 strona główna
   (#24), 4.5 `/o-nas/` (#30), 4.6 `/uslugi/` (#31), 4.7 polityka (#32)
   oraz domknięcie; Etap 5 — 5A `/kontakt/`, `/sprzedaj-z-nami/` (#25,

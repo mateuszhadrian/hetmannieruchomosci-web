@@ -1,6 +1,8 @@
 # Mini-analiza — domknięcie Etapów 4 i 5 (PR porządkowy)
 
-> **Status:** ZAKODOWANA na gałęzi `chore/domkniecie-4-5` (2026-10-05).
+> **Status:** ZMERGOWANA (PR #33, 2026-10-05 10:20 UTC, commit `8539599`;
+> pomiar budżetów LHCI na main — bieg 37296485321 tego samego dnia, mediany
+> odczytane 2026-10-17, propozycja progów: PR `chore/lhci-budgets`).
 > Zakres zaakceptowany razem z analizą 4.7 (`analiza-polityka.md` §11,
 > decyzje Q6 i Q9 z 2026-10-04) — osobnego etapu akceptacji nie było;
 > ten plik jest zapisem tego, co zrobione i zmierzone. Podstawa:
