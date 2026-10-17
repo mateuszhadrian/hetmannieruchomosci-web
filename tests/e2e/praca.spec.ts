@@ -644,6 +644,10 @@ test.describe("praca: formularz", () => {
     page,
   }) => {
     const endpoint = await stubEndpoint(page);
+    // Zaślepka Turnstile PRZED wejściem: skrypt widgetu ładuje się przy
+    // pierwszym fokusie, więc instalowana później nie zdąży — z prawdziwym
+    // kluczem publicznym (5.1) prawdziwy widget czekałby na wyzwanie.
+    await stubTurnstile(page);
     await gotoReady(page, JOBS_PATH);
     await fillValid(page, pdf("Portfolio.pdf", CV_MAX_BYTES + 1));
     await expect(page.locator("[data-file-name]")).toHaveText("Portfolio.pdf");
@@ -677,7 +681,6 @@ test.describe("praca: formularz", () => {
     // plik o rozmiarze DOKŁADNIE limitu przechodzi walidację kliencką
     await cvInput(page).setInputFiles(pdf("cv.pdf", CV_MAX_BYTES));
     await expect(wrap(page, "cv-size")).not.toHaveClass(/err/);
-    await stubTurnstile(page);
     await submit(page).click();
     await expect(page.locator("[data-form-done]")).toBeVisible();
     expect(endpoint.count()).toBe(1);
