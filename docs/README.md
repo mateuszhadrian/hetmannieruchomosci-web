@@ -62,7 +62,8 @@
 | `plan/prompt-etap-4-5.md` | Prompt sesji 4.5 (`/o-nas/`) z bramką startową i stanem po 5B PR 2 — wykonany 2026-10-04 (PR #30) |
 | `plan/prompt-etap-4-6.md` | Prompt sesji 4.6 (`/uslugi/`) z bramką startową i stanem po 4.5 — wykonany 2026-10-04 (PR #31) |
 | `plan/prompt-etap-4-7.md` | Prompt sesji 4.7 (`/polityka-prywatnosci/` + domknięcie Etapów 4 i 5; dwa PR-y) z bramką startową i stanem po 4.6 — PR 1 wykonany 2026-10-04 (PR #32), PR 2 (porządkowy) wykonany 2026-10-05 (PR #33); pomiar budżetów LHCI na main wykonany tego samego dnia (bieg 37296485321) |
-| `plan/prompt-chmura-5.md` | Prompt sesji bloku chmury dla formularzy (kroki 5.1 → 5.2 → 5.5 instrukcji; potem Etap 6) z bramką startową i stanem po 4.7 — sesja rozpoczęta 2026-10-17 (status dopisywany na końcu sesji); kroki w chmurze wykonuje Mateusz |
+| `plan/prompt-chmura-5.md` | Prompt sesji bloku chmury dla formularzy (kroki 5.1 → 5.2 → 5.5 instrukcji; potem Etap 6) z bramką startową i stanem po 4.7 — wykonany 2026-10-17 (PR #34: klucz publiczny Turnstile; zasoby chmury, pomiar limitu CV 2 MB i wysyłki rzeczywiste 5.5 — fakty w CLAUDE.md) |
+| `plan/prompt-etap-6.md` | Prompt sesji Etapu 6 (SEO, pomiar, polish: wektor znaku i ikony, JSON-LD globalny, sitemapa, monitor dostępności, kontrola statystyki, telefony, `/release-check`, budżety LHCI) z bramką startową i stanem po bloku chmury — następna sesja |
 | `plan/rozmowa-z-joanna-etap-1.md` | Scenariusz rozmowy z klientką w Etapie 1 (Resend + wizyta w home.pl), krok po kroku |
 
 ## 🔒 Tylko lokalnie — `docs/kb/` (poza git)

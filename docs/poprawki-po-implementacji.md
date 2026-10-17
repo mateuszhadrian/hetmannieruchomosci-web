@@ -16,9 +16,12 @@
 
 ## 0. Usterki zgłoszone z testów na `nowa.` i na telefonie
 
-(pusto — pytanie o testy `/uslugi/` i `/o-nas/` zostało bez odpowiedzi
-w sesjach 4.6 i 4.7; dopisuj tutaj: widok · urządzenie i przeglądarka ·
-co widać · czego się spodziewałeś)
+Odpowiedź Mateusza 2026-10-17 (sesja bloku chmury): testy `/uslugi/`
+i `/o-nas/` na `nowa.` i na telefonie — w porządku, bez zastrzeżeń.
+Poza widokami: ostrzeżenia syncu W2 ×3 i pusty tytuł oferty SW803370
+zbadane 2026-10-17 i przekazane klientce (dane w CRM) — bez zmian
+w kodzie. Dopisuj tutaj kolejne pozycje: widok · urządzenie
+i przeglądarka · co widać · czego się spodziewałeś.
 
 ## 1. Całość serwisu
 
