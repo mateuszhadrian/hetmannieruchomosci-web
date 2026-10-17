@@ -1622,6 +1622,68 @@ checkCv)`; `PRACA_FORM_COPY`. Widok: `src/pages/praca.astro` +
   (`docs/placeholdery-tresci.md`), ocena na urządzeniach
   (`docs/poprawki-po-implementacji.md`), progi LHCI z median runnera.
 
+- **Etap 5 / blok chmury formularzy (5.1 → 5.2 → 5.5) — WYKONANY**
+  (2026-10-17, PR #34 `feat(formularze): turnstile site key and cloud
+  step 5.1` zmergowany 18:58 UTC, commit `68be993`; checki PR-a (biegi
+  39051357570 i 39058359069: `quality`, `e2e`, `lighthouse`, Cloudflare
+  Pages) zielone; `prod-smoke` na main 39060406227 zielony, `ci.yml`
+  39060406228 — wynik do odczytania w następnej sesji; gałąź
+  `chore/formularze-chmura`; trzy commity: dokumenty domknięcia, klucz +
+  poprawka testu, dokumenty bloku). Kroki w chmurze wykonał Mateusz wg
+  checklisty „pole po polu"; nazwy zasobów (bez wartości) w lokalnym
+  `docs/kb/rejestr-konfiguracji.md`. **5.1:** klucz API Resend „Sending
+  access" ograniczony do domeny `send.`, śledzenie wyłączone (bez
+  subdomeny śledzącej); widget Turnstile `hetman-formularze` (Managed,
+  bez pre-clearance; hosty: domena główna, `nowa.`, `*.pages.dev`) —
+  klucz PUBLICZNY w `src/components/forms/form-config.ts`
+  (`TURNSTILE_SITE_KEY`); przestrzeń KV licznika i binding `KONTAKT_KV`
+  (Production + Preview); zmienne Pages: Production `RESEND_API_KEY`
+  i `TURNSTILE_SECRET_KEY` (Secret), Preview te same + `KONTAKT_TO` =
+  adres Mateusza (podglądy PR-ów nie piszą do biura); data zgodności
+  projektu Production i Preview 2026-09-30 ⇒ zgodność z Node domyślna,
+  bez flag. Kontrola samymi żądaniami (podgląd PR-a i `nowa.`): pułapka
+  200 · `kontakt` bez tokenu **403 `turnstile`** (było 503 `config`) ·
+  `praca` bez pól 400 `fields: [name, contact, cv]` · GET 405. Jedna
+  wysyłka z podglądu PR-a na adres Mateusza: Resend `Delivered`, folder
+  odebrane, nadawca `formularz@send.…`, `Reply-To` = nadawca. ROZJAZD
+  z założenia „klucz nie zmienia żadnego speca": e2e `praca` („plik
+  większy niż limit") instalował zaślepkę Turnstile PO nawigacji
+  i przechodził tylko dzięki pustemu kluczowi — poprawka w tym samym PR
+  (zaślepka przed `gotoReady`), reguła w testing.md; po poprawce e2e 765
+  zielone (+1 239 skip profili) na 6 profilach, 251 zrzutów identycznych
+  progiem 0 (tylko znany `not-found-top` ×2). **5.2 (pomiar limitu CV,
+  `docs/analiza-formularze-b.md` §11.7):** podgląd PR-a, `/praca/`
+  w prawdziwej przeglądarce z tokenem, PDF DOKŁADNIE 2 097 152 B —
+  **11/11 wywołań `Ok`**, każde `base64 przez toBase64`, zero 1102
+  w logu (`wrangler pages deployment tail`) i w metrykach (Preview: 16
+  Success / 0 Errors, „Exceeded CPU Time Limits" 0); CPU p50 ok. 24 ms,
+  p99 55 ms przy nominalnym limicie 10 ms planu Workers Free — runtime
+  toleruje; **limit 2 MB ZOSTAJE** (`CV_MAX_BYTES` bez zmian, zrzuty
+  `praca-*` bez regeneracji); kontrola cykliczna metryk i plan awaryjny
+  (Workers Paid albo 1 MB) w `docs/optional-todos.md`. **Kontrola
+  polityki (§12.2 pkt 14):** widget nie zapisuje cookies w żadnej
+  domenie ani storage strony; jedyny zapis to `localStorage` ramki
+  dostawcy — treść polityki bez zmian. **5.5 (wysyłki rzeczywiste
+  z `nowa.` na `biuro@`, klientka uprzedzona):** cztery formularze (A
+  kontakt, B zgłoszenie z powierzchnią i ceną, D zapytanie o ofertę
+  SW486462, C praca z plikiem 2 MB i zgodą na przyszłe rekrutacje)
+  wysłane 2026-10-17 przez Claude in Chrome na polecenie Mateusza, każda
+  z potwierdzeniem na stronie, treść „TEST HADRIANM 5.5 A–D", e-mail
+  nadawcy = adres Mateusza (D bez e-maila — wariant bez `Reply-To`).
+  **ZOSTAJE poza kodem (najwcześniej 2026-10-21):** klientka przesyła
+  cztery maile jako załączniki z programu pocztowego → kontrola
+  `Authentication-Results` (SPF i DKIM pass dla `send.`), folderu na
+  komputerze i telefonie, układu maili wg tabeli z raportu sesji;
+  mail w spamie = blokada przed Etapem 7 (nadawca i odbiorca w jednej
+  domenie). Progi LHCI z median runnera: propozycja zapisana (matryca
+  mobile 4 100 / 3 800 ms, desktop 2 000 ms, mobile `total` 600 000 B),
+  decyzja Mateusza, osobny PR `chore/lhci-budgets`. Odpowiedzi
+  z bramki: `/uslugi/` i `/o-nas/` na urządzeniach bez zastrzeżeń;
+  W2 ×3 i pusty tytuł SW803370 — dane w CRM, przekazane klientce; draft
+  polityki u klientki → jej prawnik, bez odpowiedzi. **Tym samym CAŁY
+  Etap 5 jest WYKONANY.** Następna sesja: Etap 6 (`docs/plan/
+prompt-etap-6.md`).
+
 ## Dokumentacja
 
 - Indeks i statusy plików: `docs/README.md` (tam też kolejność lektury
