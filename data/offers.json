@@ -9109,6 +9109,191 @@
     "agent": "joanna"
   },
   {
+    "crmId": 10103840,
+    "number": "SW829503",
+    "slug": "sw829503",
+    "mainType": "mieszkanie",
+    "typeName": "Mieszkanie",
+    "subTypeId": 16,
+    "subType": "Blok mieszkalny",
+    "transaction": "wynajem",
+    "market": "wtorny",
+    "status": "aktywna",
+    "statusSource": "title",
+    "badges": [],
+    "crmStatus": 3,
+    "labels": {
+      "sold": 55,
+      "reserved": 57,
+      "new": 0
+    },
+    "title": "Nowiutka kawalerka, wyposażona - wrzesień za free!",
+    "rawTitle": "Nowiutka kawalerka, wyposażona - wrzesień za free!",
+    "descriptionHtml": "Oddajemy w Twoje ręce <strong>przytulną kawalerkę</strong>.<br><br> Budynek zlokalizowany na granicy poznańskich <strong>Rataj i Starołęki Małej</strong> (ul. A. Bielerzewskiej), tuż przy przystanku komunikacji miejskiej (<strong>Rondo Żegrze</strong>). Idealna lokalizacja dla osób, które nie posiadają samochodu. Kawalerka znajduje się na <strong>II piętrze</strong> budynku (nowe osiedle), wydzielona została z większego mieszkania. Druga jest już wynajęta. Mieszka w niej przesympatyczny, pracujący student, który będzie dla Ciebie wręcz bezproblemowym sąsiadem. <br>Z pewnością również docenisz <strong>pełną Infrastrukturę okolicy</strong> (komunikacja miejska, sklepy, uczenie itp.) - wszystko to w \"zasięgu ręki\".<br> <br><strong>MIESZKANIE:</strong><br>Przedpokój to wspólna przestrzeń (sprawdź spacer wirtualny) dla obu kawalerek. Znajduje się w nim szafa i wieszak stojący na odzienie wierzchnie.<br>Każda z kawalerek oczywiście zamykana na klucz.<br>Aneks kuchenny wyposażony w podstawowy sprzęt agd (płyta ceramiczna, lodówka, kuchenka mikrofalowa), nie ma zmywarki i piekarnika.<br>Pokój wyposażony w rozkładaną kanapę, komodę i szafę.<br>W łazience kabina prysznicowa i pralka na wyposażeniu.<br><strong>Funkcjonalny, przemyślany układ</strong> zapewni komfort codziennego użytkowania. Mieszkanie zostało wykończone z gustem, utrzymane <strong>w nowoczesnym stylu</strong>. <br>Gotowe do wprowadzenia.<br><br><strong>KOSZTY:</strong><br>Czynsz najmu 1700 zł +250 zł czynsz administracyjny + 50 zł prąd + <strong>internet gratis</strong> - to <strong>tylko</strong> <strong>2000 zł za całość.</strong> Kaucja 2000 zł. Brak wymogu umowy najmu okazjonalnego. <br><br><strong>LOKALIZACJA:</strong><br>Budynek usytuowany jest na terenie <strong>nowego osiedla</strong>, w spokojnej lokalizacji. Sąsiedztwo <strong>Ronda Stare Żegrze</strong> gwarantuje doskonały dostęp do komunikacji miejskiej ( osiedle znajduje się przy przystanku tramwajowym) i szybki dojazd do centrum miasta. Bliskość kluczowych punktów miasta zapewni komfort codziennego życia. W okolicy znajduje się nowa zabudowa oraz sklepy i punkty usługowe. Cenna informacja dla osób ceniących tereny zielone - sąsiedztwo terenów rekreacyjnych nad Wartą.<br><br>Zadzwoń i umów się na prezentację.<br>Może to właśnie Twoje miejsce. <br>Nie pozwól, aby ktoś Cię ubiegł!<br><br>Joanna Hetman<br>Pośrednik w Obrocie Nieruchomości<br>nr licencji zawodowej: 24178<br>nr tel.: +48 530 100 335<br><br>HETMAN Nieruchomości<br>Os. Pod Lipami 104, lok. I/J, 60-640 Poznań<br>http://www.hetmannieruchomosci.com",
+    "tags": [
+      "Dla studenta",
+      "Blisko obwodnicy/autostrady",
+      "Blisko komunikacji miejskiej",
+      "Cicha i spokojna okolica",
+      "Z dala od ruchliwej ulicy"
+    ],
+    "addedAt": "2025-03-11T11:22:47+01:00",
+    "activatedAt": "2025-03-11T14:08:31+01:00",
+    "updatedAt": "2026-10-27T10:39:20+01:00",
+    "price": 1700,
+    "currency": "PLN",
+    "pricePerM2": 106.25,
+    "deposit": 2000,
+    "area": 16,
+    "rooms": 1,
+    "bathrooms": 1,
+    "levels": 1,
+    "floor": 2,
+    "floorsInBuilding": 8,
+    "buildingYear": 2024,
+    "elevators": 1,
+    "furnished": "tak",
+    "kitchen": "Aneks kuchenny",
+    "brightKitchen": true,
+    "windows": 432,
+    "bathroomType": 562,
+    "equipment": [
+      "pralka",
+      "lodówka",
+      "kuchenka"
+    ],
+    "condition": "idealny",
+    "heating": "CO miejskie",
+    "material": "pustak",
+    "meters": [
+      "prad",
+      "cieplo",
+      "woda"
+    ],
+    "extras": {
+      "balcony": 0,
+      "loggia": 0,
+      "terrace": 0,
+      "basement": 0,
+      "attic": 0,
+      "storage": 0,
+      "parking": 0,
+      "parkingUnderground": 0,
+      "garage": 0,
+      "garden": 0,
+      "entresol": 0
+    },
+    "security": [
+      "intercom",
+      "securedoor"
+    ],
+    "media": [
+      "current",
+      "internet",
+      "sewerage",
+      "water"
+    ],
+    "surroundings": [],
+    "location": {
+      "province": "Wielkopolskie",
+      "county": "Poznań",
+      "commune": "Poznań-Nowe Miasto",
+      "city": "Poznań",
+      "parentDistrict": "Nowe Miasto",
+      "district": "Rataje",
+      "placeName": "Poznań Rataje",
+      "street": "Aleksandry Bielerzewskiej",
+      "streetType": "ul.",
+      "slug": "poznan-rataje",
+      "lat": 52.37425,
+      "lon": 16.95027
+    },
+    "photos": [
+      {
+        "id": 85584782,
+        "sourceUrl": "https://static.esticrm.pl/public/images/offers/11355/10103840/85584782_max.jpg",
+        "kind": "photo",
+        "alt": "Nowiutka kawalerka, wyposażona - wrzesień za free! – zdjęcie 1",
+        "r2Key": "offers/10103840/85584782-3d044291.jpg",
+        "etag": "\"67d035cf-40f91\"",
+        "width": 1200,
+        "height": 900
+      },
+      {
+        "id": 85584809,
+        "sourceUrl": "https://static.esticrm.pl/public/images/offers/11355/10103840/85584809_max.jpg",
+        "kind": "photo",
+        "alt": "Nowiutka kawalerka, wyposażona - wrzesień za free! – zdjęcie 2",
+        "r2Key": "offers/10103840/85584809-1a288abe.jpg",
+        "etag": "\"67d035d0-3876a\"",
+        "width": 1200,
+        "height": 900
+      },
+      {
+        "id": 85584812,
+        "sourceUrl": "https://static.esticrm.pl/public/images/offers/11355/10103840/85584812_max.jpg",
+        "kind": "photo",
+        "alt": "Nowiutka kawalerka, wyposażona - wrzesień za free! – zdjęcie 3",
+        "r2Key": "offers/10103840/85584812-fb8ca5e3.jpg",
+        "etag": "\"67d035d1-3a680\"",
+        "width": 1200,
+        "height": 901
+      },
+      {
+        "id": 85584824,
+        "sourceUrl": "https://static.esticrm.pl/public/images/offers/11355/10103840/85584824_max.jpg",
+        "kind": "photo",
+        "alt": "Nowiutka kawalerka, wyposażona - wrzesień za free! – zdjęcie 4",
+        "r2Key": "offers/10103840/85584824-90790826.jpg",
+        "etag": "\"67d035d2-3e9ec\"",
+        "width": 1200,
+        "height": 900
+      },
+      {
+        "id": 85584770,
+        "sourceUrl": "https://static.esticrm.pl/public/images/offers/11355/10103840/85584770_max.jpg",
+        "kind": "photo",
+        "alt": "Nowiutka kawalerka, wyposażona - wrzesień za free! – zdjęcie 5",
+        "r2Key": "offers/10103840/85584770-3474019f.jpg",
+        "etag": "\"67d035d3-41cca\"",
+        "width": 1200,
+        "height": 901
+      },
+      {
+        "id": 85584773,
+        "sourceUrl": "https://static.esticrm.pl/public/images/offers/11355/10103840/85584773_max.jpg",
+        "kind": "photo",
+        "alt": "Nowiutka kawalerka, wyposażona - wrzesień za free! – zdjęcie 6",
+        "r2Key": "offers/10103840/85584773-5ac47ece.jpg",
+        "etag": "\"67d035d4-4415b\"",
+        "width": 1200,
+        "height": 900
+      },
+      {
+        "id": 85584947,
+        "sourceUrl": "https://static.esticrm.pl/public/images/offers/11355/10103840/85584947_max.jpg",
+        "kind": "photo",
+        "alt": "Nowiutka kawalerka, wyposażona - wrzesień za free! – zdjęcie 7",
+        "r2Key": "offers/10103840/85584947-57c50c27.jpg",
+        "etag": "\"67d035d4-2df93\"",
+        "width": 1200,
+        "height": 900
+      },
+      {
+        "id": 85584932,
+        "sourceUrl": "https://static.esticrm.pl/public/images/offers/11355/10103840/85584932_max.jpg",
+        "kind": "photo",
+        "alt": "Nowiutka kawalerka, wyposażona - wrzesień za free! – zdjęcie 8",
+        "r2Key": "offers/10103840/85584932-a3952bc9.jpg",
+        "etag": "\"67d035d5-35a4b\"",
+        "width": 1200,
+        "height": 900
+      }
+    ],
+    "tourUrl": "https://sb360.online/0gi2f7",
+    "agent": "joanna"
+  },
+  {
     "crmId": 6274656,
     "number": "SW844035",
     "slug": "sw844035",
