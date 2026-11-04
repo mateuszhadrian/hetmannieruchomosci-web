@@ -5,14 +5,14 @@
       "level": "province",
       "name": "Wielkopolskie",
       "parent": null,
-      "count": 47
+      "count": 46
     },
     {
       "id": "wielkopolskie/poznan",
       "level": "county",
       "name": "Poznań",
       "parent": "wielkopolskie",
-      "count": 39
+      "count": 38
     },
     {
       "id": "wielkopolskie/poznan/poznan",
@@ -27,7 +27,7 @@
         "Poznań-Stare Miasto",
         "Poznań-Wilda"
       ],
-      "count": 39
+      "count": 38
     },
     {
       "id": "wielkopolskie/poznan/poznan/grunwald",
@@ -82,7 +82,7 @@
       "level": "district",
       "name": "Nowe Miasto",
       "parent": "wielkopolskie/poznan/poznan",
-      "count": 12
+      "count": 11
     },
     {
       "id": "wielkopolskie/poznan/poznan/nowe-miasto/rataje",
@@ -90,7 +90,7 @@
       "name": "Rataje",
       "label": "Poznań Rataje",
       "parent": "wielkopolskie/poznan/poznan/nowe-miasto",
-      "count": 3
+      "count": 2
     },
     {
       "id": "wielkopolskie/poznan/poznan/nowe-miasto/staroleka",
@@ -326,11 +326,6 @@
       }
     ],
     "wielkopolskie/poznan/poznan/nowe-miasto/rataje": [
-      {
-        "name": "Aleksandry Bielerzewskiej",
-        "type": "ul.",
-        "count": 1
-      },
       {
         "name": "Rataje",
         "type": "ul.",
