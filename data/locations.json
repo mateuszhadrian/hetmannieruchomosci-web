@@ -5,14 +5,14 @@
       "level": "province",
       "name": "Wielkopolskie",
       "parent": null,
-      "count": 46
+      "count": 47
     },
     {
       "id": "wielkopolskie/poznan",
       "level": "county",
       "name": "Poznań",
       "parent": "wielkopolskie",
-      "count": 38
+      "count": 39
     },
     {
       "id": "wielkopolskie/poznan/poznan",
@@ -27,7 +27,7 @@
         "Poznań-Stare Miasto",
         "Poznań-Wilda"
       ],
-      "count": 38
+      "count": 39
     },
     {
       "id": "wielkopolskie/poznan/poznan/grunwald",
@@ -82,7 +82,7 @@
       "level": "district",
       "name": "Nowe Miasto",
       "parent": "wielkopolskie/poznan/poznan",
-      "count": 11
+      "count": 12
     },
     {
       "id": "wielkopolskie/poznan/poznan/nowe-miasto/rataje",
@@ -98,7 +98,7 @@
       "name": "Starołęka",
       "label": "Poznań Starołęka",
       "parent": "wielkopolskie/poznan/poznan/nowe-miasto",
-      "count": 7
+      "count": 8
     },
     {
       "id": "wielkopolskie/poznan/poznan/nowe-miasto/szczepankowo",
@@ -341,7 +341,7 @@
       {
         "name": "Starołęcka",
         "type": "ul.",
-        "count": 7
+        "count": 8
       }
     ],
     "wielkopolskie/poznan/poznan/nowe-miasto/szczepankowo": [
